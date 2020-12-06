@@ -1,5 +1,25 @@
 # 文法
+## 配列
+## オブジェクト
 # 関数
+## コンストラクタ
+## 静的関数
+## コールバック関数
+```js
+const printHitsuji = () => {
+  console.log("ひつじ仙人");
+};
+
+const call = (callback) => {
+  console.log("コールバック関数を呼び出します。");
+  callback();
+};
+
+call(printHitsuji);
+
+// コールバック関数を呼びだします。
+// ひつじ仙人
+```
 # クラス
 ## class
 ```js
