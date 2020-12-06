@@ -1,4 +1,5 @@
-me": "nodejs_lesson",
+{
+  "name": "nodejs_lesson",
   "version": "1.0.0",
     "description": "",
       "main": "app.js",
