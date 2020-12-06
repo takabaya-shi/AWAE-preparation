@@ -307,3 +307,5 @@ https://paiza.io/ja/projects/new?language=javascript
 ここで実行できる。   
 https://edabit.com/challenges   
 ここでJavascriptのコーディングの練習ができる。
+https://prog-8.com/languages?register=true   
+progate.無料の部分はあんまりない   
