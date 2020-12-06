@@ -1,9 +1,67 @@
 # 文法
 ## 配列
-## オブジェクト
+配列は`[]`で囲まれたやつ。   
+Array, Set, Mapがある。   
+配列には`push`メソッドで値を追加できる。   
+```js
+const array = [1,2,3,4];
+array.push(5);
+console.log(array);  // [ 1, 2, 3, 4, 5 ]
+```
+## オブジェクト(連想配列)
+`{}`で囲まれているのはオブジェクト。   
+key,valueを持ち、keyは重複できない。(配列のMapのkeyは重複できる)。   
+Objectは配列ではないので、.map()とか　forEach()とか使えない。   
+```js
+obj={}
+obj = {
+   "key1":"val1",
+   "key2":"val2"
+}
+```
 # 関数
 ## コンストラクタ
 ## 静的関数
+## クロージャ
+func()関数の中のinnerFunc()関数内で、func()内で定義したvalueにアクセスできる。値のコピーではなく参照できる。   
+```js
+function func() {
+  var value = 1;
+
+  function innerFunc() {
+    console.log(value);
+  }
+  innerFunc();
+}
+func(); // 1
+```
+## アロー関数
+以下はすべて同じこと。関数の作りかた。   
+```js
+// 普通の関数定義
+function getTriangle(base,height){
+ return base * height / 2;
+};
+
+// 関数リテラル
+let getTriangle = function(base,height){
+ return base * height / 2;
+};
+
+// アロー関数
+let getTriangle = (base, height) => {
+  return base * height / 2;
+};
+
+// 本文が一文の場合
+let getTriangle = (base, height) => base * height / 2;
+
+// 引数が1つの場合
+let getCircle = radius =>radius * radius * Math.PI;
+
+// 引数を持たない場合
+let show =()=> console.log('Hello, world!'); 
+```
 ## コールバック関数
 ```js
 const printHitsuji = () => {
