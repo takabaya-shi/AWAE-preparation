@@ -21,7 +21,78 @@ obj = {
 ```
 # 関数
 ## コンストラクタ
-## 静的関数
+```js
+// 関数オブジェクト
+function Hello(word) {
+    this.name = word;
+    // funcメソッドを定義
+    this.func = function() {
+        console.log(this.name);
+    }
+}
+// newでHelloオブジェクトのインスタンスを生成
+var aisatsu = new Hello("hello");
+aisatsu.func();  // -> "hello"
+
+// newなしだと関数実行となる。このとき、this.nameはnameというグローバル変数となってします！
+// つまり、new有りならコンストラクタ、new無しなら関数としてふるまう
+var aisatsu_2 = Hello("hello");
+
+console.log(aisatu_2); // undefined
+console.log(aisatsu);  // Hello { name: 'hello', func: [Function] }
+```
+関数オブジェクトの定義は以下はすべて同じこと。   
+```js
+// 関数オブジェクト
+function Hello(word) {
+    this.name = word;
+    // funcメソッドを定義
+    this.func = function() {
+        console.log(this.name);
+    }
+}
+
+// 関数オブジェクトを変数に
+var Hello = function(word){
+    this.name = word;
+    // funcメソッドを定義
+    this.func = function() {
+        console.log(this.name);
+    }
+}
+
+// 関数オブジェクトを直接
+var Hello = new function(word) {
+    this.name = word;
+    this.func = function() {
+        console.log(this.name);
+    }
+}("じゃんぼ");
+
+```
+## プロトタイプチェーン
+プロトタイプにインスタンス間で共通に使用するメソッドを書いておくことでメモリを節約できる。   
+`this.func`と書くとインスタンスごとに同じ`func`メソッドが作成されて、メモリ効率が悪い。   
+```js
+// Helloコンストラクタ. メソッドは持たない
+function Hello(word) {
+    this.name = word;
+}
+
+// Helloコンストラクタのプロトタイプにfuncメソッドを定義しておく
+Hello.prototype.func = function() {
+    console.log(this.name);
+}
+
+var aisatsu = new Hello("hello, world");
+// aisatsuインスタンスにはfuncメソッドは存在しない
+// そのため、記憶しているHelloコンストラクタのプロトタイプにメソッドがないか調べる
+aisatsu.func();  // -> "hello, world"
+
+console.log(aisatsu); // Hello { name: 'hello, world' }
+var aisatsu_2 = new Hello_2("hello, world");
+console.log(aisatsu_2); // Hello_2 { name: 'hello, world', func: [Function] }
+```
 ## クロージャ
 func()関数の中のinnerFunc()関数内で、func()内で定義したvalueにアクセスできる。値のコピーではなく参照できる。   
 ```js
