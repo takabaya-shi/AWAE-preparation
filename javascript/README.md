@@ -301,6 +301,9 @@ dog.info();
 ```
 # デバッグ
 # メモ
+やるべき勉強がよくわからん…
 # 勉強リンク
 https://paiza.io/ja/projects/new?language=javascript   
-ここで実行できる。
+ここで実行できる。   
+https://edabit.com/challenges   
+ここでJavascriptのコーディングの練習ができる。
