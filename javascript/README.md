@@ -1,3 +1,27 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [文法](#%E6%96%87%E6%B3%95)
+- [b](#b)
+  - [配列](#%E9%85%8D%E5%88%97)
+  - [オブジェクト(連想配列)](#%E3%82%AA%E3%83%96%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88%E9%80%A3%E6%83%B3%E9%85%8D%E5%88%97)
+- [関数](#%E9%96%A2%E6%95%B0)
+  - [コンストラクタ](#%E3%82%B3%E3%83%B3%E3%82%B9%E3%83%88%E3%83%A9%E3%82%AF%E3%82%BF)
+  - [プロトタイプチェーン](#%E3%83%97%E3%83%AD%E3%83%88%E3%82%BF%E3%82%A4%E3%83%97%E3%83%81%E3%82%A7%E3%83%BC%E3%83%B3)
+  - [クロージャ](#%E3%82%AF%E3%83%AD%E3%83%BC%E3%82%B8%E3%83%A3)
+  - [アロー関数](#%E3%82%A2%E3%83%AD%E3%83%BC%E9%96%A2%E6%95%B0)
+  - [コールバック関数](#%E3%82%B3%E3%83%BC%E3%83%AB%E3%83%90%E3%83%83%E3%82%AF%E9%96%A2%E6%95%B0)
+- [クラス](#%E3%82%AF%E3%83%A9%E3%82%B9)
+  - [class](#class)
+  - [extends(継承),super(オーバーライド)](#extends%E7%B6%99%E6%89%BFsuper%E3%82%AA%E3%83%BC%E3%83%90%E3%83%BC%E3%83%A9%E3%82%A4%E3%83%89)
+  - [file分割](#file%E5%88%86%E5%89%B2)
+- [デバッグ](#%E3%83%87%E3%83%90%E3%83%83%E3%82%B0)
+- [メモ](#%E3%83%A1%E3%83%A2)
+- [勉強リンク](#%E5%8B%89%E5%BC%B7%E3%83%AA%E3%83%B3%E3%82%AF)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # 文法
 # b
 ## 配列
