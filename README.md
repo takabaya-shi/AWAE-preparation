@@ -114,6 +114,31 @@ https://techblog.yahoo.co.jp/advent-calendar-2016/node_new_buffer/
 概要   
 https://www.smrrd.de/nodejs-hacking-challenge-writeup.html   
 Writeup   
+# その他
+## githubのOSSのディレクトリ構成
+- bin   
+プロジェクトで使用する、各種コマンド置き場   
+- dist   
+コンパイルされたコード/ライブラリ。public/またはbuild/とも呼ばれる。通常、本番用または公共用のファイル。ライブラリ本体置き場（ビルド時に自動作成される）。配付するもの   
+- lib   
+外部依存関係（直接含まれる場合）。外部ライブラリ置き場   
+- include   
+C/C++ヘッダー   
+- test   
+プロジェクトのテストスクリプト、モックなど。性能チェックとか。   
+- src   
+プロジェクトをビルドおよび開発するための「ソース」ファイル。これは、dist/、public/、またはbuild/にコンパイルされる前の元のソースファイルの場所。   
+- examples   
+使用例。   
+- vendor   
+Composerが使用するPHPパッケージのライブラリと依存関係が含まれる。   
+- contrib   
+他の人からの貢献   
+- doc   
+ドキュメント   
+- man   
+マニュアル（Unix/Linux）   
+
 # メモ
 とにかくコードを読みなれている必要があるらしい。それが一番大事っぽい。それが今全然できないしHTBやっててもそれは伸びない気がする。   
 まずはudemyとかpentesterAcademyのPHP,NodeJS,.net,JavaのWebアプリ開発コースを受講する必要がありそう。   
