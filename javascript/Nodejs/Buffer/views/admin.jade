@@ -1,0 +1,22 @@
+extends layout
+
+block content
+    h1 Private Flag Society Area
+    #container.col
+        if admin === 'yes'
+            p You are admin #{flag}
+        else
+            p 
+                |  We love flags ❤ But to get access to our private fsociety area you need the secret password (only available for true hipsters).
+                br
+                | You may apply at your local starbucks, after you mastered all rules of 
+                a(href='https://www.ted.com/talks/roman_mars_why_city_flags_may_be_the_worst_designed_thing_you_ve_never_noticed?language=en') Vexillology
+                | .
+            p
+                form
+                    input#password.form-control(type='text', placeholder='password', ng-model='password')
+                    br
+                    button#enter.btn.btn-lg.btn-primary.btn-block(ng-click='enter_password()') ENTER
+
+        div.alert.alert-danger(ng-if="login.status == 'error'")
+            p {{login.error}}
