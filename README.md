@@ -14,8 +14,37 @@
 
 # AWAE-preparation
 # Vuln
-aa
-# test
+## sample
+- 概要   
+- 例   
+- 発見方法   
+- 対策   
+- 参考資料   
+## Command Injection
+### dustjs-helper (Node.js)
+- 概要   
+dustというNodeJSのモジュールの中の拡張機能であるdustjs-helper.jsというテンプレートエンジンのための便利メソッドがあるライブラリの中のifメソッドが脆弱だった。   
+Javascriptのevalの中にユーザーの入力が入り込んでRCEできてしまう。   
+htmlescapeはあるにはあるが、String型にしかチェックがされてないのでArray型にして入力すればHtmlEscape無しに入力できてしまう。   
+- 例   
+
+- 発見方法   
+`/us/demo/navigation?device=desktop\`(%5c)を入力すると、500 internal errorが発生して、`scripts/node_modules/dustjs-helpers/lib/dust-helpers.js`の`Object.helpers.if`でSyntaxErrorが発生していることがわかる。   
+なので、次は`dustjs-helpers/lib/dust-helpers.js`をgithubの公式で読む。   
+`/dist`,`/lib`のどっちでも同じっぽい？？   
+https://github.com/linkedin/dustjs-helpers/blob/03cd65f51a/dist/dust-helpers.js   
+https://github.com/linkedin/dustjs-helpers/blob/03cd65f51a/lib/dust-helpers.js      
+![image](https://user-images.githubusercontent.com/56021519/101359047-0eaccc00-38df-11eb-8c19-3e7b986d5b5b.png)   
+`if helper`で検索すると該当箇所が見つかり、`eval`があることがわかる。   
+if helperの挙動を確認するために、dustjsのgithubの**wiki**の**Dust tutorial**を読む。   
+https://github.com/linkedin/dustjs/wiki/Dust-Tutorial#if_condcondition__if_helper_Removed_in_160_release   
+見た感じ条件式をevalの中に入れてるっぽいらしい。   
+つまり、`\`を入れると、`eval('desktop\' === 'desktop')`となってSyntaxErrorとなる。   
+![image](https://user-images.githubusercontent.com/56021519/101359923-423c2600-38e0-11eb-875c-ce9b66c0bf69.png)   
+任意のコマンドを実行するには`\`以外にも`'`とかも使う必要がある。ので、htmlEscapeする箇所を探して、そこら辺を探す。   
+
+- 対策   
+- 参考資料   
 ## Information leak
 ### new Buffer(100); (Node.js)
 - 概要   
