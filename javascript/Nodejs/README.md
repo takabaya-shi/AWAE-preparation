@@ -76,6 +76,26 @@ https://github.com/linkedin/dustjs-helpers/blob/03cd65f51a/README.md
 # サンプルアプリ
 ## progate
 プロゲートの無料のアプリ。
+# フォルダ構成
+```txt
+.
+├── app.js				// expressサーバーの設定
+├── bin
+│   └── www				// サーバーの起動
+├── package.json
+├── public				// 静的ファイル置き場
+│   ├── images
+│   ├── javascripts
+│   └── stylesheets
+│       └── style.css
+├── routes				// サーバー側のコントローラ
+│   ├── index.js
+│   └── users.js
+└── views					// サーバー側で画面を作成する際のテンプレート
+    ├── error.jade
+    ├── index.jade
+    └── layout.jade
+```
 # メモ
 https://www.smrrd.de/nodejs-hacking-challenge.html   
 にNodeJSのハッキングチャレンジ記事がある   
