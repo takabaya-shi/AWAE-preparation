@@ -112,3 +112,8 @@ https://cybervaultsec.com/ceh/hackthebox-celestial/
 HackTheBoxのCelestical.NodeJSのデシリアライズっぽい。   
 https://www.doyler.net/security-not-included/nodejs-code-injection   
 NodeJSのコマンドインジェクションのWriteup   
+   
+https://gist.github.com/mitsuruog/fc48397a8e80f051a145   
+Nodejsの基本   
+https://developer.mozilla.org/ja/docs/Learn/Server-side/Express_Nodejs/Introduction   
+Node.jsの基本   
