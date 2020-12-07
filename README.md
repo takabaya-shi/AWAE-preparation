@@ -3,6 +3,7 @@
 **Table of Contents**
 
 - [AWAE-preparation](#awae-preparation)
+- [脆弱性発見方法](#%E8%84%86%E5%BC%B1%E6%80%A7%E7%99%BA%E8%A6%8B%E6%96%B9%E6%B3%95)
 - [Vuln](#vuln)
   - [sample](#sample)
   - [Command Injection](#command-injection)
