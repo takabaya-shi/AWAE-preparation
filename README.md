@@ -4,7 +4,9 @@
 
 - [AWAE-preparation](#awae-preparation)
 - [Vuln](#vuln)
-- [test](#test)
+  - [sample](#sample)
+  - [Command Injection](#command-injection)
+    - [dustjs-helper (Node.js)](#dustjs-helper-nodejs)
   - [Information leak](#information-leak)
     - [new Buffer(100); (Node.js)](#new-buffer100-nodejs)
 - [メモ](#%E3%83%A1%E3%83%A2)
