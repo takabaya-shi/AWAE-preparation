@@ -1,3 +1,17 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [AWAE-preparation](#awae-preparation)
+- [Vuln](#vuln)
+- [test](#test)
+  - [Information leak](#information-leak)
+    - [new Buffer(100); (Node.js)](#new-buffer100-nodejs)
+- [メモ](#%E3%83%A1%E3%83%A2)
+- [参考資料](#%E5%8F%82%E8%80%83%E8%B3%87%E6%96%99)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # AWAE-preparation
 # Vuln
 aa
