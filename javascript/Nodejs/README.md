@@ -67,6 +67,11 @@ root@kali:~/Documents/AWAE/nodejs# curl http://localhost:3000/login -X POST -H "
 00000280  30 30 30 22 7d                                    |000"}|
 00000285
 ```
+## dustjs-helper
+if helperのevalと不十分な入力検証でRCEできる脆弱なNode.jsモジュール。   
+https://github.com/linkedin/dustjs   
+https://github.com/linkedin/dustjs-helpers/blob/03cd65f51a/README.md   
+よくわからんけどどうやら修正されてないっぽい。   
 # サンプルアプリ
 ## progate
 プロゲートの無料のアプリ。
