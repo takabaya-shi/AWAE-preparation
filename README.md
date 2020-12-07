@@ -15,6 +15,10 @@
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # AWAE-preparation
+# 脆弱性発見方法
+エラー文が出て入れば、その該当箇所のソースコードをgithubで探して、wikiとかTutorialとかissueを見る。   
+Injection系はevalを探す。   
+見つかれば、ユーザーの入力をエスケープするような部分を`html`,`escape`とかのキーワードで検索して見つける。
 # Vuln
 ## sample
 - 概要   
