@@ -23,7 +23,6 @@
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # 文法
-# b
 ## 配列
 配列は`[]`で囲まれたやつ。   
 Array, Set, Mapがある。   
