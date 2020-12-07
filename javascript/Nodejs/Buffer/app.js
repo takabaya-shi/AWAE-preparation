@@ -5,13 +5,16 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var session = require('cookie-session');
+// config.jsファイルに書かれているconfigオブジェクトを作成
 var config = require('./config');
 
+// ./routes/index.jsにルーティングが書かれている
 var routes = require('./routes/index');
 
 var app = express();
 
 app.set('views', path.join(__dirname, 'views'));
+// JADEというテンプレートエンジンを使用
 app.set('view engine', 'jade');
 
 app.use(logger('dev'));
