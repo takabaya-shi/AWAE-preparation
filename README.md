@@ -167,6 +167,32 @@ https://github.com/luin/serialize/blob/master/lib/serialize.js
     return obj;
   };
 ```
+### serialize-to-js (Node.js)
+- 概要   
+serialize-to-jsモジュールのversion 1.0.0以前で、deserializeメソッドでIIFE形式によるRCEの脆弱性がある。   
+https://snyk.io/vuln/npm:serialize-to-js:20170208   
+- 例   
+以下を挿入するとRCEできる！   
+```js
+var payload = "{e: function(){ eval('console.log(`exploited`)') }() }";
+```
+- 対策   
+修正されてる。現在のバージョンは
+- 根本の原因   
+ここに該当のissueがある。   
+https://github.com/commenthol/serialize-to-js/commit/1cd433960e5b9db4c0b537afb28366198a319429   
+![image](https://user-images.githubusercontent.com/56021519/101511405-fb246280-39bd-11eb-9dd2-468226ae1b2e.png)   
+`new Function`によって関数オブジェクトが作成されて、IIFE形式によって作成されたら即実行されてしまう。   
+```js
+var payload = "{e: function(){ eval('console.log(`exploited`)') }() }";
+// もともとの脆弱な実装
+var str = (new Function('return ' + payload))();
+
+// 結果
+// exploited
+```
+修正バージョンでは`sanitize()`関数が実装されて、`new`,`eval`,`function`,`(`,`)`のキーワードを構文解析して、あるかどうか調べている。   
+![image](https://user-images.githubusercontent.com/56021519/101512873-dda3c880-39be-11eb-8c91-4f159defc157.png)   
 
 ## Command Injection
 ### dustjs-helper (Node.js)
