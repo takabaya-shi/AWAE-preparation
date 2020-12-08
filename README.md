@@ -10,6 +10,7 @@
   - [sample](#sample)
   - [Deserialization](#deserialization)
     - [nodejs-serialize (CVE-2017-5941)](#nodejs-serialize-cve-2017-5941)
+    - [serialize-to-js (Node.js)](#serialize-to-js-nodejs)
   - [Command Injection](#command-injection)
     - [dustjs-helper (Node.js)](#dustjs-helper-nodejs)
   - [Information leak](#information-leak)
