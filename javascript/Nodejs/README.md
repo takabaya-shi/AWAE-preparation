@@ -75,10 +75,14 @@ if helperのevalと不十分な入力検証でRCEできる脆弱なNode.jsモジ
 https://github.com/linkedin/dustjs   
 https://github.com/linkedin/dustjs-helpers/blob/03cd65f51a/README.md   
 よくわからんけどどうやら修正されてないっぽい。   
-## node-serialize
+## node-serialize (Celestial)
 HackTheBoxのCelestialでこのモジュールの逆シリアライズの脆弱性がある。   
 https://github.com/takabaya-shi/CTF-writeup/blob/master/HackTheBox/celestial/README.md   
 にWriteupを書いた。   
+## node-serialize (temple of doom)
+Vulnhubのtemple of doomでCelestialと同じの逆シリアライズの脆弱性がある。   
+https://github.com/takabaya-shi/CTF-writeup/tree/master/Vulnhub/temple%20of%20doom   
+
 # サンプルアプリ
 ## progate
 プロゲートの無料のアプリ。
