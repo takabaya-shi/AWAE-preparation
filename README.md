@@ -21,12 +21,14 @@
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # AWAE-preparation
+
 # 脆弱性発見方法
 エラー文が出て入れば、その該当箇所のソースコードをgithubで探して、wikiとかTutorialとかissueを見る。   
 Injection系はevalを探す。   
 見つかれば、ユーザーの入力をエスケープするような部分を`html`,`escape`とかのキーワードで検索して見つける。   
 ## キーワード
-`eval`,`eval(`,`html`,`escape`,`new Buffer(`,`unserialize`,`node-serialize`   
+### Node.js
+`eval`,`eval(`,`html`,`escape`,`new Buffer(`,`unserialize`,`node-serialize`,`deserialize`,`new Function`   
 # Vuln
 ## sample
 - 概要   
@@ -117,6 +119,54 @@ https://github.com/ajinabraham/Node.Js-Security-Course/blob/master/nodejsshell.p
 `eval(String.fromCharCode(10,118,...,10))`の形式で書けばクウォートとかを使わずにReverse shellのコードが書ける。   
 https://v3ded.github.io/ctf/htb-celestial   
 HTBのWriteup。   
+- 根本の原因   
+このソースの`unserialize`関数の`eval`が良くない。   
+https://github.com/luin/serialize/blob/master/lib/serialize.js   
+```js
+  var FUNCFLAG = '_$$ND_FUNC$$_';
+  
+  // ここら辺は省略
+  
+  // objは {"a":"test1","b":"test2"} とか
+  unserialize = function(obj, originObj) {
+    var isIndex;
+    if (typeof obj === 'string') {
+      obj = JSON.parse(obj);
+      isIndex = true;
+    }
+    originObj = originObj || obj;
+
+    var circularTasks = [];
+    var key;
+    // objオブジェクトのプロパティをkeyに代入。 "a","b"が順次代入される    
+    for(key in obj) {
+      if(obj.hasOwnProperty(key)) {
+        if(typeof obj[key] === 'object') {
+          obj[key] = unserialize(obj[key], originObj);
+          // obj["a"]つまり"test1"がString型かどうかチェック
+        } else if(typeof obj[key] === 'string') {
+          // indexOfで"_$$ND_FUNC$$_"の位置を検査。先頭にあるかどうか
+          if(obj[key].indexOf(FUNCFLAG) === 0) {
+            // ここが脆弱！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+            // substringで"_$$ND_FUNC$$_"以降の文字を切り出して、evalで実行！
+            obj[key] = eval('(' + obj[key].substring(FUNCFLAG.length) + ')');
+          } else if(obj[key].indexOf(CIRCULARFLAG) === 0) {
+            obj[key] = obj[key].substring(CIRCULARFLAG.length);
+            circularTasks.push({obj: obj, key: key});
+          }
+        }
+      }
+    }
+
+    if (isIndex) {
+      circularTasks.forEach(function(task) {
+        task.obj[task.key] = getKeyPath(originObj, task.obj[task.key]);
+      });
+    }
+    return obj;
+  };
+```
+
 ## Command Injection
 ### dustjs-helper (Node.js)
 - 概要   
