@@ -111,6 +111,7 @@ https://github.com/takabaya-shi/CTF-writeup/tree/master/Vulnhub/temple%20of%20do
 https://www.smrrd.de/nodejs-hacking-challenge.html   
 にNodeJSのハッキングチャレンジ記事がある   
 https://medium.com/bugbountywriteup/nodejs-ssrf-by-response-splitting-asis-ctf-finals-2018-proxy-proxy-question-walkthrough-9a2424923501   
+https://www.rfk.id.au/blog/entry/security-bugs-ssrf-via-request-splitting/   
 NodeJSのSSRFのWriteup？的なものがある   
 https://medium.com/egghunter/node-1-vulnhub-walkthrough-5635aa56cc74   
 NodeJSのapp.jsはデータベースのデータをコマンドとして実行しようとするので、データベースに任意のコマンドを書き込む。シェルをゲット後の話。   
