@@ -61,6 +61,39 @@ class Person {
 ```
 
 ## abstract class
+## interface
+```java
+class Main {
+  public static void main(String[] args) {
+    // interfaceを実装したクラスのインスタンスを普通に作成
+    Person person1 = new Person();
+    Dog dog1 = new Dog();
+    
+    person1.hello("John"); // こんにちは！John
+    dog1.hello("犬");      // わんわん！犬
+  }
+}
+
+// interfaceを作成。継承させてから中身を実装する。具体的なことは書いてはいけない
+interface Animal{
+  // helloメソッドを使うことだけを決める
+  void hello(String name);
+}
+
+// implementsで実装する。(継承はextends!!!!)
+class Person implements Animal{
+  // interfaceのhelloメソッドをオーバーライドして実装する
+  public void hello(String name){
+    System.out.println("こんにちは！" + name);
+  }
+}
+
+class Dog implements Animal{
+  public void hello(String name){
+    System.out.println("わんわん！" + name);
+  }
+}
+```
 ## override
 
 # メモ
