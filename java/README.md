@@ -4,8 +4,8 @@
 
 - [配列](#%E9%85%8D%E5%88%97)
 - [class](#class)
-  - [abstract class](#abstract-class)
-  - [override](#override)
+  - [abstract 継承(extends)](#abstract-%E7%B6%99%E6%89%BFextends)
+  - [interface 実装(implements)](#interface-%E5%AE%9F%E8%A3%85implements)
 - [メモ](#%E3%83%A1%E3%83%A2)
 - [参考](#%E5%8F%82%E8%80%83)
 
