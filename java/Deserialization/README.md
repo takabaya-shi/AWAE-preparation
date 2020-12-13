@@ -400,6 +400,11 @@ root@kali:~/Documents/AWAE/javaDeserialization/ex1# cat Exp.ser | hexdump -C
 000007d7
 root@kali:~/Documents/AWAE/javaDeserialization/ex1# 
 ```
+# DeserLab
+## setup
+## endpointの特定
+## exploit
+
 # 参考
 https://nytrosecurity.com/2018/05/30/understanding-java-deserialization/   
 基本的なJavaの逆シリアライズの脆弱性について   
