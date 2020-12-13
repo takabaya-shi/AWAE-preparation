@@ -245,5 +245,19 @@ No actions logged
 Restoring log data to file...
 Deserializing from admin.ser
 root@kali:~/Documents/AWAE/javaDeserialization/ex1#
+root@kali:~/Documents/AWAE/javaDeserialization/ex1# cat Log.ser | hexdump -C
+00000000  ac ed 00 05 73 72 00 07  4c 6f 67 46 69 6c 65 d7  |....sr..LogFile.|
+00000010  60 3d d7 33 3e bc d1 02  00 02 4c 00 0b 66 69 6c  |`=.3>.....L..fil|
+00000020  65 63 6f 6e 74 65 6e 74  74 00 12 4c 6a 61 76 61  |econtentt..Ljava|
+00000030  2f 6c 61 6e 67 2f 53 74  72 69 6e 67 3b 4c 00 08  |/lang/String;L..|
+00000040  66 69 6c 65 6e 61 6d 65  71 00 7e 00 01 78 70 74  |filenameq.~..xpt|
+00000050  00 11 4e 6f 20 61 63 74  69 6f 6e 73 20 6c 6f 67  |..No actions log|
+00000060  67 65 64 74 00 0e 55 73  65 72 5f 4e 79 74 72 6f  |gedt..User_Nytro|
+00000070  2e 6c 6f 67                                       |.log|
+00000074
+root@kali:~/Documents/AWAE/javaDeserialization/ex1# 
 ```
+ここから、シリアライズされたデータは`LogFileクラス`、`データ`を持ち、Javaのコードは含まないことがわかる。   
+ここで攻撃者はデータを改竄することでRCEできるかも。この例だと、`obj.filename`の`User_Nytro.log`を`/etc/passwd`にして別のデータを書き込んだりWebshellを設置したりすればよい。   
+
 
