@@ -406,7 +406,354 @@ root@kali:~/Documents/AWAE/javaDeserialization/ex1#
 ```
 # DeserLab
 ## setup
+server側は以下でJARファイルを実行して9000ポートで待ち受け。   
+```txt
+root@kali:~/Documents/AWAE/javaDeserialization/DeserLab/DeserLab-v1.0# java -cp lib/ -jar DeserLab.jar -server localhost 9000
+[+] DeserServer started, listening on 127.0.0.1:9000
+[+] Connection accepted from 127.0.0.1:59564
+[+] Connection accepted from 127.0.0.1:59666
+[+] Connection accepted from 127.0.0.1:59688
+[+] Connection accepted from 127.0.0.1:59710
+[+] Connection accepted from 127.0.0.1:59786
+[+] Sending hello...
+[+] Hello sent, waiting for hello from client...
+[+] Hello received from client...
+[+] Sending protocol version...
+[+] Version sent, waiting for version from client...
+[+] Client version is compatible, reading client name...
+[+] Client name received: help
+[+] Hash request received, hashing: a
+[+] Hash generated: 0cc175b9c0f1b6a831c399e269772661
+[+] Done, terminating connection.
+```
+client側のスクリプトが用意されてる。今回はHttpとかではないのでこのスクリプトを使ってServerと対話する。   
+```txt
+root@kali:~/Documents/AWAE/javaDeserialization/DeserLab/DeserLab-v1.0# java -cp lib -jar DeserLab.jar -client localhost 9000
+[+] DeserClient started, connecting to 127.0.0.1:9000
+[+] Connected, reading server hello packet...
+[+] Hello received, sending hello to server...
+[+] Hello sent, reading server protocol version...
+[+] Sending supported protocol version to the server...
+[+] Enter a client name to send to the server: 
+aaa
+[+] Enter a string to hash: 
+aa
+[+] Generating hash of "aa"...
+[+] Hash generated: 4124bc0a9335c27f086f24ba207a4912
+root@kali:~/Documents/AWAE/javaDeserialization/DeserLab/DeserLab-v1.0#
+```
+## serializedデータの抽出
+ユーザーネームとMD5ハッシュ化するフレーズを送信すると、MD5ハッシュされたフレーズが返ってくる。この一連の流れをWiresharkで記録する。   
+![image](https://user-images.githubusercontent.com/56021519/102015097-d1dc4b80-3d9c-11eb-9f24-06619551f41d.png)   
+Javaのシリアライズされたバイト列っぽいものがある。   
+![image](https://user-images.githubusercontent.com/56021519/102015144-17007d80-3d9d-11eb-89e0-06429fa4ffa8.png)   
+この通信データからシリアライズされたデータだけを取り出したいが、Wireshark上だと作業しにくいので以下のようにtsharkで作業できるように`pcap`ファイルに保存する。   
+![image](https://user-images.githubusercontent.com/56021519/102015194-6b0b6200-3d9d-11eb-92aa-58daf8447445.png)   
+![image](https://user-images.githubusercontent.com/56021519/102015203-7b234180-3d9d-11eb-95cd-dc0056be2002.png)   
+以下のようにtsharkで`src port,data,dst port`となるように出力する。   
+```txt
+root@kali:~/Documents/AWAE/javaDeserialization/DeserLab# tshark -r packet4.pcap -T fields -e tcp.srcport -e data -e tcp.dstport -E separator=,
+Running as user "root" and group "root". This could be dangerous.
+tshark: Lua: Error during loading:
+ [string "/usr/share/wireshark/init.lua"]:32: dofile has been disabled due to running Wireshark as superuser. See https://wiki.wireshark.org/CaptureSetup/CapturePrivileges for help in running Wireshark as an unprivileged user.
+57032,,8080
+8080,,57032
+57032,,8080
+57032,,8080
+8080,,57032
+8080,,57032
+57032,,8080
+57032,,8080
+8080,,57032
+57032,,8080
+8080,,57032
+57032,,8080
+57032,,8080
+57032,,8080
+57032,,8080
+8080,,57032
+8080,,57032
+57032,,8080
+57034,,8080
+8080,,57034
+57034,,8080
+57034,,8080
+8080,,57034
+57036,,8080
+8080,,57036
+57036,,8080
+57036,,8080
+8080,,57036
+8080,,57036
+57036,,8080
+57036,,8080
+8080,,57036
+8080,,57036
+57036,,8080
+8080,,57036
+57036,,8080
+57036,,8080
+8080,,57036
+57036,,8080
+8080,,57036
+57036,,8080
+8080,,57036
+57036,,8080
+57034,,8080
+57038,,8080
+8080,,57038
+57038,,8080
+57038,,8080
+8080,,57038
+8080,,57034
+57040,,8080
+8080,,57040
+57040,,8080
+57040,,8080
+8080,,57040
+8080,,57040
+57040,,8080
+57040,,8080
+8080,,57040
+57040,,8080
+8080,,57040
+57040,,8080
+57040,,8080
+57040,,8080
+8080,,57040
+57040,,8080
+60974,,9000
+9000,,60974
+60974,,9000
+9000,aced0005,60974
+60974,,9000
+60974,aced0005,9000
+9000,,60974
+9000,7704,60974
+60974,,9000
+9000,f000baaa,60974
+60974,,9000
+60974,7704,9000
+9000,,60974
+60974,f000baaa,9000
+9000,,60974
+9000,7702,60974
+60974,,9000
+9000,0101,60974
+60974,,9000
+60974,7702,9000
+9000,,60974
+60974,0101,9000
+9000,,60974
+57038,,8080
+57044,,8080
+8080,,57044
+57044,,8080
+57044,,8080
+8080,,57044
+8080,,57038
+60974,7707,9000
+9000,,60974
+60974,000561646d696e,9000
+9000,,60974
+60974,737200146e622e64657365722e4861736852657175657374e52ce9a92ac1f9910200024c000a64617461546f486173687400124c6a6176612f6c616e672f537472696e673b4c00077468654861736871007e0001,9000
+9000,,60974
+60974,787074000870617373776f7264740000,9000
+9000,,60974
+9000,737200146e622e64657365722e4861736852657175657374e52ce9a92ac1f9910200024c000a64617461546f486173687400124c6a6176612f6c616e672f537472696e673b4c00077468654861736871007e0001,60974
+9000,787074000870617373776f72647400203566346463633362356161373635643631643833323764656238383263663939,60974
+60974,,9000
+60974,,9000
+9000,,60974
+57044,,8080
+57046,,8080
+8080,,57046
+57046,,8080
+57046,,8080
+8080,,57046
+8080,,57044
+57048,,8080
+8080,,57048
+57048,,8080
+57048,,8080
+8080,,57048
+8080,,57048
+57048,,8080
+57048,,8080
+8080,,57048
+57048,,8080
+8080,,57048
+57048,,8080
+57048,,8080
+57048,,8080
+8080,,57048
+57048,,8080
+,010000001c00000071269ca454590200518594a45459020000000000,
+,080000001400000059350000e3619ca454590200,
+root@kali:~/Documents/AWAE/javaDeserialization/DeserLab# 
+```
+このうち、`クライアント->サーバー`の通信を取り出したいので`grep ,9000`をする。   
+```txt
+root@kali:~/Documents/AWAE/javaDeserialization/DeserLab# tshark -r packet4.pcap -T fields -e tcp.srcport -e data -e tcp.dstport -E separator=, | grep ,9000
+Running as user "root" and group "root". This could be dangerous.
+tshark: Lua: Error during loading:
+ [string "/usr/share/wireshark/init.lua"]:32: dofile has been disabled due to running Wireshark as superuser. See https://wiki.wireshark.org/CaptureSetup/CapturePrivileges for help in running Wireshark as an unprivileged user.
+60974,,9000
+60974,,9000
+60974,,9000
+60974,aced0005,9000
+60974,,9000
+60974,,9000
+60974,7704,9000
+60974,f000baaa,9000
+60974,,9000
+60974,,9000
+60974,7702,9000
+60974,0101,9000
+60974,7707,9000
+60974,000561646d696e,9000
+60974,737200146e622e64657365722e4861736852657175657374e52ce9a92ac1f9910200024c000a64617461546f486173687400124c6a6176612f6c616e672f537472696e673b4c00077468654861736871007e0001,9000
+60974,787074000870617373776f7264740000,9000
+60974,,9000
+60974,,9000
+root@kali:~/Documents/AWAE/javaDeserialization/DeserLab# 
+```
+このうち、TCP 3way handshakeとかでACKだけのパケットとかもあって見づらいので`grep -v ',,'`でデータがないものを取り除く。   
+```txt
+root@kali:~/Documents/AWAE/javaDeserialization/DeserLab# tshark -r -e data -e tcp.dstport -E separator=, | grep ,9000 | grep -v ',,'
+Running as user "root" and group "root". This could be dangerous.
+tshark: Lua: Error during loading:
+ [string "/usr/share/wireshark/init.lua"]:32: dofile has been disabled due to running Wireshark as superuser. See https://wiki.wireshark.org/CaptureSetup/CapturePrivileges for help in running Wireshark as an unprivileged user.
+60974,aced0005,9000
+60974,7704,9000
+60974,f000baaa,9000
+60974,7702,9000
+60974,0101,9000
+60974,7707,9000
+60974,000561646d696e,9000
+60974,737200146e622e64657365722e4861736852657175657374e52ce9a92ac1f9910200024c000a64617461546f486173687400124c6a6176612f6c616e672f537472696e673b4c00077468654861736871007e0001,9000
+60974,787074000870617373776f7264740000,9000
+root@kali:~/Documents/AWAE/javaDeserialization/DeserLab# 
+```
+ここから、データだけを取り出したいので`cut -d',' -f2 | tr '\n' ':' | sed s/://g`をする。   
+これで`aced0005`から始まるデータを抽出できた！   
+```txt
+root@kali:~/Documents/AWAE/javaDeserialization/DeserLab# tshark -r packet4.pcap -T fields -e tcp.srcport -e data -e tcp.dstport -E separator=, | grep ,9000 | grep -v ',,'| cut -d',' -f2 | tr '\n' ':' | sed s/://g
+Running as user "root" and group "root". This could be dangerous.
+tshark: Lua: Error during loading:
+ [string "/usr/share/wireshark/init.lua"]:32: dofile has been disabled due to running Wireshark as superuser. See https://wiki.wireshark.org/CaptureSetup/CapturePrivileges for help in running Wireshark as an unprivileged user.
+aced00057704f000baaa770201017707000561646d696e737200146e622e64657365722e4861736852657175657374e52ce9a92ac1f9910200024c000a64617461546f486173687400124c6a6176612f6c616e672f537472696e673b4c00077468654861736871007e0001787074000870617373776f7264740000
+```
 ## endpointの特定
+### SerializationDumper
+```txt
+root@kali:~/Documents/AWAE/javaDeserialization/DeserLab# java -jar SerializationDumper-v1.13.jar aced00057704f000baaa770201017707000561646d696e737200146e622e64657365722e4861736852657175657374e52ce9a92ac1f9910200024c000a64617461546f486173687400124c6a6176612f6c616e672f537472696e673b4c00077468654861736871007e0001787074000870617373776f7264740000
+
+STREAM_MAGIC - 0xac ed
+STREAM_VERSION - 0x00 05
+Contents
+  TC_BLOCKDATA - 0x77
+    Length - 4 - 0x04
+    Contents - 0xf000baaa
+  TC_BLOCKDATA - 0x77
+    Length - 2 - 0x02
+    Contents - 0x0101
+  TC_BLOCKDATA - 0x77
+    Length - 7 - 0x07
+    Contents - 0x000561646d696e
+  TC_OBJECT - 0x73
+    TC_CLASSDESC - 0x72
+      className
+        Length - 20 - 0x00 14
+        Value - nb.deser.HashRequest - 0x6e622e64657365722e4861736852657175657374
+      serialVersionUID - 0xe5 2c e9 a9 2a c1 f9 91
+      newHandle 0x00 7e 00 00
+      classDescFlags - 0x02 - SC_SERIALIZABLE
+      fieldCount - 2 - 0x00 02
+      Fields
+        0:
+          Object - L - 0x4c
+          fieldName
+            Length - 10 - 0x00 0a
+            Value - dataToHash - 0x64617461546f48617368
+          className1
+            TC_STRING - 0x74
+              newHandle 0x00 7e 00 01
+              Length - 18 - 0x00 12
+              Value - Ljava/lang/String; - 0x4c6a6176612f6c616e672f537472696e673b
+        1:
+          Object - L - 0x4c
+          fieldName
+            Length - 7 - 0x00 07
+            Value - theHash - 0x74686548617368
+          className1
+            TC_REFERENCE - 0x71
+              Handle - 8257537 - 0x00 7e 00 01
+      classAnnotations
+        TC_ENDBLOCKDATA - 0x78
+      superClassDesc
+        TC_NULL - 0x70
+    newHandle 0x00 7e 00 02
+    classdata
+      nb.deser.HashRequest
+        values
+          dataToHash
+            (object)
+              TC_STRING - 0x74
+                newHandle 0x00 7e 00 03
+                Length - 8 - 0x00 08
+                Value - password - 0x70617373776f7264
+          theHash
+            (object)
+              TC_STRING - 0x74
+                newHandle 0x00 7e 00 04
+                Length - 0 - 0x00 00
+                Value -  - 0x
+root@kali:~/Documents/AWAE/javaDeserialization/DeserLab# 
+```
+Contentsの`0x000561646d696e`には`admin`という入力したユーザーネームが入っている。   
+`nb.deser.HashRequest`というオブジェクトがシリアル化されており、`dataToHash`,`theHash`の二つのフィールド(values)を持ち、`dataToHash`の値が`password`であることがわかる。   
+### jdeserialize
+セットアップは以下を参照。   
+https://diablohorn.com/2017/09/09/understanding-practicing-java-deserialization-exploits/   
+まずpythonでHEXの文字列をBinaryでファイルに書き込む必要がある。   
+```txt
+>>> open('rawser.bin','wb').write('aaaa'.decode('hex'))
+>>> open('rawser.bin','wb').write('aced00057704f000baaa770201017707000561646d696e737200146e622e64657365722e4861736852657175657374e52ce9a92ac1f9910200024c000a64617461546f486173687400124c6a6176612f6c616e672f537472696e673b4c00077468654861736871007e0001787074000870617373776f7264740000'.decode('hex'))
+```
+Serializerableな`nb.deser.HashRequest`クラスが二つのフィールド`dataToHash`,`theHash`を持つことがわかる。   
+```txt
+root@kali:~/Documents/AWAE/javaDeserialization/DeserLab# java -cp /opt/jdeserialize/jdeserialize/build/jdeserialize.jar org.unsynchronized.jdeserialize rawser.bin 
+read: [blockdata 0x00: 4 bytes]
+read: [blockdata 0x00: 2 bytes]
+read: [blockdata 0x00: 7 bytes]
+read: nb.deser.HashRequest _h0x7e0002 = r_0x7e0000;  
+//// BEGIN stream content output
+[blockdata 0x00: 4 bytes]
+[blockdata 0x00: 2 bytes]
+[blockdata 0x00: 7 bytes]
+nb.deser.HashRequest _h0x7e0002 = r_0x7e0000;  
+//// END stream content output
+
+//// BEGIN class declarations (excluding array classes)
+class nb.deser.HashRequest implements java.io.Serializable {
+    java.lang.String dataToHash;
+    java.lang.String theHash;
+}
+
+//// END class declarations
+
+//// BEGIN instance dump
+[instance 0x7e0002: 0x7e0000/nb.deser.HashRequest
+  field data:
+    0x7e0000/nb.deser.HashRequest:
+        dataToHash: r0x7e0003: [String 0x7e0003: "password"]
+        theHash: r0x7e0004: [String 0x7e0004: ""]
+]
+//// END instance dump
+
+root@kali:~/Documents/AWAE/javaDeserialization/DeserLab# 
+```
 ## exploit
 
 # 参考
