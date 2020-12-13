@@ -1,3 +1,12 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Serialize](#serialize)
+  - [文字列のSerialize](#%E6%96%87%E5%AD%97%E5%88%97%E3%81%AEserialize)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Serialize
 ## 文字列のSerialize
 以下でシリアライズする。   
