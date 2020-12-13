@@ -31,6 +31,8 @@ Injection系はevalを探す。
 ## キーワード
 ### Node.js
 `eval`,`eval(`,`html`,`escape`,`new Buffer(`,`unserialize`,`node-serialize`,`deserialize`,`new Function`   
+### Java Deserialization
+`readObject`,`readExternal`,`readUnshared`,`XStream`,`AC ED`で始まるバイトストリーム(Serializeされたことを示すマジックナンバー)、`ObjectInputStream`,`ObjectOutputStream`,`defaultReadObject`,`Apache Commons Collections`
 # Vuln
 ## sample
 - 概要   
