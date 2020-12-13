@@ -7,6 +7,10 @@
   - [文字列のDeserialize](#%E6%96%87%E5%AD%97%E5%88%97%E3%81%AEdeserialize)
   - [脆弱なクラス](#%E8%84%86%E5%BC%B1%E3%81%AA%E3%82%AF%E3%83%A9%E3%82%B9)
   - [gadget](#gadget)
+- [DeserLab](#deserlab)
+  - [setup](#setup)
+  - [endpointの特定](#endpoint%E3%81%AE%E7%89%B9%E5%AE%9A)
+  - [exploit](#exploit)
 - [参考](#%E5%8F%82%E8%80%83)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
