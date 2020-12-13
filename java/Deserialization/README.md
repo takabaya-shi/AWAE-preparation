@@ -716,6 +716,23 @@ root@kali:~/Documents/AWAE/javaDeserialization/DeserLab#
 ```
 Contentsの`0x000561646d696e`には`admin`という入力したユーザーネームが入っている。   
 `nb.deser.HashRequest`というオブジェクトがシリアル化されており、`dataToHash`,`theHash`の二つのフィールド(values)を持ち、`dataToHash`の値が`password`であることがわかる。   
+   
+また、前半の以下のやつから、TC_BLOCKDATAが3つ、TC_OBJECTが1つありことがわかる。最後の一個がシリアル化されたオブジェクトで、前半の3つはそれ以外のデータ。   
+`0xac ed 00 05`の後に必ずシリアライズされたデータが来るというわけではないらしい…   
+```txt
+Contents
+  TC_BLOCKDATA - 0x77
+    Length - 4 - 0x04
+    Contents - 0xf000baaa
+  TC_BLOCKDATA - 0x77
+    Length - 2 - 0x02
+    Contents - 0x0101
+  TC_BLOCKDATA - 0x77
+    Length - 7 - 0x07
+    Contents - 0x000561646d696e
+  TC_OBJECT - 0x73
+    TC_CLASSDESC - 0x72
+```
 ### jdeserialize
 セットアップは以下を参照。   
 https://diablohorn.com/2017/09/09/understanding-practicing-java-deserialization-exploits/   
