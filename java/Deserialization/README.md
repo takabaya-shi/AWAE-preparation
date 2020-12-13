@@ -9,7 +9,10 @@
   - [gadget](#gadget)
 - [DeserLab](#deserlab)
   - [setup](#setup)
+  - [serializedデータの抽出](#serialized%E3%83%87%E3%83%BC%E3%82%BF%E3%81%AE%E6%8A%BD%E5%87%BA)
   - [endpointの特定](#endpoint%E3%81%AE%E7%89%B9%E5%AE%9A)
+    - [SerializationDumper](#serializationdumper)
+    - [jdeserialize](#jdeserialize)
   - [exploit](#exploit)
 - [参考](#%E5%8F%82%E8%80%83)
 
