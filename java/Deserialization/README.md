@@ -13,7 +13,8 @@
   - [endpointの特定](#endpoint%E3%81%AE%E7%89%B9%E5%AE%9A)
     - [SerializationDumper](#serializationdumper)
     - [jdeserialize](#jdeserialize)
-  - [exploit](#exploit)
+  - [exploit (hardcoding)](#exploit-hardcoding)
+  - [manually exploit](#manually-exploit)
 - [参考](#%E5%8F%82%E8%80%83)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
