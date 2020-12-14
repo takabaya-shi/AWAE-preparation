@@ -42,6 +42,18 @@ Injection系はevalを探す。
 - 対策   
 - 参考資料   
 ## Deserialization
+### Apache Groovy (CVE-2015-3253)
+- 概要   
+バージョン1.7.0 through 2.4.3で、MethodClosureクラスがデシリアライズされてしまうことが脆弱。このクラスはインスタンスを作成するだけで任意コマンドを実行できる仕様なので、デシリアライズするだけでRCEできてしまう。   
+- 例   
+https://github.com/takabaya-shi/AWAE-preparation/blob/main/java/Deserialization/README.md#manually-exploit   
+を参照。   
+- 発見方法   
+Groovyライブラリでコマンドを実行する方法としてMethodClosureクラスがあるので、これがデシリアライズされうるかどうかを調べれば発見できた？(もう遅いけど)   
+- 対策   
+シリアライズ時のreadResolve()メソッドをオーバーライドして、MethodClosureクラスの場合は再帰的にデシリアライズせずに例外をスローするようにする。   
+![image](https://user-images.githubusercontent.com/56021519/102111504-d4f93980-3e79-11eb-8d23-c23a026dfc9d.png)   
+- 参考資料   
 ### nodejs-serialize (CVE-2017-5941)
 - 概要   
 Node.jsのnode-serializeパッケージ0.0.4のunserialize（）関数に渡された信頼できないデータを悪用して、即時呼び出し関数式（IIFE）を使用してJavaScriptオブジェクトを渡すことにより、任意のコードを実行できる。   
