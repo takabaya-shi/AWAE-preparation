@@ -900,9 +900,10 @@ https://www.sourceclear.com/vulnerability-database/security/remote-code-executio
 ```txt
 The MethodClosure class in runtime/MethodClosure.java in Apache Groovy 1.7.0 through 2.4.3 allows remote attackers to execute arbitrary code or cause a denial of service via a crafted serialized object.
 ```
-Apache GroovyのMethodClosureクラスが`entrySet()`メソッドが呼ばれたら`test()`メソッドを呼び出す、的な書き方ができてしまうことが問題？   
+Apache GroovyのMethodClosureクラスが`MethodClosure method = new MethodClosure(command, "execute");`みたいにしてインスタンスを作成するだけでコードが実行されてしまうことが問題？ではない！MethodClosureクラスがデシリアライズ可能なことが問題。このクラスはインスタンスを作成するだけでコードが実行されてしまう仕様なのでそもそもデシリアライズしないようにする必要がある！   
    
 entrypointをMyClassとして以下の概略に示す。   
+つまり、MyClassのthis.map.putメソッドが呼び出されたら最終的に`new DynamicInvocationHandler()`ハンドラーが実行されるようにする。   
 ```java
 import java.util.*;
 import java.lang.reflect.*;
@@ -925,6 +926,7 @@ public class Main {
         constructor.setAccessible(true);
         // MyClassのインスタンスを作成する。これは、
 	// InvocationHandler secondInvocationHandler = new MyClass(proxyInstance); と同じ
+	// InvocationHandlerにしてるのはMyClassのインターフェースだから(?)
         InvocationHandler secondInvocationHandler = (InvocationHandler) constructor.newInstance(proxyInstance); 
 	// これで、
 	// DynamicProxy:before
@@ -943,7 +945,7 @@ class MyClass implements InvocationHandler{
         this.map = map;
         this.map.put("hello", "world");
     }
-
+    // ここはどうでもいい
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         System.out.println("MyClass:before");
@@ -951,6 +953,8 @@ class MyClass implements InvocationHandler{
     }
 }
 
+// entrypointでputが呼び出されたときのためのhandler
+// ここではinvokeメソッドをputの前に実行する
 class DynamicInvocationHandler implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -959,6 +963,29 @@ class DynamicInvocationHandler implements InvocationHandler {
     }
 }
 ```
+ここで、MyClassとしたものは実際には以下の`AnnotationInvocationHandler`で、ここをentrypointとすることが多いらしい。   
+```java
+// このクラスをシリアライズすれば、デシリアライズ時にreadObject()内のmemberValues.entrySet()を実行するのでentrypointに使いやすい
+class AnnotationInvocationHandler implements InvocationHandler, Serializable {
+    private static final long serialVersionUID = 6182022883658399397L;
+    private final Map<String, Object> memberValues;
+    
+	private void readObject(java.io.ObjectInputStream s) throws java.io.IOException, ClassNotFoundException {
+		// *snip*
+				
+		for (Map.Entry<String, Object> memberValue : memberValues.entrySet()) {
+		    // *snip*
+		}
+	}
+}
+```
+また、`new DynamicInvocationHandler()`ハンドラーが実行できるようになる部分は実際には、以下の`closure`が実行できるようになる。   
+```java
+// "entrySet"が実行されれば"new MethodClosure("ping 127.0.0.1", "execute")"を実行してインスタンスを作成する。これは""ping 127.0.0.1".execute()"と同義らしい
+final ConvertedClosure closure = new ConvertedClosure(new MethodClosure("ping 127.0.0.1", "execute"), "entrySet");
+```
+実際のソースコードは以下を参照   
+https://gist.github.com/DiabloHorn/44d91d3cbefa425b783a6849f23b8aa7   
 
 # 参考
 https://nytrosecurity.com/2018/05/30/understanding-java-deserialization/   
@@ -967,3 +994,9 @@ https://github.com/GrrrDog/Java-Deserialization-Cheat-Sheet#overview
 チートシート。よくわからん   
 https://github.com/frohoff/ysoserial   
 ysoserialの使い方的な。   
+https://www.sourceclear.com/vulnerability-database/security/remote-code-execution-through-object-deserialization/java/sid-1710/technical   
+Apache Groovy(CVE-2015-3253)の解説記事   
+https://diablohorn.com/2017/09/09/understanding-practicing-java-deserialization-exploits/   
+DeserLabの解説記事。神。ゴッド。   
+https://github.com/NickstaDB/SerialBrute/   
+ysoserialのどれが刺さるか不明なときに全部試してくれるスクリプト   
