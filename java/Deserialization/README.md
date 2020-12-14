@@ -895,6 +895,70 @@ root@kali:~/Documents/AWAE/javaDeserialization/DeserLab#
 ```
 ![image](https://user-images.githubusercontent.com/56021519/102057416-3b0d9e80-3e31-11eb-90e8-572c99862f37.png)   
 ## manually exploit
+ysoserialの部分を自作する的な？   
+https://www.sourceclear.com/vulnerability-database/security/remote-code-execution-through-object-deserialization/java/sid-1710/technical   
+```txt
+The MethodClosure class in runtime/MethodClosure.java in Apache Groovy 1.7.0 through 2.4.3 allows remote attackers to execute arbitrary code or cause a denial of service via a crafted serialized object.
+```
+Apache GroovyのMethodClosureクラスが`entrySet()`メソッドが呼ばれたら`test()`メソッドを呼び出す、的な書き方ができてしまうことが問題？   
+   
+entrypointをMyClassとして以下の概略に示す。   
+```java
+import java.util.*;
+import java.lang.reflect.*;
+
+public class Main {
+    public static void main(String[] args) throws Exception {
+        // 動的プロキシを作成。
+	// Map型なので、proxyinstanceでMapクラスのメソッドを呼び出すと、DynamicInvocationHandlerのinvokeメソッドを経由して実行する
+        Map proxyInstance = (Map) Proxy.newProxyInstance(
+            Main.class.getClassLoader(),
+        new Class[]{ Map.class },
+        new DynamicInvocationHandler());
+        
+	// つまりこれでプロキシ経由でinvokeメソッドもputメソッドも実行する
+        //proxyInstance.put("hello", "world");  // DynamicProxy:before
+        
+        String className = "MyClass";
+	// リフレクションでインスタンスを作成する。finalとかprivateメソッドにもアクセスできるらしい
+        Constructor<?> constructor = Class.forName(className).getDeclaredConstructors()[0];
+        constructor.setAccessible(true);
+        // MyClassのインスタンスを作成する。これは、
+	// InvocationHandler secondInvocationHandler = new MyClass(proxyInstance); と同じ
+        InvocationHandler secondInvocationHandler = (InvocationHandler) constructor.newInstance(proxyInstance); 
+	// これで、
+	// DynamicProxy:before
+	// と表示される。(インスタンスが作成されたことでMyClassのコンストラクタが呼び出され、プロキシのinvokeも呼びだされるから)
+  
+    }
+}
+
+// このクラスがentrypoint
+// this.map.put()メソッドが呼び出されると、invoke()内の任意の処理を実行できるようにしたい！
+// つまり、putメソッドが呼び出されるといろいろチェーンして最終的にRCEできる、最初の発火点
+class MyClass implements InvocationHandler{
+    private Map map;
+    
+    public MyClass(Map map){
+        this.map = map;
+        this.map.put("hello", "world");
+    }
+
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        System.out.println("MyClass:before");
+        return 42;
+    }
+}
+
+class DynamicInvocationHandler implements InvocationHandler {
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        System.out.println("DynamicProxy:before");
+        return 42;
+    }
+}
+```
 
 # 参考
 https://nytrosecurity.com/2018/05/30/understanding-java-deserialization/   
