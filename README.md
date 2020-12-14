@@ -55,6 +55,8 @@ Groovyライブラリでコマンドを実行する方法としてMethodClosure�
 シリアライズ時のreadResolve()メソッドをオーバーライドして、MethodClosureクラスの場合は再帰的にデシリアライズせずに例外をスローするようにする。   
 ![image](https://user-images.githubusercontent.com/56021519/102111504-d4f93980-3e79-11eb-8d23-c23a026dfc9d.png)   
 - 参考資料   
+https://www.sourceclear.com/vulnerability-database/security/remote-code-execution-through-object-deserialization/java/sid-1710/technical   
+https://diablohorn.com/2017/09/09/understanding-practicing-java-deserialization-exploits/   
 ### nodejs-serialize (CVE-2017-5941)
 - 概要   
 Node.jsのnode-serializeパッケージ0.0.4のunserialize（）関数に渡された信頼できないデータを悪用して、即時呼び出し関数式（IIFE）を使用してJavaScriptオブジェクトを渡すことにより、任意のコードを実行できる。   
