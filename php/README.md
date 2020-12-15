@@ -39,4 +39,31 @@
     }    
   ?>
 ```
-# class
+# オブジェクト指向
+## class
+### 基本
+```php
+<?php
+// インスタンスを作成
+$parent1 = new ParentClass("John");  // $name: John
+// アロー演算子でメソッドを呼び出す
+$parent1->hello();  // parent class hello!
+
+class ParentClass{
+    // protectedはそのクラス自身と継承クラスからアクセス可能
+    protected $name;
+    // コンストラクタを定義
+    function __construct($name){
+        $this->name = $name;
+        echo "\$name: ".$this->name."\n";
+    }
+    // メソッドを定義
+    public function hello(){
+        echo "parent class hello!";
+    }
+}
+
+?>
+```
+### 継承(extends) Override
+### スコープ定義(::)と$this
