@@ -6,11 +6,7 @@
   - [配列](#%E9%85%8D%E5%88%97-1)
   - [連想配列](#%E9%80%A3%E6%83%B3%E9%85%8D%E5%88%97)
   - [foreach](#foreach)
-- [オブジェクト指向](#%E3%82%AA%E3%83%96%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88%E6%8C%87%E5%90%91)
-  - [class](#class)
-    - [基本](#%E5%9F%BA%E6%9C%AC)
-    - [継承(extends) Override](#%E7%B6%99%E6%89%BFextends-override)
-    - [スコープ定義(::)と$this](#%E3%82%B9%E3%82%B3%E3%83%BC%E3%83%97%E5%AE%9A%E7%BE%A9%E3%81%A8this)
+- [class](#class)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -70,4 +66,42 @@ class ParentClass{
 ?>
 ```
 ### 継承(extends) Override
+```php
+<?php
+$child1 = new ChildClass("John",20);
+$child1->hello();
+
+// 出力結果
+// name: John
+// $age: 20
+// child class hello! John
+
+class ParentClass{
+    protected $name;
+    function __construct($name){
+        $this->name = $name;
+        echo "\$name: ".$this->name."\n";
+    }
+    public function hello(){
+        echo "parent class hello!";
+    }
+}
+
+// ParentClassを継承する
+class ChildClass extends ParentClass{
+    protected $age;
+    function __construct($name,$age){
+        // parent::で親クラスのコンストラクタを呼び出す
+        parent::__construct($name);
+        $this->age = $age;
+        echo "\$age: ".$this->age."\n";
+    }
+    // 親クラスのhello()をオーバーライドする
+    public function hello(){
+        // parent::で親クラスのコンストラクタを呼び出したので$this->nameに値がセットされている
+        echo "child class hello! ".$this->name;
+    } 
+}
+?>
+```
 ### スコープ定義(::)と$this
