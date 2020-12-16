@@ -35,7 +35,10 @@ Injection系はevalを探す。
 ### Node.js
 `eval`,`eval(`,`html`,`escape`,`new Buffer(`,`unserialize`,`node-serialize`,`deserialize`,`new Function`   
 ### Java Deserialization
-`readObject`,`readExternal`,`readUnshared`,`XStream`,`AC ED`で始まるバイトストリーム(Serializeされたことを示すマジックナンバー)、`ObjectInputStream`,`ObjectOutputStream`,`defaultReadObject`,`Apache Commons Collections`
+`readObject`,`readExternal`,`readUnshared`,`XStream`,`AC ED`で始まるバイトストリーム(Serializeされたことを示すマジックナンバー)、`ObjectInputStream`,`ObjectOutputStream`,`defaultReadObject`,`Apache Commons Collections`   
+### PHP Deserialization
+`unserialize`,`__construct`,`__destruct`,`__wakeup`,`__toString`   
+PHAR形式のファイルをアップロードできてその場所が特定できるなら(ファイル名も)、`file()`,`file_exist()`,`file_get_contents()`,`fopen()`,`rename()`,`unlink()`,`include()`。`form`とかで入力がどこにあるのかもわかるかも。   
 # Vuln
 ## sample
 - 概要   
@@ -385,6 +388,9 @@ if __name__ == '__main__':
 https://hackerone.com/reports/407552   
 https://blog.ohgaki.net/php-phar-remote-code-execution-vulnerability   
 `phar`の脆弱性についての情報。かなりわかりやすい。   
+https://blog.usejournal.com/diving-into-unserialize-phar-deserialization-98b1254380e9   
+`phar`のDeserializeの脆弱性について。   
+
 ### Apache Groovy (CVE-2015-3253)
 - 概要   
 バージョン1.7.0 through 2.4.3で、MethodClosureクラスがデシリアライズされてしまうことが脆弱。このクラスはインスタンスを作成するだけで任意コマンドを実行できる仕様なので、デシリアライズするだけでRCEできてしまう。   
