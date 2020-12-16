@@ -49,6 +49,135 @@ PHAR形式のファイルをアップロードできてその場所が特定で�
 - 対策   
 - 参考資料   
 ## Deserialization
+### WordPress < 3.6.1 (is_serialized()) PHP Object Injection
+- 概要   
+wordpressではユーザーのメタデータ(名前とかの情報)をシリアライズしたりしなかったりしてデータベースに保存する。そのため、メタデータを取得するときには`unserialize`するべきデータとするべきではないデータ(そもそもシリアル化されてないデータ)の2種類存在するので、`unserialize`したりしなかったりする必要がある。   
+ここで、じゃあ入力に`i:1;`を入れれば、このままデータベースに保存されて、データベースから取り出すときに`unserialize`されて`1`を取得するのでは？って思うがそうはならない。入力が`i:1;`の場合、`is_serialized()`でシリアル化されたデータと判断して、さらにもう一回シリアライズして`s:4:"i:1;";`としてデータベースに保存する。   
+これによって一応シリアライズされたデータを挿入しても`unserialize`しないようになっている。   
+しかし、その「データがシリアル化されているかどうか」を判断する`is_serialized()`メソッドで、`i:1;𝌆`という文字列の場合、最後が`;`,`}`で終わっていないのでシリアル化されているとはみなさずにこのままデータベースに保存しようとするが、MySQLではこの`𝌆`というUnicode文字列を扱えないので捨てられて`i:1;`として保存されてしまう。   
+これによってデータベースから取り出すときにシリアライズされたデータとみなして`unserialize`されてしまう！   
+つまり、`O:4:"Test":{...}𝌆`的なPayloadをユーザーのメタデータとして登録すれば、そのデータを取り出すときに`unserialize`されてRCEできるかも！ってこと。   
+- 例   
+メタデータをデータベースから取得する`get_metadata()`は以下をする。   
+```php
+if ( isset($meta_cache[$meta_key]) ) {
+    if ( $single )
+        return maybe_unserialize( $meta_cache[$meta_key][0] );
+    else
+        return array_map('maybe_unserialize', $meta_cache[$meta_key]);
+}
+```
+`maybe_unserialize`は以下の通りでシリアライズされたデータなら`unserialize`、そうでないならそのまま返す。   
+```php
+function maybe_unserialize( $original ) {
+    if ( is_serialized( $original ) ) // don't attempt to unserialize data that wasn't serialized going in
+        return @unserialize( $original );
+    return $original;
+}
+```
+`is_serialized()`は以下の通りで、シリアライズされたデータかどうか判断している。   
+```php
+function is_serialized( $data ) {
+    // if it isn't a string, it isn't serialized
+    if ( ! is_string( $data ) )
+        return false;
+    $data = trim( $data );
+     if ( 'N;' == $data )
+        return true;
+    $length = strlen( $data );
+    if ( $length < 4 )
+        return false;
+    if ( ':' !== $data[1] )
+        return false;
+    $lastc = $data[$length-1];
+    if ( ';' !== $lastc && '}' !== $lastc )
+        return false;
+    $token = $data[0];
+    switch ( $token ) {
+        case 's' :
+            if ( '"' !== $data[$length-2] )
+                return false;
+        case 'a' :
+        case 'O' :
+            return (bool) preg_match( "/^{$token}:[0-9]+:/s", $data );
+        case 'b' :
+        case 'i' :
+        case 'd' :
+            return (bool) preg_match( "/^{$token}:[0-9.E-]+;\$/", $data );
+    }
+    return false;
+}
+```
+メタデータを更新する`update_metadata()`は以下の通り。   
+```php
+// …
+    $meta_value = wp_unslash($meta_value);
+    $meta_value = sanitize_meta( $meta_key, $meta_value, $meta_type );
+// …
+    $meta_value = maybe_serialize( $meta_value );
+    
+    $data  = compact( 'meta_value' );
+// …
+    $wpdb->update( $table, $data, $where );
+// …
+```
+`maybe_serialize`は以下の通り。   
+```php
+function maybe_serialize( $data ) {
+    if ( is_array( $data ) || is_object( $data ) )
+        return serialize( $data );
+
+    // Double serialization is required for backward compatibility.
+    // See http://core.trac.wordpress.org/ticket/12930
+    if ( is_serialized( $data ) )
+        return serialize( $data );
+
+    return $data;
+}
+```
+- 発見方法   
+`unserialize`が呼ばれている箇所を特定して、どういうデータがそこに呼ばれているのかを確認する？   
+- 対策   
+`$strict`が追加されてる。最後の文字が`;`,`}`かどうかでチェックしないようになっているらしい。   
+```php
+function is_serialized( $data, $strict = true ) {
+     // if it isn't a string, it isn't serialized
+     if ( ! is_string( $data ) )
+         return false;
+     if ( ':' !== $data[1] )
+         return false;
+    if ( $strict ) {
+        $lastc = $data[ $length - 1 ];
+        if ( ';' !== $lastc && '}' !== $lastc )
+            return false;
+    } else {
+        // ensures ; or } exists but is not in the first X chars
+        if ( strpos( $data, ';' ) < 3 && strpos( $data, '}' ) < 4 )
+            return false;
+    }
+     $token = $data[0];
+     switch ( $token ) {
+         case 's' :
+            if ( $strict ) {
+                if ( '"' !== $data[ $length - 2 ] )
+                    return false;
+            } elseif ( false === strpos( $data, '"' ) ) {
+                 return false;
+            }
+         case 'a' :
+         case 'O' :
+             return (bool) preg_match( "/^{$token}:[0-9]+:/s", $data );
+         case 'b' :
+         case 'i' :
+         case 'd' :
+            $end = $strict ? '$' : '';
+            return (bool) preg_match( "/^{$token}:[0-9.E-]+;$end/", $data );
+     }
+     return false;
+ }
+```
+- 参考資料   
+https://tom.vg/2013/09/wordpress-php-object-injection/   
 ### Vanilla Forums Gdn_Format unserialize() Remote Code Execution Vulnerability
 - 概要   
 AuthenticatedなAdminユーザーがPOSTの`Garden-dot-TouchIcon`パラメータの値にシリアライズした文字列を設定すると、`unserialize`まで到達してRCEができる。   
