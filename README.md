@@ -11,6 +11,7 @@
 - [Vuln](#vuln)
   - [sample](#sample)
   - [Deserialization](#deserialization)
+    - [WordPress < 3.6.1 (is_serialized()) PHP Object Injection](#wordpress--361-is_serialized-php-object-injection)
     - [Vanilla Forums Gdn_Format unserialize() Remote Code Execution Vulnerability](#vanilla-forums-gdn_format-unserialize-remote-code-execution-vulnerability)
     - [Vanilla Forums ImportController index file_exists Unserialize Remote Code Execution](#vanilla-forums-importcontroller-index-file_exists-unserialize-remote-code-execution)
     - [Apache Groovy (CVE-2015-3253)](#apache-groovy-cve-2015-3253)
