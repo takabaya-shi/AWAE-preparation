@@ -7,6 +7,7 @@
   - [キーワード](#%E3%82%AD%E3%83%BC%E3%83%AF%E3%83%BC%E3%83%89)
     - [Node.js](#nodejs)
     - [Java Deserialization](#java-deserialization)
+    - [PHP Deserialization](#php-deserialization)
 - [Vuln](#vuln)
   - [sample](#sample)
   - [Deserialization](#deserialization)
