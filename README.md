@@ -48,6 +48,149 @@ PHAR形式のファイルをアップロードできてその場所が特定で�
 - 対策   
 - 参考資料   
 ## Deserialization
+### Vanilla Forums Gdn_Format unserialize() Remote Code Execution Vulnerability
+- 概要   
+AuthenticatedなAdminユーザーがPOSTの`Garden-dot-TouchIcon`パラメータの値にシリアライズした文字列を設定すると、`unserialize`まで到達してRCEができる。   
+- 例   
+`c('Garden.TouchIcon')`は`config($_POST['Garden-dot-TouchIcon'])`的な動作をするらしい。`c`関数は`config`関数のマクロらしい。config関数は`library/core/functions.general.php`で定義されている。      
+```php
+class Gdn_Controller extends Gdn_Pluggable {
+
+    ...
+
+    public function renderMaster() {
+        // Build the master view if necessary
+        if (in_array($this->_DeliveryType, [DELIVERY_TYPE_ALL])) {
+
+        ...
+
+            $touchIcon = c('Garden.TouchIcon');                                     // 1
+            if ($touchIcon) {
+                $this->Head->setTouchIcon(Gdn_Upload::url($touchIcon));
+            }
+```
+この`config`メソッドが呼び出されてるっぽい？   
+この中でさらに`Gdn::config`(Gndクラスで定義されたconfigメソッド)が呼ばれてる。   
+```php
+if (!function_exists('config')) {
+    /**
+     * Retrieves a configuration setting.
+     *
+     * @param string|bool $name The name of the configuration setting.
+     * Settings in different sections are separated by dots.
+     * @param mixed $default The result to return if the configuration setting is not found.
+     * @return mixed The configuration setting.
+     * @see Gdn::config()
+     */
+    function config($name = false, $default = false) {                              // 2
+        return Gdn::config($name, $default);
+    }
+}
+```
+中で`get`メソッドが呼ばれている。ここまででPOSTで入力したデータは`$name`にある？   
+```php
+class Gdn {
+
+    ...
+
+    /**
+     * Get a configuration setting for the application.
+     *
+     * @param string $name The name of the configuration setting. Settings in different sections are seperated by a dot ('.')
+     * @param mixed $default The result to return if the configuration setting is not found.
+     * @return Gdn_Configuration|mixed The configuration setting.
+     */
+    public static function config($name = false, $default = false) {
+        if (self::$_Config === null) {
+            self::$_Config = static::getContainer()->get(self::AliasConfig);
+        }
+        $config = self::$_Config;
+        if ($name === false) {
+            $result = $config;
+        } else {
+            $result = $config->get($name, $default);        // 3
+        }
+
+        return $result;
+    }
+```
+ここで`Gdn_Format::unserialize($value);`でユーザーの入力が`Gdn_Format`クラスで定義された`unserialize`メソッドに入力されているらしい…。でも`$name`が`$value`に代入されてる様子もないし…。なんで`$name`から`$value`に入力が移ってるのか不明…。   
+この`unserialize`はユーザーが定義したものでデフォルトではないのでその定義を確認する。   
+```php
+class Gdn_Configuration extends Gdn_Pluggable {
+
+    ...
+
+    public function get($name, $defaultValue = false) {
+        // Shortcut, get the whole config
+        if ($name == '.') {
+            return $this->Data;
+        }
+
+        $keys = explode('.', $name);
+        // If splitting is off, HANDLE IT
+        if (!$this->splitting) {
+//         $FirstKey = getValue(0, $Keys);
+            $firstKey = $keys[0];
+            if ($firstKey == $this->defaultGroup) {
+                $keys = [array_shift($keys), implode('.', $keys)];
+            } else {
+                $keys = [$name];
+            }
+        }
+        $keyCount = count($keys);
+
+        $value = $this->Data;
+        for ($i = 0; $i < $keyCount; ++$i) {
+            if (is_array($value) && array_key_exists($keys[$i], $value)) {
+                $value = $value[$keys[$i]];
+            } else {
+                return $defaultValue;
+            }
+        }
+
+        if (is_string($value)) {
+            $result = Gdn_Format::unserialize($value);                          // 4
+        } else {
+            $result = $value;
+        }
+
+        return $result;
+    }
+```
+中でデフォルトの`unserialize`が実行されている。   
+```php
+class Gdn_Format {
+
+    ...
+
+    /**
+     * Takes a serialized variable and unserializes it back into its original state.
+     * 
+     * @param string $serializedString A json or php serialized string to be unserialized.
+     * @return mixed
+     */
+    public static function unserialize($serializedString) {
+        $result = $serializedString;
+
+        if (is_string($serializedString)) {
+            if (substr_compare('a:', $serializedString, 0, 2) === 0 || substr_compare('O:', $serializedString, 0, 2) === 0) {
+                $result = unserialize($serializedString);                          // 5
+            } elseif (substr_compare('obj:', $serializedString, 0, 4) === 0) {
+                $result = json_decode(substr($serializedString, 4), false);
+            } elseif (substr_compare('arr:', $serializedString, 0, 4) === 0) {
+                $result = json_decode(substr($serializedString, 4), true);
+            }
+        }
+        return $result;
+    }
+```
+- 発見方法   
+`unserialize`が呼び出されている場所を特定して、そのメソッドがどこで呼ばれているのかを確認する。そうやってたどっていってユーザーの入力があればOK?って感じ？   
+- 対策   
+ユーザーの入力を`unserialize`に入れてはいけない。   
+- 参考資料   
+https://hackerone.com/reports/407552   
 ### Vanilla Forums ImportController index file_exists Unserialize Remote Code Execution
 - 概要   
 認証された管理者ユーザーは、シリアル化されたペイロードをpharアーカイブに挿入し、保護されていないfile_exists（）を介してそのペイロードへの読み取りアクセスをトリガーできます。攻撃者はこれを利用して、信頼できないデータを逆シリアル化し、リモートでコードが実行される可能性があります。   
