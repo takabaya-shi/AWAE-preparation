@@ -43,6 +43,116 @@ Injection系はevalを探す。
 - 対策   
 - 参考資料   
 ## Deserialization
+### Vanilla Forums ImportController index file_exists Unserialize Remote Code Execution
+- 概要   
+認証された管理者ユーザーは、シリアル化されたペイロードをpharアーカイブに挿入し、保護されていないfile_exists（）を介してそのペイロードへの読み取りアクセスをトリガーできます。攻撃者はこれを利用して、信頼できないデータを逆シリアル化し、リモートでコードが実行される可能性があります。   
+つまり、`phar`形式でMetaデータにシリアライズしたオブジェクトを書いておいたファイルを何らかの方法でアップロードして、そのファイルへのパスを`phar://var/www.../attack.jpg`みたいにして`file_exits()`に挿入できればデシリアライズされてRCEできる！   
+`phar`形式のファイルは非常に危険で単に`file_exeits('phar://www/..')`みたいにして`phar`ファイルを呼び出すだけで脆弱！しかも`phar`ファイルは拡張子に依存しないので`.jpg`としてアップしても普通に`phar`がいるとｈして動作する！   
+- 例   
+[1]で`$this->Form->getFormValue('PathSelect')`でフォームの`name="PathSelect"`の値が`'NEW'`かどうかチェックしてる。   
+[2]で`$pathSelect`にユーザーによるこの値をセットする。   
+[3]で`$imp->ImportPath`にこの`$pathSelect`をセットする。   
+[4]で`file_exists($imp->ImportPath)`が呼ばれるので、ユーザーの入力がそのまま`file_exists()`に入っており脆弱！   
+```php
+class ImportController extends DashboardController {
+
+    ...
+
+    public function index() {
+        $this->permission('Garden.Import'); // This permission doesn't exist, so only users with Admin == '1' will succeed.
+        $timer = new Gdn_Timer();
+
+        // Determine the current step.
+        $this->Form = new Gdn_Form();
+        $imp = new ImportModel();
+        $imp->loadState();
+
+        // Search for the list of acceptable imports.
+        $importPaths = [];
+        $existingPaths = safeGlob(PATH_UPLOADS.'/export*', ['gz', 'txt']);
+        $existingPaths2 = safeGlob(PATH_UPLOADS.'/porter/export*', ['gz']);
+        $existingPaths = array_merge($existingPaths, $existingPaths2);
+        foreach ($existingPaths as $path) {
+            $importPaths[$path] = basename($path);
+        }
+        // Add the database as a path.
+        $importPaths = array_merge(['db:' => t('This Database')], $importPaths);
+
+        if ($imp->CurrentStep < 1) {
+            // Check to see if there is a file.
+            $importPath = c('Garden.Import.ImportPath');
+            $validation = new Gdn_Validation();
+
+
+            if (Gdn::request()->isAuthenticatedPostBack(true)) {
+                $upload = new Gdn_Upload();
+                $validation = new Gdn_Validation();
+                if (count($importPaths) > 0) {
+                    $validation->applyRule('PathSelect', 'Required', t('You must select a file to import.'));
+                }
+
+                if (count($importPaths) == 0 || $this->Form->getFormValue('PathSelect') == 'NEW') {                 // 1
+                    $tmpFile = $upload->validateUpload('ImportFile', false);
+                } else {
+                    $tmpFile = '';
+                }
+
+                if ($tmpFile) {
+                    $filename = $_FILES['ImportFile']['name'];
+                    $extension = pathinfo($filename, PATHINFO_EXTENSION);
+                    $targetFolder = PATH_ROOT.DS.'uploads'.DS.'import';
+                    if (!file_exists($targetFolder)) {
+                        mkdir($targetFolder, 0777, true);
+                    }
+                    $importPath = $upload->generateTargetName(PATH_ROOT.DS.'uploads'.DS.'import', $extension);
+                    $upload->saveAs($tmpFile, $importPath);
+                    $imp->ImportPath = $importPath;
+                    $this->Form->setFormValue('PathSelect', $importPath);
+
+                    $uploadedFiles = val('UploadedFiles', $imp->Data);
+                    $uploadedFiles[$importPath] = basename($filename);
+                    $imp->Data['UploadedFiles'] = $uploadedFiles;
+                } elseif (($pathSelect = $this->Form->getFormValue('PathSelect'))) {                                // 2
+                    if ($pathSelect == 'NEW') {
+                        $validation->addValidationResult('ImportFile', 'ValidateRequired');
+                    } else {
+                        $imp->ImportPath = $pathSelect;                                                             // 3
+                    }
+                } elseif (!$imp->ImportPath && count($importPaths) == 0) {
+                    // There was no file uploaded this request or before.
+                    $validation->addValidationResult('ImportFile', $upload->Exception);
+                }
+
+                // Validate the overwrite.
+                if (true || strcasecmp($this->Form->getFormValue('Overwrite'), 'Overwrite') == 0) {
+                    if (!stringBeginsWith($this->Form->getFormValue('PathSelect'), 'Db:', true)) {
+                        $validation->applyRule('Email', 'Required');
+                    }
+                }
+
+                if ($validation->validate($this->Form->formValues())) {
+                    $this->Form->setFormValue('Overwrite', 'overwrite');
+                    $imp->fromPost($this->Form->formValues());
+                    $this->View = 'Info';
+                } else {
+                    $this->Form->setValidationResults($validation->results());
+                }
+            } else {
+                $this->Form->setFormValue('PathSelect', $imp->ImportPath);
+            }
+            $imp->saveState();
+        } else {
+            $this->setData('Steps', $imp->steps());
+            $this->View = 'Info';
+        }
+
+        if (!stringBeginsWith($imp->ImportPath, 'db:') && !file_exists($imp->ImportPath)) {                         // 4
+            $imp->deleteState();
+        }
+```
+- 発見方法   
+- 対策   
+- 参考資料   
 ### Apache Groovy (CVE-2015-3253)
 - 概要   
 バージョン1.7.0 through 2.4.3で、MethodClosureクラスがデシリアライズされてしまうことが脆弱。このクラスはインスタンスを作成するだけで任意コマンドを実行できる仕様なので、デシリアライズするだけでRCEできてしまう。   
