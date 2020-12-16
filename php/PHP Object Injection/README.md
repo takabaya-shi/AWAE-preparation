@@ -1,3 +1,20 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Unserialize](#unserialize)
+  - [Serializeの基本](#serialize%E3%81%AE%E5%9F%BA%E6%9C%AC)
+  - [__destruct](#__destruct)
+  - [__wakeup](#__wakeup)
+  - [AuthBypass TypeJuggling](#authbypass-typejuggling)
+  - [AuthBypass ObjectReference](#authbypass-objectreference)
+  - [POP chain](#pop-chain)
+    - [__toString (SQL Injection)](#__tostring-sql-injection)
+    - [__destruct (webshell)](#__destruct-webshell)
+- [参考](#%E5%8F%82%E8%80%83)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Unserialize
 ## Serializeの基本
 ```php
