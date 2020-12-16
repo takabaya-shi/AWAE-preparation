@@ -391,7 +391,8 @@ https://blog.ohgaki.net/php-phar-remote-code-execution-vulnerability
 `phar`の脆弱性についての情報。かなりわかりやすい。   
 https://blog.usejournal.com/diving-into-unserialize-phar-deserialization-98b1254380e9   
 `phar`のDeserializeの脆弱性について。   
-
+https://medium.com/@knownsec404team/extend-the-attack-surface-of-php-deserialization-vulnerability-via-phar-d6455c6a1066   
+`phar`の脆弱性のWordpressでの具体例。   
 ### Apache Groovy (CVE-2015-3253)
 - 概要   
 バージョン1.7.0 through 2.4.3で、MethodClosureクラスがデシリアライズされてしまうことが脆弱。このクラスはインスタンスを作成するだけで任意コマンドを実行できる仕様なので、デシリアライズするだけでRCEできてしまう。   
