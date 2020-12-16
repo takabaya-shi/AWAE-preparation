@@ -438,4 +438,11 @@ https://nitesculucian.github.io/2018/10/05/php-object-injection-cheat-sheet/
 具体例がたくさん。よさげ。   
 https://hackerone.com/reports/407552   
 Vanilla Forumのpop chainのガジェット。   
-
+https://vickieli.medium.com/diving-into-unserialize-pop-chains-35bc1141b69a   
+pop chainの簡単な例。   
+https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Insecure%20Deserialization/PHP.md   
+簡単な例と参考文献がある。   
+https://owasp.org/www-community/vulnerabilities/PHP_Object_Injection   
+OWASP ZAPのわかりやすい説明。   
+https://github.com/ambionics/phpggc   
+PHPでの発見済みのオガジェットを簡単に作成できる。ysoserial的な。   
