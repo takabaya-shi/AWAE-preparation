@@ -152,7 +152,8 @@ echo serialize($obj1);  // O:7:"Object1":2:{s:10:"secretCode";s:1:"a";s:4:"code"
 ```txt
 ?input=O:7:"Object1":2:{s:10:"secretCode";s:1:"a";s:4:"code";R:2;}
 ```
-## POP chain (SQL Injection)
+## POP chain 
+### __toString (SQL Injection)
 ```php
 <?php
 class Example3{
@@ -213,6 +214,34 @@ print (serialize(new Example3));
 
 // O:8:"Example3":1:{s:6:" * obj";O:13:"SQL_Row_Value":1:{s:21:"SQL_Row_Value_table";s:10:"users -- -";}}
 ?>
+```
+### __destruct (webshell)
+
+`Gdn_Configuration`クラスのデストラクタが呼ばれるのがentrypoint。   
+[2]でshutdowm()メソッドが呼ばれて[3]が実行される。    
+[3]ではshutdown()メソッドの中でshutdown()メソッドが呼ばれてる。これは多分別のクラスのshutdown()メソッドを探すことになるはず？？ここでは別の`Gdn_ConfigurationSource`クラスにあるshutdown()メソッドが該当する。     
+```php
+class Gdn_Configuration extends Gdn_Pluggable {
+
+    ...
+
+    /**
+     *
+     */
+    public function __destruct() {
+        if ($this->autoSave) {                      // 1
+            $this->shutdown();                      // 2
+        }
+    }
+
+    /**
+     *
+     */
+    public function shutdown() {
+        foreach ($this->sources as $source) {
+            $source->shutdown();                    // 3
+        }
+    }
 ```
 # 参考
 https://securitycafe.ro/2015/01/05/understanding-php-object-injection/   
