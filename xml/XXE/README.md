@@ -132,5 +132,6 @@ https://portswigger.net/web-security/xxe#:~:text=XML%20external%20entity%20injec
 わかりやすそうな説明。   
 https://yamory.io/blog/what-is-xxe/   
 日本語の説明   
-
+https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/XXE%20Injection#classic-xxe   
+PayloadAllThings
 
