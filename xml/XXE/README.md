@@ -120,6 +120,9 @@ POST http://example.com/xml.php HTTP/1.1
 ]>
 <lolz>&lol9;</lolz>
 ```
+# メモ
+`hackerone report xxe`とかでググるといろいろ出てくる。   
+
 # 参考
 https://github.com/EdOverflow/bugbounty-cheatsheet/blob/master/cheatsheets/xxe.md   
 チートシート   
@@ -134,4 +137,5 @@ https://yamory.io/blog/what-is-xxe/
 日本語の説明   
 https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/XXE%20Injection#classic-xxe   
 PayloadAllThings
-
+https://phonexicum.github.io/infosec/xxe.html#exploitation-ways   
+いろいろまとまっててよさげ   
