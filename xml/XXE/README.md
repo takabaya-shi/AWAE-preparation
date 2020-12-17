@@ -123,7 +123,7 @@ POST http://example.com/xml.php HTTP/1.1
 ```
 # メモ
 `hackerone report xxe`とかでググるといろいろ出てくる。   
-
+`xxe ctf`,`xxe vulnhub`,`xxe hackthebox`とか。   
 # 参考
 https://github.com/EdOverflow/bugbounty-cheatsheet/blob/master/cheatsheets/xxe.md   
 チートシート   
