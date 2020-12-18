@@ -16,9 +16,9 @@
   - [XXE (normal XXE / upload XMLfile)](#xxe-normal-xxe--upload-xmlfile)
   - [XXE (normal XXE / request XMLfile's URL)](#xxe-normal-xxe--request-xmlfiles-url)
   - [XXE (SVG XXE / identify fullpath as /proc/self/cwd/flag.txt)](#xxe-svg-xxe--identify-fullpath-as-procselfcwdflagtxt)
+  - [OOB XXE (create DTDfile into server / DNS SubDomain)](#oob-xxe-create-dtdfile-into-server--dns-subdomain)
   - [sample](#sample)
   - [sample](#sample-1)
-  - [sample](#sample-2)
 - [メモ](#%E3%83%A1%E3%83%A2)
 - [参考](#%E5%8F%82%E8%80%83)
 
