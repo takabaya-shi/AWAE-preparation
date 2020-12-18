@@ -9,6 +9,10 @@
     - [Blind LFI](#blind-lfi)
     - [SSRF](#ssrf)
     - [DOS](#dos)
+- [writeup](#writeup)
+  - [OOB XXE (obtain index.php / indentify webshell's fullpath)](#oob-xxe-obtain-indexphp--indentify-webshells-fullpath)
+  - [OOB XXE (SSRF / 二重XXE)](#oob-xxe-ssrf--%E4%BA%8C%E9%87%8Dxxe)
+  - [sample](#sample)
 - [メモ](#%E3%83%A1%E3%83%A2)
 - [参考](#%E5%8F%82%E8%80%83)
 
