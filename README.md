@@ -41,7 +41,11 @@ Injection系はevalを探す。
 `readObject`,`readExternal`,`readUnshared`,`XStream`,`AC ED`で始まるバイトストリーム(Serializeされたことを示すマジックナンバー)、`ObjectInputStream`,`ObjectOutputStream`,`defaultReadObject`,`Apache Commons Collections`   
 ### PHP Deserialization
 `unserialize`,`__construct`,`__destruct`,`__wakeup`,`__toString`   
-PHAR形式のファイルをアップロードできてその場所が特定できるなら(ファイル名も)、`file()`,`file_exist()`,`file_get_contents()`,`fopen()`,`rename()`,`unlink()`,`include()`。`form`とかで入力がどこにあるのかもわかるかも。   
+PHAR形式のファイルをアップロードできてその場所が特定できるなら(ファイル名も)、`file()`,`file_exist()`,`file_get_contents()`,`fopen()`,`rename()`,`unlink()`,`include()`。`form`とかで入力がどこにあるのかもわかるかも。PHARファイルの保存先のパスを指定するための変数`path`があるかも。   
+### PHP XXE Injection
+変数名`xml`,`loadXML`,`simplexml_load_string`,`svg`
+### Command Injection
+`system`,`exec`,`create_function`
 # Vuln
 ## sample
 - 概要   
