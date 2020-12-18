@@ -12,7 +12,11 @@
 - [writeup](#writeup)
   - [OOB XXE (obtain index.php / indentify webshell's fullpath)](#oob-xxe-obtain-indexphp--indentify-webshells-fullpath)
   - [OOB XXE (SSRF / 二重XXE)](#oob-xxe-ssrf--%E4%BA%8C%E9%87%8Dxxe)
+  - [XXE (normai XXE / identify webroot or /proc/self/cwd)](#xxe-normai-xxe--identify-webroot-or-procselfcwd)
   - [sample](#sample)
+  - [sample](#sample-1)
+  - [sample](#sample-2)
+  - [sample](#sample-3)
 - [メモ](#%E3%83%A1%E3%83%A2)
 - [参考](#%E5%8F%82%E8%80%83)
 
