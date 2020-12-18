@@ -18,7 +18,7 @@
   - [XXE (SVG XXE / identify fullpath as /proc/self/cwd/flag.txt)](#xxe-svg-xxe--identify-fullpath-as-procselfcwdflagtxt)
   - [OOB XXE (create DTDfile into server / DNS SubDomain)](#oob-xxe-create-dtdfile-into-server--dns-subdomain)
   - [OOB XXE (SVG XXE / upload PHARfile / PHP Object Injection to OS Command Injection)](#oob-xxe-svg-xxe--upload-pharfile--php-object-injection-to-os-command-injection)
-  - [sample](#sample)
+  - [(OOB) XXE (SSRF to localhost / Command Injection)](#oob-xxe-ssrf-to-localhost--command-injection)
 - [メモ](#%E3%83%A1%E3%83%A2)
 - [参考](#%E5%8F%82%E8%80%83)
 
