@@ -954,6 +954,34 @@ Composerが使用するPHPパッケージのライブラリと依存関係が含
 ドキュメント   
 - man   
 マニュアル（Unix/Linux）   
+## dockerでの環境構築
+### コマンドとかのメモ
+以下、Windows10のDockerToolBoxを使用して、Dockerサーバー自体はVirtualBox上のVMで動かすことを想定。   
+- `Dockerサーバー起動`   
+`Docker QuickStart Terminal`をクリックして起動。いろいろ出るが、VirtualBox上でDockerサーバーを立ち上げてプロンプトが返ってくるまでちょっと待つ。プロンプト自体はWindows10だけど、`docker`コマンドとかで作ったイメージとかは全部VM上に保存される。   
+- `docker images`   
+今Dockerサーバーに保存されているイメージを表示する。   
+- `docker container ls -a`   
+今Dockerサーバーに保存されてるコンテナを表示する。   
+- `docker-machine ip default`   
+DockerサーバーのIPアドレスを確認する。localhostではなくて`192.168.99.100`とか。   
+- `docker container run -d --rm -it -p 10080:80 コンテナID`   
+今あるDockerコンテナを実行する。`--rm`で起動後そのコンテナを削除する。`-it`でコンテナに対して操作可能とする。`-p 10080:80`でホストOSの10080ポートをDockerサーバーの80ポートに接続する。`-d`でデーモンを起動する。   
+- `docker ps`   
+今Dockerサーバー上で動いているコンテナを表示する。   
+- `docker-machine ssh`   
+HostOSからDockerサーバーにSSHログインする。   
+- `docker attach 0b5aad08487b`   
+HostOSからDockerサーバーのシェルに入る。   
+- `docker build .`   
+現在のディレクトリ上にある`Dockerfile`を実行してDockerイメージを作成する。イメージはDockerサーバー上の`/mnt/sda1/var/lib/docker`に保存されている。   
+DockerイメージとはOS的なアプリケーションを動かすためのもので、ファイルの内容は変更できない。ファイルの変更が保存されたりするのはイメージレイヤーに追加するコンテナレイヤー側。この二つが合わさってDockerコンテナ。   
+- `docker-compose up -d`   
+現在のディレクトリ上にある`docker-compose.yml`を実行する。このファイルにはイメージを作成してそれをさらにコンテナにして実行する処理が書かれている。   
+- `docker commit`   
+Dockerコンテナをイメージ化する。   
+- `docker-compose down`   
+コンテナを停止する。   
 
 # メモ
 とにかくコードを読みなれている必要があるらしい。それが一番大事っぽい。それが今全然できないしHTBやっててもそれは伸びない気がする。   
@@ -962,9 +990,14 @@ Composerが使用するPHPパッケージのライブラリと依存関係が含
 受講は2月の春休み開始直後から1カ月でとりたい！それまでにいろいろ計画的に勉強するべし！
 XXE,SSTI,C#関係、XSS関係がイマイチ。まだ具体例が少なすぎるからもっと増やす！   
 あとある程度理解したらHTBで腕試すのがよさそう？？   
+
 # 参考資料
 https://alex-labs.com/my-awae-review-becoming-an-oswe/   
 ホワイトボックスの方法論的なことが書いてある。超参考になりそう。   
    
 https://stacktrac3.co/oswe-review-awae-course/   
 こっちにも方法論的なことが書いてある。   
+https://blog.codecamp.jp/programming-docker-image-container   
+DockerコンテナとDockerイメージについて   
+https://qiita.com/hiyuzawa/items/81490020568417d85e86   
+Dockerでの基礎的な操作が大体全部かかれてる   
