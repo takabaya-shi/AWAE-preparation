@@ -1,3 +1,14 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Server-Side Template Injection](#server-side-template-injection)
+  - [概要](#%E6%A6%82%E8%A6%81)
+  - [tplmal (SSTI practice)](#tplmal-ssti-practice)
+- [参考](#%E5%8F%82%E8%80%83)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Server-Side Template Injection
 ## 概要
 `<% %>`とかでViewの中に変数のデータを表示させたいときに、ユーザーの入力をそのTemplate構文の中に
