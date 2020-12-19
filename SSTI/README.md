@@ -30,7 +30,10 @@ f1a58c98075d        docker-envs_tplmap_test_python3   "/bin/sh -c 'python3…"  
 docker@default:~$
 ```
 `http://192.168.99.100:15004/ejs?inj=a`とかでアクセスできる！   
-
+# メモ
+escapeHTMLってどんな感じでエスケープする？   
+動的な文字列連結は脆弱になりがちっぽい   
+変数名のワードリストがあるぽい   
 # 参考
 https://portswigger.net/web-security/server-side-template-injection   
 SSTIの概要   
