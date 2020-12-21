@@ -995,6 +995,10 @@ Dockerコンテナをイメージ化する。
 XXE,SSTI,C#関係、XSS関係がイマイチ。まだ具体例が少なすぎるからもっと増やす！   
 あとある程度理解したらHTBで腕試すのがよさそう？？   
 
+# ToDO
+https://github.com/wectf/2020   
+https://github.com/TeamHarekaze/HarekazeCTF2019-challenges   
+
 # 参考資料
 https://alex-labs.com/my-awae-review-becoming-an-oswe/   
 ホワイトボックスの方法論的なことが書いてある。超参考になりそう。   
