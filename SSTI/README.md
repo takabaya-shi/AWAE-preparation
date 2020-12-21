@@ -4,7 +4,8 @@
 
 - [Server-Side Template Injection](#server-side-template-injection)
   - [概要](#%E6%A6%82%E8%A6%81)
-  - [tplmal (SSTI practice)](#tplmal-ssti-practice)
+  - [websitesVulnerableToSSTI](#websitesvulnerabletossti)
+  - [tplmap (SSTI practice)](#tplmap-ssti-practice)
     - [setup](#setup)
     - [php](#php)
       - [eval](#eval)
