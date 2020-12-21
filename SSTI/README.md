@@ -8,6 +8,7 @@
     - [setup](#setup)
     - [php](#php)
       - [eval](#eval)
+      - [smarty](#smarty)
     - [Java](#java)
     - [python](#python)
     - [Ruby](#ruby)
