@@ -11,6 +11,8 @@
       - [smarty](#smarty)
       - [twig](#twig)
     - [Java](#java)
+      - [velocity](#velocity)
+      - [freemarker](#freemarker)
     - [python](#python)
     - [Ruby](#ruby)
     - [Node.js](#nodejs)
