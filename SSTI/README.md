@@ -5,6 +5,13 @@
 - [Server-Side Template Injection](#server-side-template-injection)
   - [概要](#%E6%A6%82%E8%A6%81)
   - [tplmal (SSTI practice)](#tplmal-ssti-practice)
+    - [setup](#setup)
+    - [php](#php)
+      - [eval](#eval)
+    - [Java](#java)
+    - [python](#python)
+    - [Ruby](#ruby)
+    - [Node.js](#nodejs)
 - [メモ](#%E3%83%A1%E3%83%A2)
 - [参考](#%E5%8F%82%E8%80%83)
 
