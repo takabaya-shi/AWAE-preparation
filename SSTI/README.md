@@ -36,10 +36,10 @@
   - [erb / bypass 正規表現 "^" "$" (harkaze ctf 2017)](#erb--bypass-%E6%AD%A3%E8%A6%8F%E8%A1%A8%E7%8F%BE---harkaze-ctf-2017)
   - [jinja2 RCE through __class__.__mro__ (BSidesSF CTF 2017)](#jinja2-rce-through-__class____mro__-bsidessf-ctf-2017)
   - [Django str.format Information Disclosure (CODEGRAY CTF 2018)](#django-strformat-information-disclosure-codegray-ctf-2018)
+  - [jinja2 / LFI / session['']に暗号化鍵で暗号化した値をセット (ASIS_CTF 2017 Golem)](#jinja2--lfi--session%E3%81%AB%E6%9A%97%E5%8F%B7%E5%8C%96%E9%8D%B5%E3%81%A7%E6%9A%97%E5%8F%B7%E5%8C%96%E3%81%97%E3%81%9F%E5%80%A4%E3%82%92%E3%82%BB%E3%83%83%E3%83%88-asis_ctf-2017-golem)
   - [sample](#sample)
   - [sample](#sample-1)
   - [sample](#sample-2)
-  - [sample](#sample-3)
 - [メモ](#%E3%83%A1%E3%83%A2)
 - [参考](#%E5%8F%82%E8%80%83)
 
