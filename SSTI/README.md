@@ -1061,7 +1061,7 @@ https://nvisium.com/blog/2016/03/11/exploring-ssti-in-flask-jinja2-part-ii/
 ## Django str.format Information Disclosure (CODEGRAY CTF 2018)
 https://blog.ssrf.in/post/codegray-ctf-writeup/   
 - **entrypoint**    
-python3で`format`関数の`"hello {user}".format(user="John")`みたいなのの`"hello {user}"`に該当する箇所をユーザーの入力にできる部分が脆弱！これでグローバル変数の値を読みだせる！   
+python2.6以降で`format`関数の`"hello {user}".format(user="John")`みたいなのの`"hello {user}"`に該当する箇所をユーザーの入力にできる部分が脆弱！これでグローバル変数の値を読みだせる！   
 - **概要**    
 以下のソースの`template.format(email=email,user=user)`で`template`にユーザーの入力を挿入できる部分が脆弱！   
 ```python
@@ -1187,10 +1187,66 @@ def hello_world():
     return session["golem"]
 ```
 これを実行して、暗号化した値をCookieにセットすればFlagゲット！   
-## sample
+## Jinja2 bypass "." "_" / (Asis CTF Quals 2019)
+https://fireshellsecurity.team/asisctf-fort-knox/   
 - **entrypoint**    
+ソースにアクセスできて、`t = Template(question)`がJinja2の脆弱とわかる。   
 - **概要**    
+以下より、`.`,`_`がフィルタリングされていて、これをBypassしてSSTIしないといけない。   
+```python
+from flask import Flask, session
+from flask_session import Session
+from flask import request
+from flask import render_template
+from jinja2 import Template
+ 
+import fort
+ 
+Flask.secret_key = fort.SECKEY
+ 
+app = Flask(__name__)
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+Session(app)
+ 
+@app.route("/")
+def main():
+    return render_template("index.html")
+ 
+@app.route("/ask", methods = ["POST"])
+def ask():
+    question = request.form["q"]
+    for c in "._%":
+        if c in question:
+            return render_template("no.html", err = "no " + c)
+    try:
+        t = Template(question)
+        t.globals = {}
+        answer = t.render({
+            "history": fort.history(),
+            "credit": fort.credit(),
+            "trustworthy": fort.trustworthy()
+        })
+    except:
+        return render_template("no.html", err = "bad")
+    return render_template("yes.html", answer = answer)
+ 
+@app.route("/door/<door>")
+def door(door):
+    if fort.trustworthy():
+        return render_template("flag.html", flag = fort.FLAG)
+    doorNum = 0
+    if door is not None:
+        doorNum = int(door)
+    if doorNum > 0 and doorNum < 7:
+        fort.visit(doorNum)
+        return render_template("door.html", door = doorNum)
+    return render_template("no.html", err = "Door not found!")
+```
+`{{ [[]|map|string|list][0][20] }}`で`_`   
+`[1|float|string|list][0][1]`で`.`が出力できる！   
 - **Payload**    
+書かれてるやつがどれもJinja2の環境で動いてない…理解不足…   
 
 ## sample
 - **entrypoint**    
