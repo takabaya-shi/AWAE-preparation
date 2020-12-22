@@ -31,6 +31,12 @@
       - [dust](#dust)
       - [marko](#marko)
       - [ejs](#ejs)
+- [writeup](#writeup)
+  - [jinja2 render_template_string (ISC BugHunt101 CTF 2020)](#jinja2-render_template_string-isc-bughunt101-ctf-2020)
+  - [erb / bypass 正規表現 "^" "$" (harkaze ctf 2017)](#erb--bypass-%E6%AD%A3%E8%A6%8F%E8%A1%A8%E7%8F%BE---harkaze-ctf-2017)
+  - [sample](#sample)
+  - [sample](#sample-1)
+  - [sample](#sample-2)
 - [メモ](#%E3%83%A1%E3%83%A2)
 - [参考](#%E5%8F%82%E8%80%83)
 
