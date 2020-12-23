@@ -11,7 +11,8 @@
       - [request](#request)
       - [\_\_class\_\_](#%5C_%5C_class%5C_%5C_)
       - [self](#self)
-      - [g namespace lipsum range session dict get\_flashed\_messages cycler joiner](#g-namespace-lipsum-range-session-dict-get%5C_flashed%5C_messages-cycler-joiner)
+      - [session](#session)
+      - [g namespace lipsum range dict get\_flashed\_messages cycler joiner](#g-namespace-lipsum-range-dict-get%5C_flashed%5C_messages-cycler-joiner)
       - [その他（よくわからん）](#%E3%81%9D%E3%81%AE%E4%BB%96%E3%82%88%E3%81%8F%E3%82%8F%E3%81%8B%E3%82%89%E3%82%93)
   - [tplmap (SSTI practice)](#tplmap-ssti-practice)
     - [setup](#setup)
@@ -57,6 +58,7 @@
     - [miniblog (InterKosenCTF 2020)](#miniblog-interkosenctf-2020)
     - [BuggyBase2 (ISCbughunt101ctf 2020)](#buggybase2-iscbughunt101ctf-2020)
     - [Zumbo (BSidesSF CTF 2017)](#zumbo-bsidessf-ctf-2017)
+    - [shrine (TokyoWestern CTF 2018)](#shrine-tokyowestern-ctf-2018)
 - [メモ](#%E3%83%A1%E3%83%A2)
 - [参考](#%E5%8F%82%E8%80%83)
 
