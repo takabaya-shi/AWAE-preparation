@@ -33,7 +33,7 @@
       - [ejs](#ejs)
 - [writeup](#writeup)
   - [jinja2 render_template_string (ISC BugHunt101 CTF 2020)](#jinja2-render_template_string-isc-bughunt101-ctf-2020)
-  - [erb / bypass 正規表現 "^" "$" (harkaze ctf 2017)](#erb--bypass-%E6%AD%A3%E8%A6%8F%E8%A1%A8%E7%8F%BE---harkaze-ctf-2017)
+  - [erb / bypass 正規表現 "^" "$" (harkaze 解説記事 2017)](#erb--bypass-%E6%AD%A3%E8%A6%8F%E8%A1%A8%E7%8F%BE---harkaze-%E8%A7%A3%E8%AA%AC%E8%A8%98%E4%BA%8B-2017)
   - [jinja2 RCE through __class__.__mro__ (BSidesSF CTF 2017)](#jinja2-rce-through-__class____mro__-bsidessf-ctf-2017)
   - [Django str.format Information Disclosure (CODEGRAY CTF 2018)](#django-strformat-information-disclosure-codegray-ctf-2018)
   - [jinja2 / LFI / session['']に暗号化鍵で暗号化した値をセット (ASIS_CTF 2017 Golem)](#jinja2--lfi--session%E3%81%AB%E6%9A%97%E5%8F%B7%E5%8C%96%E9%8D%B5%E3%81%A7%E6%9A%97%E5%8F%B7%E5%8C%96%E3%81%97%E3%81%9F%E5%80%A4%E3%82%92%E3%82%BB%E3%83%83%E3%83%88-asis_ctf-2017-golem)
@@ -47,6 +47,8 @@
   - [Docker環境があるやつ(復習用)](#docker%E7%92%B0%E5%A2%83%E3%81%8C%E3%81%82%E3%82%8B%E3%82%84%E3%81%A4%E5%BE%A9%E7%BF%92%E7%94%A8)
     - [The Usual Suspects (csictf 2020)](#the-usual-suspects-csictf-2020)
     - [miniblog (InterKosenCTF 2020)](#miniblog-interkosenctf-2020)
+    - [BuggyBase2 (ISCbughunt101ctf 2020)](#buggybase2-iscbughunt101ctf-2020)
+    - [Zumbo (BSidesSF CTF 2017)](#zumbo-bsidessf-ctf-2017)
 - [メモ](#%E3%83%A1%E3%83%A2)
 - [参考](#%E5%8F%82%E8%80%83)
 
