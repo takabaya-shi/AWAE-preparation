@@ -1007,7 +1007,7 @@ $ bash runInDocker.sh 0.0.0.0
 ![image](https://user-images.githubusercontent.com/56021519/102914001-fc2bb880-44c2-11eb-8303-5cd2b4ca0641.png)   
 `<pre>{{config.__class__.__init__.__globals__['os'].popen('id').read()}}<!--`として`<pre>`を先頭につけて、末尾に`<!--`を付けると出力が綺麗になる。   
 ![image](https://user-images.githubusercontent.com/56021519/102914209-46149e80-44c3-11eb-892b-36ef254f6cff.png)   
-## erb / bypass 正規表現 "^" "$" (harkaze ctf 2017)
+## erb / bypass 正規表現 "^" "$" (harkaze 解説記事 2017)
 https://st98.github.io/diary/posts/2017-12-08-harekaze-ssti-problem.html   
 - **entrypoint**    
 `params[:memo]`の値が`erb`のテンプレートエンジンに入力されてる。Rubyで入力を`/^[0-9A-Za-z]+$/`で正規表現で数字とアルファベットだけに制限してるが、Rubyでの`^`,`$`は脆弱だから使わない方がいい。これは改行文字を入れることで簡単にBypassできるのでここがentrypoint   
@@ -1434,6 +1434,10 @@ JWTを付与して、`/admin/{{7*7}}`とかをすると49が返るのでSSTI可�
 https://github.com/csivitu/ctf-challenges/tree/master/web/The%20Usual%20Suspects   
 ### miniblog (InterKosenCTF 2020)
 https://github.com/theoremoon/InterKosenCTF2020-challenges/tree/master/web/miniblog   
+### BuggyBase2 (ISCbughunt101ctf 2020)
+https://github.com/8ayac/iscbughunt101ctf/blob/master/buggybase2/README.md   
+### Zumbo (BSidesSF CTF 2017)
+https://github.com/BSidesSF/ctf-2017-release/blob/master/web/zumbo/README.md   
 
 # メモ
 escapeHTMLってどんな感じでエスケープする？   
