@@ -38,8 +38,11 @@
   - [Django str.format Information Disclosure (CODEGRAY CTF 2018)](#django-strformat-information-disclosure-codegray-ctf-2018)
   - [jinja2 / LFI / session['']に暗号化鍵で暗号化した値をセット (ASIS_CTF 2017 Golem)](#jinja2--lfi--session%E3%81%AB%E6%9A%97%E5%8F%B7%E5%8C%96%E9%8D%B5%E3%81%A7%E6%9A%97%E5%8F%B7%E5%8C%96%E3%81%97%E3%81%9F%E5%80%A4%E3%82%92%E3%82%BB%E3%83%83%E3%83%88-asis_ctf-2017-golem)
   - [Jinja2 bypass "." "_" / (Asis CTF Quals 2019)](#jinja2-bypass--_--asis-ctf-quals-2019)
+  - [bottle / zip slip in tarFile (InterKosenCTF 2020 miniblog)](#bottle--zip-slip-in-tarfile-interkosenctf-2020-miniblog)
   - [sample](#sample)
-  - [sample](#sample-1)
+  - [Docker環境があるやつ(復習用)](#docker%E7%92%B0%E5%A2%83%E3%81%8C%E3%81%82%E3%82%8B%E3%82%84%E3%81%A4%E5%BE%A9%E7%BF%92%E7%94%A8)
+    - [The Usual Suspects (csictf 2020)](#the-usual-suspects-csictf-2020)
+    - [miniblog (InterKosenCTF 2020)](#miniblog-interkosenctf-2020)
 - [メモ](#%E3%83%A1%E3%83%A2)
 - [参考](#%E5%8F%82%E8%80%83)
 
