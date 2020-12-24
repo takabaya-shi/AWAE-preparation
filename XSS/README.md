@@ -1,3 +1,15 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [練習](#%E7%B7%B4%E7%BF%92)
+  - [xsssample](#xsssample)
+    - [1](#1)
+    - [2](#2)
+    - [3](#3)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # 練習
 ## xsssample
 http://bogus.jp/xsssample/   
