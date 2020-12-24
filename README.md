@@ -976,6 +976,8 @@ DockerサーバーのIPアドレスを確認する。localhostではなくて`19
 HostOSからDockerサーバーにSSHログインする。   
 - `docker attach 0b5aad08487b`   
 HostOSからDockerサーバーのシェルに入る。   
+- `docker exec -it c9eb1f0daf24 /bin/sh`   
+Dockerコンテナに入る。(Dockerサーバーではない！)   
 - `docker build .`   
 現在のディレクトリ上にある`Dockerfile`を実行してDockerイメージを作成する。イメージはDockerサーバー上の`/mnt/sda1/var/lib/docker`に保存されている。   
 DockerイメージとはOS的なアプリケーションを動かすためのもので、ファイルの内容は変更できない。ファイルの変更が保存されたりするのはイメージレイヤーに追加するコンテナレイヤー側。この二つが合わさってDockerコンテナ。   
