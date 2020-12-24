@@ -388,8 +388,13 @@ https://macchinetta.github.io/server-guideline/current/ja/Security/XSS.html
 ### 18 IE
 ### 19 ページが動いてない
 
-
-
+## 動作環境ナシ
+### XSS Challenge(セキュリティ・ミニキャンプ in 岡山 2018)
+https://szarny.hatenablog.com/entry/2019/01/01/XSS_Challenge_%28%E3%82%BB%E3%82%AD%E3%83%A5%E3%83%AA%E3%83%86%E3%82%A3%E3%83%BB%E3%83%9F%E3%83%8B%E3%82%AD%E3%83%A3%E3%83%B3%E3%83%97_in_%E5%B2%A1%E5%B1%B1_2018_%E6%BC%94%E7%BF%92%E3%82%B3%E3%83%B3   
+https://graneed.hatenablog.com/entry/2018/11/23/222842   
+### katagaitaiCTF#9 xss千本ノック
+http://sec-rookie.hatenablog.com/entry/2017/08/29/015957   
+https://exploit.moe/2017-08-28/katagaitaiCTF9-writeup   
 
 
 
