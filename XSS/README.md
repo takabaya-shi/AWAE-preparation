@@ -4,9 +4,19 @@
 
 - [練習](#%E7%B7%B4%E7%BF%92)
   - [xsssample](#xsssample)
-    - [1](#1)
-    - [2](#2)
-    - [3](#3)
+    - [1 (normal)](#1-normal)
+    - [2 (bypass <input )](#2-bypass-input-)
+    - [3 (bypass maxlength="10")](#3-bypass-maxlength10)
+    - [4 (bypass "<>")](#4-bypass-)
+    - [5 (bypass maxlength="10" with POST)](#5-bypass-maxlength10-with-post)
+    - [6 (href javascript:)](#6-href-javascript)
+    - [7 (filter "script")](#7-filter-script)
+    - [8 (inject in document.write(''))](#8-inject-in-documentwrite)
+  - [XSS Challenges](#xss-challenges)
+    - [1 (normal)](#1-normal-1)
+    - [2 (bypass \<input value="">)](#2-bypass-%5Cinput-value)
+    - [3 (inject \<select>tag)](#3-inject-%5Cselecttag)
+    - [4](#4)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
