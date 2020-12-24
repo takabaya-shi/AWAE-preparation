@@ -16,7 +16,21 @@
     - [1 (normal)](#1-normal-1)
     - [2 (bypass \<input value="">)](#2-bypass-%5Cinput-value)
     - [3 (inject \<select>tag)](#3-inject-%5Cselecttag)
-    - [4](#4)
+    - [4 (bypas \<input type="hidden" value="">)](#4-bypas-%5Cinput-typehidden-value)
+    - [5 (bypass maxlength="15")](#5-bypass-maxlength15)
+    - [6 (fileter "<>")](#6-fileter-)
+    - [7 (inject \<input value= > with no quote)](#7-inject-%5Cinput-value--with-no-quote)
+    - [8 (href)](#8-href)
+    - [9 (UTF-7 XSS)](#9-utf-7-xss)
+    - [10 (filter "domain")](#10-filter-domain)
+    - [11 ページが動いてない…](#11-%E3%83%9A%E3%83%BC%E3%82%B8%E3%81%8C%E5%8B%95%E3%81%84%E3%81%A6%E3%81%AA%E3%81%84)
+    - [12 IE](#12-ie)
+    - [13 IE](#13-ie)
+    - [14 IE](#14-ie)
+    - [15](#15)
+    - [17 IE](#17-ie)
+    - [18 IE](#18-ie)
+    - [19](#19)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
