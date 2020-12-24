@@ -12,6 +12,8 @@
     - [6 (href javascript:)](#6-href-javascript)
     - [7 (filter "script")](#7-filter-script)
     - [8 (inject in document.write(''))](#8-inject-in-documentwrite)
+    - [11 (inject \<input value="">)](#11-inject-%5Cinput-value)
+    - [12 (\<meta content=""/>)](#12-%5Cmeta-content)
   - [XSS Challenges](#xss-challenges)
     - [1 (normal)](#1-normal-1)
     - [2 (bypass \<input value="">)](#2-bypass-%5Cinput-value)
@@ -27,10 +29,11 @@
     - [12 IE](#12-ie)
     - [13 IE](#13-ie)
     - [14 IE](#14-ie)
-    - [15](#15)
+    - [15 (DOM based document.write)](#15-dom-based-documentwrite)
+    - [16 ページが動いてない](#16-%E3%83%9A%E3%83%BC%E3%82%B8%E3%81%8C%E5%8B%95%E3%81%84%E3%81%A6%E3%81%AA%E3%81%84)
     - [17 IE](#17-ie)
     - [18 IE](#18-ie)
-    - [19](#19)
+    - [19 ページが動いてない](#19-%E3%83%9A%E3%83%BC%E3%82%B8%E3%81%8C%E5%8B%95%E3%81%84%E3%81%A6%E3%81%AA%E3%81%84)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
