@@ -257,7 +257,7 @@ kind=../
 kind=../templates/
 {"status": "ok", "content": ["index.html", "report.html", "flag.txt"]}
 ```
-## 
+## CSP nonce strict-dynamic / DOM clobbering / BaseTag Injection (SECCON beginnres 2020 somen)
 https://github.com/SECCON/Beginners_CTF_2020/blob/master/web/somen/writeup.md   
 https://www.ryotosaito.com/blog/?p=474   
 https://diary.shift-js.info/seccon-beginners-ctf-2020/   
