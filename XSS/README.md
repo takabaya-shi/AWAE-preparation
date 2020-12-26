@@ -52,9 +52,26 @@
     - [katagaitaiCTF&#035;9 xss千本ノック](#katagaitaictf9-xss%E5%8D%83%E6%9C%AC%E3%83%8E%E3%83%83%E3%82%AF)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
+# XSS
+## CSP
+### CSP Level
+CSP Level 3の strict-dynamic をサポートしているブラウザでは nonce-{random} 'unsafe-eval' 'strict-dynamic' のみ解釈され、その他は無視される。   
+CSP Level 2までのみサポートしているブラウザでは 'nonce-{random}' 'unsafe-eval' のみ解釈され、その他は無視   
+CSP Level 1のみサポートしているブラウザでは 'unsafe-inline' 'unsafe-eval' https: http:; のみ解釈され、その他は無視   
+
+### script-src (level 2)
+ホワイトリストによって、jsファイルを読み込めるドメインを制限する。ただしコールバック関数を呼びだしできるJSONPエンドポイントを使用すればCSPをバイパスできるのでよくないらしい   
+https://inside.pixiv.blog/kobo/5137   
+https://csp-evaluator.withgoogle.com/   
+ここにCSPの設定を投げると、危険性を評価してくれる。超便利。   
+
+### strict-dynamic (level 3)
+https://inside.pixiv.blog/kobo/5137   
+`'strict-dynamic'`によってnonceによるscriptの実行制御が強制される ( script-src にドメインのホワイトリストを書いても無視される)。   
+nonceにより実行を許可されたscriptから動的に生成された別のscriptも実行が許可されるようになる。   
+
+
 # writeup
-
-
 ## Reflect / JSON Injection (CONFidence 2020 Teaser)
 https://www.gem-love.com/ctf/2019.html   
 - **entrypoint**   
@@ -189,7 +206,21 @@ jsonStr = JSON.stringify(temp_obj);
 console.log(jsonStr);  // {"key1":"value1","key2":"'value2', key1:'fake_value1'"}
 ```
 ## 
+https://github.com/SECCON/Beginners_CTF_2020/blob/master/web/somen/writeup.md   
+https://www.ryotosaito.com/blog/?p=474   
+
 - **entrypoint**   
+`<title>Best somen for <?= isset($_GET["username"]) ? $_GET["username"] : "You" ?></title>`にReflect XSSがあることがわかる。   
+また、``document.getElementById("message").innerHTML = `${username}, I recommend ${adjective} somen for you.`;``にDOM based XSSがあることがわかる。   
+また、CSPが以下のように設定されているので、単に`<script>alert(1)</script>`を挿入するだけではだめ。   
+`default-src 'none'`なので、script以外を埋め込むことはできない。   
+`script-src`に`nonce`と`sha256...`のハッシュがあるので、`nonce`がセットされているまたはintegrityにsha256のハッシュがセットされている`<script>`しか実行できない。   
+```txt
+Content-Security-Policy: default-src 'none'; script-src 'nonce-WuUfK2ztXY/KcshKy90o8SGykbs=' 'strict-dynamic' 'sha256-nus+LGcHkEgf6BITG7CKrSgUIb1qMexlF8e5Iwx1L2A='
+```
+したがって、nonceのセットされている元々ある`<script>`内でDOM basedにより任意のJavascriptを生成する必要があることがわかる。   
+nonceのある`<script>`から生成されるnonceのない`<script>`は実行権限が継承されて実行可能となる。   
+
 - **概要**   
 - **Payload**   
 ## 
