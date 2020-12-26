@@ -71,6 +71,7 @@ CSP Level 1のみサポートしているブラウザでは 'unsafe-inline' 'uns
 未指定の-srcディレクティブの大半に対してデフォルトを定義する。   
 デフォルトでインラインコードとeval()は有害とみなす   
 'unsafe-inline' もしくは 'unsafe-eval'で明示的に有効化する必要がある   
+`default-src 'none'`ですべて無効化し、全ての読み込みを制限。(ただし`default-src 'none' img-src 'self'`とすればimgは現在のオリジンと一致すれば許可、みたいになる)   
 
 ### script-src 
 ホワイトリストによって、jsファイルを読み込めるドメインを制限する。ただしコールバック関数を呼びだしできるJSONPエンドポイントを使用すればCSPをバイパスできるのでよくないらしい   
@@ -266,7 +267,7 @@ https://diary.shift-js.info/seccon-beginners-ctf-2020/
 `<title>Best somen for <?= isset($_GET["username"]) ? $_GET["username"] : "You" ?></title>`にReflect XSSがあることがわかる。   
 また、``document.getElementById("message").innerHTML = `${username}, I recommend ${adjective} somen for you.`;``にDOM based XSSがあることがわかる。   
 また、CSPが以下のように設定されているので、単に`<script>alert(1)</script>`を挿入するだけではだめ。   
-`default-src 'none'`なので、script以外を埋め込むことはできない。   
+`default-src 'none'`なので、すべての読み込みを制限(ただしそのあとにscript-srcがあるのでscriptの読み込みは限定で許可)   
 `script-src`に`nonce`と`sha256...`のハッシュがあるので、`nonce`がセットされているまたはintegrityにsha256のハッシュがセットされている`<script>`しか実行できない。   
 ```txt
 Content-Security-Policy: default-src 'none'; script-src 'nonce-WuUfK2ztXY/KcshKy90o8SGykbs=' 'strict-dynamic' 'sha256-nus+LGcHkEgf6BITG7CKrSgUIb1qMexlF8e5Iwx1L2A='
