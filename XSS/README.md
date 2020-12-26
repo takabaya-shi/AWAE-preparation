@@ -2,6 +2,11 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**
 
+- [XSS](#xss)
+  - [CSP](#csp)
+    - [CSP Level](#csp-level)
+    - [script-src (level 2)](#script-src-level-2)
+    - [strict-dynamic (level 3)](#strict-dynamic-level-3)
 - [writeup](#writeup)
   - [Reflect / JSON Injection (CONFidence 2020 Teaser)](#reflect--json-injection-confidence-2020-teaser)
   - [](#)
