@@ -2,6 +2,15 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**
 
+- [XSS](#xss)
+  - [CSP](#csp)
+    - [CSP Level](#csp-level)
+    - [default-src](#default-src)
+    - [script-src](#script-src)
+    - [strict-dynamic (level 3)](#strict-dynamic-level-3)
+  - [Base Tag Injection](#base-tag-injection)
+  - [DOM clobbering](#dom-clobbering)
+  - [JSON Injection](#json-injection)
 - [writeup](#writeup)
   - [Reflect / JSON Injection (CONFidence 2020 Teaser)](#reflect--json-injection-confidence-2020-teaser)
   - [](#)
