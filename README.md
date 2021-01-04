@@ -1007,7 +1007,13 @@ Dockerコンテナをイメージ化する。
 https://github.com/mochizukikotaro/docker-nginx-phpfpm/blob/master/README.md   
 https://qiita.com/mochizukikotaro/items/b398076cb57492980447   
 上の解説記事。   
-
+nginxのconfファイルの以下の`fastcgi-pass`でlocalhostの9000ポートで待機しているPHP-fpmの通信してそこのfastcgiにphpファイルを渡してPHPを実行している。  
+なのでnginxのコンテナ上にはphpファイルを置く必要なし。  
+```txt
+    location ~ \.php$ {
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_pass php:9000;
+```
 
 # メモ
 とにかくコードを読みなれている必要があるらしい。それが一番大事っぽい。それが今全然できないしHTBやっててもそれは伸びない気がする。   
