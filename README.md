@@ -993,9 +993,20 @@ my.cnfを`.`にすれば現在のファイルすべてを送信する。
 - `docker commit`   
 Dockerコンテナをイメージ化する。   
 - `docker-compose down`   
-コンテナを停止する。   
+コンテナとネットワークを停止、削除する。   
+- `docker-compose down --rmi all`  
+イメージも削除する。一から作り直すときとか。  
 - `docker stop 23fba3fd85c4`   
 コンテナを停止する。   
+- `docker stop $(docker ps -q)`  
+すべてのコンテナを停止する  
+
+### nginx + php-fpm
+これが動いている。他はdocker-compose.ymlが間違ってたりnginxのnginx.confが存在していなかったりするので注意。   
+https://github.com/mochizukikotaro/docker-nginx-phpfpm/blob/master/README.md   
+https://qiita.com/mochizukikotaro/items/b398076cb57492980447   
+上の解説記事。   
+
 
 # メモ
 とにかくコードを読みなれている必要があるらしい。それが一番大事っぽい。それが今全然できないしHTBやっててもそれは伸びない気がする。   
