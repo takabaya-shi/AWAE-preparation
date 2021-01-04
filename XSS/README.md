@@ -19,6 +19,7 @@
   - [Reflect / BaseTag Injection / force scraping fake Form (SECCON beginners 2018 Gimme your comment REVENGE)](#reflect--basetag-injection--force-scraping-fake-form-seccon-beginners-2018-gimme-your-comment-revenge)
   - [Reflected / Get Admin's Cookie through bypass "." (33C3 CTF )](#reflected--get-admins-cookie-through-bypass--33c3-ctf-)
   - [Base tag Injection / CSP bypass / DOM clobbering (BugPoC XSS CTF November 2020)](#base-tag-injection--csp-bypass--dom-clobbering-bugpoc-xss-ctf-november-2020)
+  - [CSS Injection (SECCON 2018 Online GhostKingdom)](#css-injection-seccon-2018-online-ghostkingdom)
   - [](#)
 - [Docker環境があるやつ](#docker%E7%92%B0%E5%A2%83%E3%81%8C%E3%81%82%E3%82%8B%E3%82%84%E3%81%A4)
   - [somen (SECCON beginners 2020)](#somen-seccon-beginners-2020)
