@@ -25,6 +25,7 @@
   - [XSS in title form / bypass blacklist \<script> (HackerOne CTF：Micro-CMS v1)](#xss-in-title-form--bypass-blacklist-%5Cscript-hackerone-ctfmicro-cms-v1)
   - [bypass addslashes() with %bf%5c$22 / Prototype Polution (PBCTF 2020 - Ikea Name Generator)](#bypass-addslashes-with-22--prototype-polution-pbctf-2020---ikea-name-generator)
   - [Stored XSS in User-Agent Referer / SQL Injection / (Tips for bug bounty beginners from a real life experience)](#stored-xss-in-user-agent-referer--sql-injection--tips-for-bug-bounty-beginners-from-a-real-life-experience)
+  - [eval Injection / overwrite function with eval (calc -> alert,eval) (Intigriti's December XSS Challenge 2020)](#eval-injection--overwrite-function-with-eval-calc---alerteval-intigritis-december-xss-challenge-2020)
   - [](#)
   - [CSS Injection / Self Injection / Header Injection / Command Injection (Google CTF Cat Chat)](#css-injection--self-injection--header-injection--command-injection-google-ctf-cat-chat)
   - [bypass XSS Auditor (ISITDTU CTF 2019 Quals Writeup - XSSgame1)](#bypass-xss-auditor-isitdtu-ctf-2019-quals-writeup---xssgame1)
