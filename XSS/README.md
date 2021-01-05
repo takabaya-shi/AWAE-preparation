@@ -126,6 +126,8 @@ CSPが`default-src 'none'`だとしてもformの送信先も変えられる！�
 - 参考   
 https://portswigger.net/web-security/dom-based/dom-clobbering   
 https://diary.shift-js.info/dom-clobbering/   
+http://www.thespanner.co.uk/2013/05/16/dom-clobbering/   
+
 - 例題   
 https://github.com/SECCON/Beginners_CTF_2020/blob/master/web/somen/writeup.md   
 https://masatokinugawa.l0.cm/2018/05/cve-2018-5175-firefox-csp-strict-dynamic-bypass.html   
@@ -654,7 +656,7 @@ window.location = 'https://wacky.buggywebsite.com/frame.html?param=%3C/title%3E%
 XSSではないので省略   
 https://techblog.securesky-tech.com/entry/2018/10/31/2   
 
-## 
+## DOM clobbering / CSP bypass in meta tag / jQuery before 3.0.0 (Midnight Sun CTF 2019 Finals Marcololo)
 https://tasteofsecurity.com/security/ctf-midnight-marcololo/
 - **entrypoint**   
 ```html
