@@ -24,13 +24,13 @@
   - [bypass with HTML entity, ES6 unicode / DOM clobbering / iframe (Security Fest 2019 CTF, entropian)](#bypass-with-html-entity-es6-unicode--dom-clobbering--iframe-security-fest-2019-ctf-entropian)
   - [XSS in title form / bypass blacklist \<script> (HackerOne CTF：Micro-CMS v1)](#xss-in-title-form--bypass-blacklist-%5Cscript-hackerone-ctfmicro-cms-v1)
   - [bypass addslashes() with %bf%5c$22 / Prototype Polution (PBCTF 2020 - Ikea Name Generator)](#bypass-addslashes-with-22--prototype-polution-pbctf-2020---ikea-name-generator)
+  - [Stored XSS in User-Agent Referer / SQL Injection / (Tips for bug bounty beginners from a real life experience)](#stored-xss-in-user-agent-referer--sql-injection--tips-for-bug-bounty-beginners-from-a-real-life-experience)
   - [](#)
-  - [](#-1)
   - [CSS Injection / Self Injection / Header Injection / Command Injection (Google CTF Cat Chat)](#css-injection--self-injection--header-injection--command-injection-google-ctf-cat-chat)
   - [bypass XSS Auditor (ISITDTU CTF 2019 Quals Writeup - XSSgame1)](#bypass-xss-auditor-isitdtu-ctf-2019-quals-writeup---xssgame1)
   - [CSS Injection (TSG CTF BADNONCE Part 1)](#css-injection-tsg-ctf-badnonce-part-1)
   - [XSS-unsafe jQuery plugins (GitHub Security Lab CTF 3:)](#xss-unsafe-jquery-plugins-github-security-lab-ctf-3)
-  - [](#-2)
+  - [](#-1)
 - [Docker環境があるやつ](#docker%E7%92%B0%E5%A2%83%E3%81%8C%E3%81%82%E3%82%8B%E3%82%84%E3%81%A4)
   - [somen (SECCON beginners 2020)](#somen-seccon-beginners-2020)
 - [練習](#%E7%B7%B4%E7%BF%92)
@@ -71,6 +71,7 @@
   - [動作環境ナシ](#%E5%8B%95%E4%BD%9C%E7%92%B0%E5%A2%83%E3%83%8A%E3%82%B7)
     - [XSS Challenge(セキュリティ・ミニキャンプ in 岡山 2018)](#xss-challenge%E3%82%BB%E3%82%AD%E3%83%A5%E3%83%AA%E3%83%86%E3%82%A3%E3%83%BB%E3%83%9F%E3%83%8B%E3%82%AD%E3%83%A3%E3%83%B3%E3%83%97-in-%E5%B2%A1%E5%B1%B1-2018)
     - [katagaitaiCTF&#035;9 xss千本ノック](#katagaitaictf9-xss%E5%8D%83%E6%9C%AC%E3%83%8E%E3%83%83%E3%82%AF)
+- [メモ](#%E3%83%A1%E3%83%A2)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 # XSS
