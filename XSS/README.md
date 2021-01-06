@@ -78,8 +78,8 @@
     - [3 (XHR JSON -> .innerHTML)](#3-xhr-json---innerhtml)
     - [4 (WebSocket JSON -> .innerHTML)](#4-websocket-json---innerhtml)
     - [5 (frames[0].postMessage -> window.parent.postMessage -> .innerHTML)](#5-frames0postmessage---windowparentpostmessage---innerhtml)
-    - [6 (localStorage.setItem() -> localStorage.getItem() -> .innerHTML)](#6-localstoragesetitem---localstoragegetitem---innerhtml)
-    - [7 (inject href in <a tag with onmouseover=alert(1))](#7-inject-href-in-a-tag-with-onmouseoveralert1)
+    - [6](#6)
+    - [7](#7)
     - [8](#8)
     - [9](#9)
     - [10](#10)
@@ -1937,20 +1937,77 @@ localStorageを使ってデータを保存している。
     document.getElementById("srcvalue").textContent = hash;
     document.getElementById("valuetosink").textContent = msg;
 ```
-### 8
+### 8 (inject href in <a tag with onmouseover=alert(1))
+`.substr(hashValueToUse.indexOf("=")+1)`で`user=1234`をはじめに`=`が現れたindex`4`に1を足した`5`を`.substr()`して5文字目以降の`1234`を抽出する。  
+7と同様、`12345' onmouseover='alert(1)`で、`<a href='#user=12345' onmouseover='alert(1)'>Welcome</a>!!`となって成功！  
 **Vunlerable code**  
 ```html
+    let hash = location.hash;
+    let hashValueToUse = hash.length > 1 ? unescape(hash.substr(1)) : hash;
 
+    if (hashValueToUse.indexOf("=") > -1 ) {
+        hashValueToUse = hashValueToUse.substr(hashValueToUse.indexOf("=")+1);
+        hashValueToUse = hashValueToUse.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        let msg = "<a href='#user=" + hashValueToUse + "'>Welcome</a>!!";
+        document.getElementById("msgboard").innerHTML = msg;
+
+        //Data flow info
+        document.getElementById("srcvalue").textContent = hash;
+        document.getElementById("valuetosink").textContent = msg;
+    }
 ```
-### 9
+### 9 (javascript:alert(1) in \<a tag href="\<inject>")
+今度は`"`が弾かれてしまう。  
+`href="<inject>"`なので`javascript:alert(1)`でよい。  
+`window.name = ":alert(1)"`として`/cxss/example/9#user=javascript`でよい。  
 **Vunlerable code**  
 ```html
+    let hash = location.hash;
+    let hashValueToUse = hash.length > 1 ? unescape(hash.substr(1)) : hash;
 
+    if (hashValueToUse.indexOf("=") > -1 ) {
+        
+        hashValueToUse = hashValueToUse.substr(hashValueToUse.indexOf("=") + 1);
+        
+        if (hashValueToUse.length > 1) {
+            hashValueToUse = hashValueToUse.substr(0, 10);
+            hashValueToUse = hashValueToUse.replace(/"/g, "&quot;");
+            let windowValueToUse = window.name.replace(/"/g, "&quot;");
+            let msg = "<a href=\"" + hashValueToUse + windowValueToUse + "\">Welcome</a>!!";
+            document.getElementById("msgboard").innerHTML = msg;
+        }
+    }
 ```
-### 10
+### 10 (javascript:alert(1) in \<a tag href="\<inject>")
+9と同じ感じで`/cxss/example/10?lang=en&user=ID-javascript&returnurl=/`で`javascript`を取り出して、`window.name`と結合する。`window.name=":alert(1)"`とすればよい。  
 **Vunlerable code**  
 ```html
+    let urlParts = location.href.split("?");
+    if (urlParts.length > 1) {
+        
+        let queryString = urlParts[1];
+        let queryParts = queryString.split("&");
+        let userId = "";
+        for (let i = 0; i < queryParts.length; i++) {
+            
+            let keyVal = queryParts[i].split("=");
+            if (keyVal.length > 1) {
+                if (keyVal[0] === "user") {
+                    
+                    userId = keyVal[1];
+                    break;
+                }
+            }
+        }
+        if (userId.startsWith("ID-")) {
 
+            userId = userId.substr(3, 10);
+            userId = userId.replace(/"/g, "&quot;");
+            let windowValueToUse = window.name.replace(/"/g, "&quot;");
+            let msg = "<a href=\"" + userId + windowValueToUse + "\">Welcome</a>!!";
+            document.getElementById("msgboard").innerHTML = msg;
+        }
+    }
 ```
 
 ## 動作環境ナシ
