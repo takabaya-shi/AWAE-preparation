@@ -72,13 +72,6 @@
     - [17 IE](#17-ie)
     - [18 IE](#18-ie)
     - [19 ページが動いてない](#19-%E3%83%9A%E3%83%BC%E3%82%B8%E3%81%8C%E5%8B%95%E3%81%84%E3%81%A6%E3%81%AA%E3%81%84)
-  - [DomGoat](#domgoat)
-    - [1 (location.hash -> .innerHTML)](#1-locationhash---innerhtml)
-    - [2 (document.referer -> .innerHTML)](#2-documentreferer---innerhtml)
-    - [3 (XHR JSON -> .innerHTML)](#3-xhr-json---innerhtml)
-    - [4 (WebSocket JSON -> .innerHTML)](#4-websocket-json---innerhtml)
-    - [2](#2)
-    - [2](#2-1)
   - [動作環境ナシ](#%E5%8B%95%E4%BD%9C%E7%92%B0%E5%A2%83%E3%83%8A%E3%82%B7)
     - [XSS Challenge(セキュリティ・ミニキャンプ in 岡山 2018)](#xss-challenge%E3%82%BB%E3%82%AD%E3%83%A5%E3%83%AA%E3%83%86%E3%82%A3%E3%83%BB%E3%83%9F%E3%83%8B%E3%82%AD%E3%83%A3%E3%83%B3%E3%83%97-in-%E5%B2%A1%E5%B1%B1-2018)
     - [katagaitaiCTF&#035;9 xss千本ノック](#katagaitaictf9-xss%E5%8D%83%E6%9C%AC%E3%83%8E%E3%83%83%E3%82%AF)
@@ -1791,12 +1784,107 @@ https://macchinetta.github.io/server-guideline/current/ja/Security/XSS.html
         ws.send(payload);
     };
 ```
-### 2
+### 5 (frames[0].postMessage -> window.parent.postMessage -> .innerHTML)
+`<img src=/ onerror=alert(1)>`を同様に入力する。  
+**Vunlerable code**  
+`/cxss/example/5`  
+iframeで`/cxss/iframe`のHTMLを読みこむ。  
+`frames[0].postMessage(payload, location.origin);`でwindow.framesの1つ目のWindowsオブジェクト`Window https://domgo.at/cxss/iframe`に`postMessage`でデータ`payload`を送信する。`location.origin`は`"https://domgo.at"`をさしている。  
+`postMessage`はWindow間でデータを送信、受信できる。以下の`window.onmessage = function (evt) {`で`addEventListener('message', function(event) {`と同じようにデータを受信する。`evt.data`でデータを取り出せる。  
+```html
+    <iframe src="/cxss/iframe" style="display:none"></iframe>
+</div>
+<script>
+
+    document.getElementById("wmUrl").textContent = location.origin;
+
+    let showFullResponse = function (btn) {
+        $("#msgModal").modal();
+        return false;
+    };
+
+    let debuggerEnabled = false;
+    let toggleDebugging = function () {
+        debuggerEnabled = !debuggerEnabled;
+        if (debuggerEnabled) {
+            document.getElementById("debugToglrBtn").className = "text-muted";
+        } else {
+            document.getElementById("debugToglrBtn").className = "text-danger";
+        }
+    };
+
+    window.onmessage = function (evt) {
+        if (debuggerEnabled) {
+            debugger;
+        }
+
+        try {
+
+            let msgObj = evt.data;
+            let msg = "Welcome <b>" + msgObj.payload + "</b>!!";
+            document.getElementById("msgboard").innerHTML = msg;
+
+            //Data flow info
+            document.getElementById("srcvalue").textContent = msgObj.payload;
+            document.getElementById("valuetosink").textContent = msg;
+            document.getElementById("fullMsg").textContent = JSON.stringify(msgObj, null, "\t");
+
+        } catch (e) {
+            console.log(e);
+        }
+    };
+
+    window.onload = function () {
+        processPayload();
+    };
+
+    let processPayload = function () {
+
+        let payload = document.getElementById('payloadbox').value;
+        frames[0].postMessage(payload, location.origin);
+    };
+
+</script>
+```
+`/cxss/iframe`  
+`frames[0].postMessage(payload, location.origin);`から送信されてきた値を`{"payload": evt.data}`としてJSON形式に加工して、親Windowに`postMessage`で送信し返している。  
+```html
+<html>
+<body>
+    <script>
+        window.onmessage = function (evt) {
+            var msg = evt.data;
+            //console.log(evt);
+            window.parent.postMessage({
+                "payload": msg
+            },
+                location.origin);
+        };
+    </script>
+</body>
+</html>
+```
+### 6
 **Vunlerable code**  
 ```html
 
 ```
-### 2
+### 7
+**Vunlerable code**  
+```html
+
+```
+### 8
+**Vunlerable code**  
+```html
+
+```
+### 9
+**Vunlerable code**  
+```html
+
+```
+### 10
 **Vunlerable code**  
 ```html
 
