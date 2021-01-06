@@ -1875,15 +1875,67 @@ iframeで`/cxss/iframe`のHTMLを読みこむ。
 </body>
 </html>
 ```
-### 6
+### 6 (localStorage.setItem() -> localStorage.getItem() -> .innerHTML)
+`<img src=/ onerror=alert(1)>`  
 **Vunlerable code**  
+localStorageを使ってデータを保存している。  
+![image](https://user-images.githubusercontent.com/56021519/103765718-ff957700-5060-11eb-8492-3607eaa6a9ab.png)  
+`localStorage.setItem("payload", payload);`でデータをlocalStorageに保存して、`let payloadValue = localStorage.getItem("payload");`でデータを取り出している。  
 ```html
+<script>
 
+    let debuggerEnabled = false;
+    let toggleDebugging = function () {
+        debuggerEnabled = !debuggerEnabled;
+        if (debuggerEnabled) {
+            document.getElementById("debugToglrBtn").className = "text-muted";
+        } else {
+            document.getElementById("debugToglrBtn").className = "text-danger";
+        }
+    };
+
+    window.onload = function () {
+        processPayload();
+    };
+
+    let processPayload = function () {
+        let payload = document.getElementById('payloadbox').value;
+        localStorage.setItem("payload", payload);
+        readPayload();
+    };
+
+    let readPayload = function () {
+
+        if (debuggerEnabled) {
+            debugger;
+        }
+
+        let payloadValue = localStorage.getItem("payload");
+        let msg = "Welcome <b>" + payloadValue + "</b>!!";
+        document.getElementById("msgboard").innerHTML = msg;
+
+        //Data flow info
+        document.getElementById("srcvalue").textContent = payloadValue;
+        document.getElementById("valuetosink").textContent = msg;
+    };
+
+</script>
 ```
-### 7
+### 7 (inject href in <a tag with onmouseover=alert(1))
+`<`,`>`が`replace`でエスケープされてる。`aaa`を入力すると、`<a href='#user=aaa'>Welcome</a>!! `が出力される。  
+`>`で閉じることはできないけど、`onmouseover`とかでインラインスクリプトを入れればOK   
+`<a href='#user=a' onmouseover='javascript:alert(1);'>Welcome</a>!! `  
 **Vunlerable code**  
 ```html
+    let hash = location.hash;
+    let hashValueToUse = hash.length > 1 ? unescape(hash.substr(1)) : hash;
+    hashValueToUse = hashValueToUse.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    let msg = "<a href='#user=" + hashValueToUse + "'>Welcome</a>!!";
+    document.getElementById("msgboard").innerHTML = msg;
 
+    //Data flow info
+    document.getElementById("srcvalue").textContent = hash;
+    document.getElementById("valuetosink").textContent = msg;
 ```
 ### 8
 **Vunlerable code**  
