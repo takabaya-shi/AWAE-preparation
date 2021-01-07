@@ -13,6 +13,7 @@
   - [JSON Injection](#json-injection)
   - [CSS Injection](#css-injection)
   - [XSS with image (ex. SVG mbep jpg)](#xss-with-image-ex-svg-mbep-jpg)
+  - [JSONP callback](#jsonp-callback)
 - [writeup](#writeup)
   - [Reflect / JSON Injection (CONFidence 2020 Teaser)](#reflect--json-injection-confidence-2020-teaser)
   - [CSP nonce strict-dynamic / DOM clobbering / BaseTag Injection (SECCON beginnres 2020 somen)](#csp-nonce-strict-dynamic--dom-clobbering--basetag-injection-seccon-beginnres-2020-somen)
