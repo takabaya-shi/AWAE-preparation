@@ -449,6 +449,17 @@ title
 ```txt
 result: id,title,filename,parent
 ```
+```txt
+// 指定したDB、テーブルの持つカラム数を表示
+SELECT count(distinct column_name) from  information_schema.columns where table_schema like 'db44364' AND table_name like 'demo';
+SELECT COUNT(*) from  information_schema.columns where table_schema like 'db44364' AND table_name like 'demo'
+
+// 指定したDBのテーブル数を表示
+SELECT table_name from  information_schema.columns where table_schema like 'db44364' group by table_name
+
+// 指定したDB、テーブルの持つカラムを結合して1行で表示
+SELECT group_concat(column_name) from  information_schema.columns where table_schema like 'db44364' AND table_name like 'demo'
+```
 # メモ
 https://www.hamayanhamayan.com/entry/2020/06/25/222618  
 https://graneed.hatenablog.com/entry/2019/12/29/115100#SQL-Injection  
