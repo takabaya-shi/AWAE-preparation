@@ -107,7 +107,9 @@ Union queryも試したがダメっぽい？
 0 union select 1 -- -
 internal server error
 ```
-以下のようにhttps://sqliteonline.com/で実験すると、`id=0`として失敗させたときは`union select`が取り出されると思ったんだけど……  
+以下のように  
+https://sqliteonline.com/  
+で実験すると、`id=0`として失敗させたときは`union select`が取り出されると思ったんだけど……  
 ![image](https://user-images.githubusercontent.com/56021519/103920720-f7b6ff00-5154-11eb-86d9-fabb4b5fad14.png)  
 ![image](https://user-images.githubusercontent.com/56021519/103920784-0bfafc00-5155-11eb-9313-b2415a015930.png)  
 以下の単純な全探索のBlindで`@@version`を試している。これでバージョンがゲットできたので、DBはMySQLとわかる。  
