@@ -25,6 +25,8 @@
     - [login bypass (Irish-Name-Repo 2)](#login-bypass-irish-name-repo-2)
     - [login bypass (Irish-Name-Repo 3)](#login-bypass-irish-name-repo-3)
     - [SQLite / Union query (Empire1)](#sqlite--union-query-empire1)
+  - [ksnctf](#ksnctf)
+    - [blind Injection / SQLite3 (Login 6)](#blind-injection--sqlite3-login-6)
   - [wargame.kr](#wargamekr)
     - [inject into order by / blind Injection (dbms335)](#inject-into-order-by--blind-injection-dbms335)
   - [hacker101 CTF](#hacker101-ctf)
