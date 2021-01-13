@@ -34,6 +34,10 @@
       - [flag0 (Union query)](#flag0-union-query)
     - [flag1 (blind Injection)](#flag1-blind-injection)
     - [flag2 (Stack query / OS Command Injection)](#flag2-stack-query--os-command-injection)
+  - [Micro-CMS v2](#micro-cms-v2)
+    - [login bypass "' union select '1" "1" /  (flag0)](#login-bypass--union-select-1-1---flag0)
+    - [HTTP Verb Tampering (flag1)](#http-verb-tampering-flag1)
+    - [MySQL / blind Injection / identify password (flag2)](#mysql--blind-injection--identify-password-flag2)
 - [メモ](#%E3%83%A1%E3%83%A2)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
