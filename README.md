@@ -72,6 +72,9 @@ https://ctftime.org/task/12375
 https://ndb796.tistory.com/332  
 第二引数に`true`とするとバイナリ形式の出力結果になるらしくて、`mysql_query("select * from users where password='".md5($pass,true)."');`のような実装になっている場合、ハッシュ化したバイナリの中に`'='`という部分が出現すれば、`password='aaa'='bbb'`となってこれはTrueとなる。  
 `7201387`をハッシュかしたら`'='`というパターンが中に含まれている！  
+- `opcache`  
+https://www.sousse.love/post/carthagods-3kctf2020/index.html  
+phpinfoが見れて、`opcache.file_cache = /var/www/cache/`となってopchacheがセットされていれば、webroot上に存在する`flag.php`には`/var/www/cache/[system_id]/var/www/html/flag.php.bin`でアクセスできる。このsystem idは`python ./system_id_scraper.py http://carthagods.3k.ctf.to:8039/info.php`みたいにしてこのスクリプトを使って特定できるらしい？？  
 
 ### Command Injection
 `system`,`exec`,`create_function`
