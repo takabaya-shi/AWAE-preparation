@@ -9,6 +9,8 @@
     - [Java Deserialization](#java-deserialization)
     - [PHP Deserialization](#php-deserialization)
     - [PHP XXE Injection](#php-xxe-injection)
+    - [PHP Type Juggling](#php-type-juggling)
+    - [PHP XSS](#php-xss)
     - [Command Injection](#command-injection)
 - [Vuln](#vuln)
   - [sample](#sample)
