@@ -47,15 +47,30 @@ Injection系はevalを探す。
 `eval`,`eval(`,`html`,`escape`,`new Buffer(`,`unserialize`,`node-serialize`,`deserialize`,`new Function`   
 ### Java Deserialization
 `readObject`,`readExternal`,`readUnshared`,`XStream`,`AC ED`で始まるバイトストリーム(Serializeされたことを示すマジックナンバー)、`ObjectInputStream`,`ObjectOutputStream`,`defaultReadObject`,`Apache Commons Collections`   
-### PHP Deserialization
+### PHP
+#### PHP Deserialization
 `unserialize`,`__construct`,`__destruct`,`__wakeup`,`__toString`   
 PHAR形式のファイルをアップロードできてその場所が特定できるなら(ファイル名も)、`file()`,`file_exist()`,`file_get_contents()`,`fopen()`,`rename()`,`unlink()`,`include()`。`form`とかで入力がどこにあるのかもわかるかも。PHARファイルの保存先のパスを指定するための変数`path`があるかも。   
-### PHP XXE Injection
+#### PHP XXE Injection
 変数名`xml`,`loadXML`,`simplexml_load_string`,`svg`
-### PHP Type Juggling
+#### PHP Type Juggling
 `==`,`!=`,`eval`  
-### PHP XSS
+#### PHP XSS
 `$_SERVER['PHP_SELF']`  
+#### その他
+https://www.hamayanhamayan.com/entry/2020/08/09/193357  
+- `ob_start()`  
+`ob_start()`で`ob_end_clean();`までの出力をバッファに入力しておける。これはfatal errorを発生させることで中止できるらしい。  
+`O:11:"Traversable":0:{}`をunserializeさせることで、抽象クラスを作ろうとしてエラーを出せるらしい。  
+https://wrecktheline.com/writeups/3kctf-2020/#xsser  
+- `if ($_GET['a'] !== $_GET['b'] && hash("sha256", $_GET['a']) === hash("sha256", $_GET['b']))`  
+https://ctftime.org/task/12375  
+`?a[0]=0&b[1]=0`もしくは`?a[]=0&b[]=1`でこの条件に入れるらしい？？？  
+- `md5($var1, true)`  
+https://ndb796.tistory.com/332  
+第二引数に`true`とするとバイナリ形式の出力結果になるらしくて、`mysql_query("select * from users where password='".md5($pass,true)."');`のような実装になっている場合、ハッシュ化したバイナリの中に`'='`という部分が出現すれば、`password='aaa'='bbb'`となってこれはTrueとなる。  
+`7201387`をハッシュかしたら`'='`というパターンが中に含まれている！  
+
 ### Command Injection
 `system`,`exec`,`create_function`
 # Vuln
