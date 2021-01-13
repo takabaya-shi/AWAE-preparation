@@ -11,6 +11,11 @@
   - [POP chain](#pop-chain)
     - [__toString (SQL Injection)](#__tostring-sql-injection)
     - [__destruct (webshell)](#__destruct-webshell)
+- [writeup](#writeup)
+  - [\_\_destruct / SQL Injection (websec level04)](#%5C_%5C_destruct--sql-injection-websec-level04)
+  - [](#)
+  - [](#-1)
+  - [](#-2)
 - [参考](#%E5%8F%82%E8%80%83)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
