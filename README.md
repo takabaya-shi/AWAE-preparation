@@ -59,6 +59,10 @@ PHAR形式のファイルをアップロードできてその場所が特定で�
 `==`,`!=`,`eval`  
 #### PHP XSS
 `$_SERVER['PHP_SELF']`  
+#### PHP XXE
+`file_get_contents`,`loadXML`  
+#### PHP Directory Traversal
+`file_get_contetns`(外部のURLも可)  
 #### その他
 https://www.hamayanhamayan.com/entry/2020/08/09/193357  
 - `ob_start()`  
