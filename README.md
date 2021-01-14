@@ -61,14 +61,19 @@ PHAR形式のファイルをアップロードできてその場所が特定で�
 #### PHP Type Juggling
 `==`,`!=`,`eval`,`strcasecmp`,`strcmp`  
 #### PHP XSS
-`$_SERVER['PHP_SELF']`,`preg_replace`  
+`$_SERVER['PHP_SELF']`,`preg_replace`,`urldecode`(`$_GET[]で既にdecodeされるので不要`),`htmlspecialchars`(引数無しは`'`をエスケープしない)  
+https://vulners.com/myhack58/MYHACK58:62201234463  
+https://qiita.com/addictionwhite/items/4e9c9cc4570c0bcaa656  
 #### PHP XXE
 `file_get_contents`,`loadXML`,`simplexml_load_string`  
 #### PHP Directory Traversal
 `file_get_contetns`(外部のURLも可)  
 #### PHP Command Injection
 `backtick演算子`(バッククォート),`shell_exec`,`exec`,`passthru`,`system`,`pcntl_exec`,`popen`,`proc_open`,`eval`  
-`preg_replace`  
+`preg_replace`,`escapeshellcmd`,`escapeshellarg`,`filter_var`  
+https://github.com/kacperszurek/exploits/blob/master/GitList/exploit-bypass-php-escapeshellarg-escapeshellcmd.md  
+https://gist.github.com/Zenexer/40d02da5e07f151adeaeeaa11af9ab36  
+
 以下でいろいろRCEできるときにPHPでいろいろできる。  
 - **RCE** `system("ls -la ./");`, `<?='cat /flag';`  
 - **ls** `foreach(new DirectoryIterator('glob:///*') as $f){ echo $f."\n"; }`,`print_r(scandir('./'));`,`var_dump(scandir("/var/www/html"));`  
