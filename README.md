@@ -12,6 +12,8 @@
       - [PHP XXE Injection](#php-xxe-injection)
       - [PHP Type Juggling](#php-type-juggling)
       - [PHP XSS](#php-xss)
+      - [PHP XXE](#php-xxe)
+      - [PHP Directory Traversal](#php-directory-traversal)
       - [その他](#%E3%81%9D%E3%81%AE%E4%BB%96)
     - [Command Injection](#command-injection)
 - [Vuln](#vuln)
