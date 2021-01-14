@@ -66,6 +66,8 @@ https://vulners.com/myhack58/MYHACK58:62201234463
 https://qiita.com/addictionwhite/items/4e9c9cc4570c0bcaa656  
 #### PHP XXE
 `file_get_contents`,`loadXML`,`simplexml_load_string`  
+#### PHP SQL Injection
+`mysql_real_escape_string`(`mysqli_real_escape_string`は安全?)  
 #### PHP Directory Traversal
 `file_get_contetns`(外部のURLも可),`include`  
 #### PHP Command Injection
