@@ -2,15 +2,11 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**
 
+- [概要](#%E6%A6%82%E8%A6%81)
 - [writeup](#writeup)
   - [bypass filter "." with "%E3%80%82" (hackerone)](#bypass-filter--with--hackerone)
-  - [](#)
-  - [](#-1)
-  - [](#-2)
-  - [](#-3)
-  - [](#-4)
-  - [](#-5)
-- [メモ](#%E3%83%A1%E3%83%A2)
+  - [python / bypass nginx WAF with "?" / "/proc/self/maps" (ångstromCTF 2020 - LeetTube)](#python--bypass-nginx-waf-with---procselfmaps-%C3%A5ngstromctf-2020---leettube)
+  - [XXE (SHARKY CTF 2020 XXEXTERNALXX)](#xxe-sharky-ctf-2020-xxexternalxx)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 # 概要
