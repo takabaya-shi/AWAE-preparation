@@ -10,7 +10,10 @@
   - [LFI with /var/lib/php/sessions/sess\_\<PHPSESSID\> / upload base64 webshell "php://filter/convert.base64-decode/resource=" (Meepwn CTF Quals 2018 Mapl Story)](#lfi-with-varlibphpsessionssess%5C_%5Cphpsessid%5C--upload-base64-webshell-phpfilterconvertbase64-decoderesource-meepwn-ctf-quals-2018-mapl-story)
   - [convert flag to image file with "php：//filter/convert.iconv.IBM1154%2fUTF-32BE/resource" (Insomni'hack teaser 2018 - Cool Storage Service)](#convert-flag-to-image-file-with-phpfilterconverticonvibm1154utf-32beresource-insomnihack-teaser-2018---cool-storage-service)
   - [php://filter/convert.iconv.UTF8.IBM1154 (HITCON CTF 2018 - One Line PHP Challenge)](#phpfilterconverticonvutf8ibm1154-hitcon-ctf-2018---one-line-php-challenge)
+  - [Log Poisoning / "/proc/self/fd/7" (Byte Bandits CTF 2018 R3M3MB3R)](#log-poisoning--procselffd7-byte-bandits-ctf-2018-r3m3mb3r)
   - [](#)
+  - [](#-1)
+  - [](#-2)
 - [メモ](#%E3%83%A1%E3%83%A2)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
