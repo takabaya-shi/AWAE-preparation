@@ -67,7 +67,7 @@ https://qiita.com/addictionwhite/items/4e9c9cc4570c0bcaa656
 #### PHP XXE
 `file_get_contents`,`loadXML`,`simplexml_load_string`  
 #### PHP Directory Traversal
-`file_get_contetns`(外部のURLも可)  
+`file_get_contetns`(外部のURLも可),`include`  
 #### PHP Command Injection
 `backtick演算子`(バッククォート),`shell_exec`,`exec`,`passthru`,`system`,`pcntl_exec`,`popen`,`proc_open`,`eval`  
 `preg_replace`,`escapeshellcmd`,`escapeshellarg`,`filter_var`  
