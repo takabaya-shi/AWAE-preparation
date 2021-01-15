@@ -1415,6 +1415,8 @@ $ curl -b cookie "http://host/?m=upload&url=phar:///var/www/data/$MD5_IP/&lucky=
 https://github.com/BlackFan/ctfs/tree/master/volgactf_2018_quals/forgotten_task  
 - **entrypoint**  
 `http://forgotten-task.quals.2018.volgactf.ru/laravel../.env`でalias traversalという手法が使えるらしい。どうやらサーバー側でのaliasの設定が良くないっぽい？(`/i/`を`/data/w3/images/`に変換するエイリアスで、`/i../`を`/data/w3/`と変換するミス？)  
+https://qiita.com/no1zy_sec/items/e541f1c838874ff400bb  
+ここにわかりやすい説明かいてた。  
 これでLaravelのAPP_KEYを取得してセッションデータをヤバいやつにAPP_KEYで署名する以下のスクリプトを実行するらしい。  
 よくわからん  
 ```txt
