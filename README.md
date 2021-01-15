@@ -60,7 +60,12 @@ Injection系はevalを探す。
 記号とかが使えないときは`<?=include"$_COOKIE[0]`でBase64エンコードされたwebshellを`php://filter/convert.base64-decode/resource=path/to/file`でデコードしながら読み込むことでコマンド実行できる！  
 #### PHP Deserialization
 `unserialize`,`__construct`,`__destruct`,`__wakeup`,`__toString`   
-PHAR形式のファイルをアップロードできてその場所が特定できるなら(ファイル名も)、`file()`,`file_exist()`,`file_get_contents()`,`fopen()`,`rename()`,`unlink()`,`include()`。`form`とかで入力がどこにあるのかもわかるかも。PHARファイルの保存先のパスを指定するための変数`path`があるかも。   
+`unserialize`してる箇所があってもその入力に必ず`serlaize`後のデータが入るなら脆弱ではない。  
+PHAR形式のファイルをアップロードできてその場所が特定できるなら(ファイル名も)、`file()`,`file_exists()`,`file_get_contents()`,`fopen()`,`rename()`,`unlink()`,`include()`,`getimagesize()`。  
+`file_exists`はファイルだけなじゃくてディレクトリもTrueを返す。  
+変数名`form`とかで入力がどこにあるのかもわかるかも。PHARファイルの保存先のパスを指定するための変数`path`があるかも。   
+`addFile($name,$value)`メソッドの中で`?data[a]=@/etc/passwd`の`/etc/passwd`を`file_get_contents($value);`で読み込んでたりしてた。  
+- monolog POP gadgestがPHPGCCにある。よく見かける気がする。  
 #### PHP XXE Injection
 変数名`xml`,`loadXML`,`simplexml_load_string`,`svg`
 #### PHP Type Juggling
