@@ -470,6 +470,7 @@ nginxのconfファイルの以下の`fastcgi-pass`でlocalhostの9000ポート�
 受講は2月の春休み開始直後から1カ月でとりたい！それまでにいろいろ計画的に勉強するべし！
 XXE,SSTI,C#関係、XSS関係がイマイチ。まだ具体例が少なすぎるからもっと増やす！   
 あとある程度理解したらHTBで腕試すのがよさそう？？   
+`sudo service apache2 start`  
 
 # ToDO
 https://github.com/wectf/2020   
