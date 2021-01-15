@@ -114,6 +114,10 @@ https://github.com/w181496/Web-CTF-Cheatsheet#mysql
 `"'whoami'"@example.com`とかでCommand Injectionにつながるかも。`'||1#@i.i`も通すのでSQL Injectionできるかも。  
 - `preg_replace`  
 １回しかreplaceしないので`scrscriptipt`とかは`script`になってこれは通す。  
+- `\x00lambda_%d`  
+https://www.cnblogs.com/leixiao-/p/9818602.html  
+``$MY = create_function("","die(`cat flag.php`);");``みたいにラムダ関数が定義されているとき、`\x00lambda_49()`みたいにすると同じラムダ関数を実行できるらしい？？  
+数字は頑張って探す必要がありそう。  
 ### Command Injection
 `system`,`exec`,`create_function`
 # Vuln
