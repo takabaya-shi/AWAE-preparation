@@ -11,9 +11,9 @@
   - [convert flag to image file with "php：//filter/convert.iconv.IBM1154%2fUTF-32BE/resource" (Insomni'hack teaser 2018 - Cool Storage Service)](#convert-flag-to-image-file-with-phpfilterconverticonvibm1154utf-32beresource-insomnihack-teaser-2018---cool-storage-service)
   - [php://filter/convert.iconv.UTF8.IBM1154 (HITCON CTF 2018 - One Line PHP Challenge)](#phpfilterconverticonvutf8ibm1154-hitcon-ctf-2018---one-line-php-challenge)
   - [Log Poisoning / "/proc/self/fd/7" (Byte Bandits CTF 2018 R3M3MB3R)](#log-poisoning--procselffd7-byte-bandits-ctf-2018-r3m3mb3r)
+  - [nginx.conf alias traversal / get SECRET_KEY from Django's settings.py (inshack-2019 unchained)](#nginxconf-alias-traversal--get-secret_key-from-djangos-settingspy-inshack-2019-unchained)
   - [](#)
   - [](#-1)
-  - [](#-2)
 - [メモ](#%E3%83%A1%E3%83%A2)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
