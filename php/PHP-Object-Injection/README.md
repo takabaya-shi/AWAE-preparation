@@ -2255,11 +2255,14 @@ $phar->stopBuffering();
 getimagesize('phar://phar.phar/test.txt');
 ?>
 ```
-## (AceBear CTF2019 web 100)
+## ZendFramework / phpggc (AceBear CTF2019 web 100)
 https://ctf.yeuchimse.com/acebear-security-contest-2019-duudududduduudstore-image-service-best-band-of-asia-web-100/  
 https://movrment.blogspot.com/2019/04/acebear-ctf-2019-web-category.html  
 - **entrypoint**  
+ZendFrameworkのgadgetを使うやつ。問題設定がよくわからん…  
+https://github.com/ambionics/phpggc  
 - **payload**  
+???  
 ##
 - **entrypoint**  
 - **payload**  
