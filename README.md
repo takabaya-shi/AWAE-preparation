@@ -47,6 +47,8 @@
 Injection系はevalを探す。   
 見つかれば、ユーザーの入力をエスケープするような部分を`html`,`escape`とかのキーワードで検索して見つける。   
 ## キーワード
+### MySQL
+- `SELECT 'Ä'='a'`はTrueとなる。  
 ### Node.js
 `eval`,`eval(`,`html`,`escape`,`new Buffer(`,`unserialize`,`node-serialize`,`deserialize`,`new Function`   
 ### Java Deserialization
@@ -62,6 +64,8 @@ PHAR形式のファイルをアップロードできてその場所が特定で�
 `file_exists`はファイルだけなじゃくてディレクトリもTrueを返す。  
 変数名`form`とかで入力がどこにあるのかもわかるかも。PHARファイルの保存先のパスを指定するための変数`path`があるかも。   
 `addFile($name,$value)`メソッドの中で`?data[a]=@/etc/passwd`の`/etc/passwd`を`file_get_contents($value);`で読み込んでたりしてた。  
+  
+PHP 5.6.25 and 7.x before 7.0.10では`__wakeup()`を呼び出さず`__destruct`を呼び出せるらしい。   
 - monolog POP gadgestがPHPGCCにある。よく見かける気がする。  
 #### PHP XXE Injection
 変数名`xml`,`loadXML`,`simplexml_load_string`,`svg`
@@ -74,7 +78,7 @@ https://qiita.com/addictionwhite/items/4e9c9cc4570c0bcaa656
 #### PHP XXE
 `file_get_contents`,`loadXML`,`simplexml_load_string`  
 #### PHP SQL Injection
-`mysql_real_escape_string`(`mysqli_real_escape_string`は安全?)  
+`mysql_real_escape_string`(`mysqli_real_escape_string`は安全?),`mysql_escape_string`(`%`,`_`は通す)  
 #### PHP Directory Traversal
 `file_get_contetns`(外部のURLも可),`include`  
 #### PHP Command Injection
