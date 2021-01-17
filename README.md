@@ -82,6 +82,8 @@ https://qiita.com/addictionwhite/items/4e9c9cc4570c0bcaa656
 `mysql_real_escape_string`(`mysqli_real_escape_string`は安全?),`mysql_escape_string`(`%`,`_`は通す)  
 #### PHP Directory Traversal
 `file_get_contetns`(外部のURLも可),`include`  
+変数名`$path`,`$url`,`$image`  
+関数名`fetch`が含まれているものは外部からのurl入力したURLにアクセスしてることが多い？(pharの問題で複数)  
 #### PHP Command Injection
 `backtick演算子`(バッククォート),`shell_exec`,`exec`,`passthru`,`system`,`pcntl_exec`,`popen`,`proc_open`,`eval`  
 `preg_replace`,`escapeshellcmd`,`escapeshellarg`,`filter_var`  
