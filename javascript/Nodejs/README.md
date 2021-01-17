@@ -7,6 +7,7 @@
   - [dustjs-helper](#dustjs-helper)
   - [node-serialize (Celestial)](#node-serialize-celestial)
   - [node-serialize (temple of doom)](#node-serialize-temple-of-doom)
+  - [MySQL "max_allowed_packet"/ PostgreSQL RCE "pg@2.x ~ pg@7.1.0" / (hitcon2017 SQL so Hard)](#mysql-max_allowed_packet-postgresql-rce-pg2x--pg710--hitcon2017-sql-so-hard)
 - [サンプルアプリ](#%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%82%A2%E3%83%97%E3%83%AA)
   - [progate](#progate)
 - [フォルダ構成](#%E3%83%95%E3%82%A9%E3%83%AB%E3%83%80%E6%A7%8B%E6%88%90)
