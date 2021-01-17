@@ -4,11 +4,11 @@
 
 - [writeup](#writeup)
   - [PHP "preg_match" with "%0a" (hitcon2015 babyfirst)](#php-preg_match-with--hitcon2015-babyfirst)
-  - [PHP "exec(cmd) len(cmd)<= 5"(Hitcon CTF 2017 Quals: Baby First Revenge)](#php-execcmd-lencmd-5hitcon-ctf-2017-quals-baby-first-revenge)
   - [](#)
   - [](#-1)
   - [](#-2)
   - [](#-3)
+  - [](#-4)
 - [メモ](#%E3%83%A1%E3%83%A2)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -64,6 +64,7 @@ http://localhost/
 &args[6]=846465263%0a
 ```
 ## PHP "exec(cmd) len(cmd)<= 5"(Hitcon CTF 2017 Quals: Baby First Revenge)
+https://github.com/orangetw/My-CTF-Web-Challenges#babyfirst-revenge  
 https://infosec.rm-it.de/2017/11/06/hitcon-2017-ctf-babyfirst-revenge/  
 https://hack.more.systems/writeup/2017/11/06/hitconctf-babyfirstrevenge/  
 - **entrypoint**  
