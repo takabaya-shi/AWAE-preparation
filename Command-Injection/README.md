@@ -20,7 +20,7 @@ https://github.com/pwning/public-writeup/blob/master/hitcon2015/web100-babyfirst
 - **entrypoint**  
 以下のソースが与えられる。  
 `if ( !preg_match('/^\w+$/', $args[$i]) )`で行頭から行末までが`\w`(abcdefghijklmnopqrstuvwxyz0123456789_)の時に`/bin/orange`コマンドと結合する。  
-`preg_match`の`^ $`では改行文字`%0a`を入れると「行頭から改行文字まで」に範囲が変わってしまって、改行文字以降はチェックしなくなる！  
+`preg_match`の`^ $`では改行文字`%0a`を入れると「行頭から改行文字まで」に範囲が変わってしまって、改行文字はOKとなる！本来は改行文字も禁止すべきなのに…ってこと！？  
 https://qiita.com/tadsan/items/81b2925b3ed03ae6b7e0  
 
 ```php
