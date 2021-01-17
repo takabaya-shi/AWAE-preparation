@@ -4,11 +4,11 @@
 
 - [writeup](#writeup)
   - [PHP "preg_match" with "%0a" (hitcon2015 babyfirst)](#php-preg_match-with--hitcon2015-babyfirst)
+  - [PHP "exec(cmd) len(cmd)<= 5"(Hitcon CTF 2017 Quals: Baby First Revenge)](#php-execcmd-lencmd-5hitcon-ctf-2017-quals-baby-first-revenge)
   - [](#)
   - [](#-1)
   - [](#-2)
   - [](#-3)
-  - [](#-4)
 - [メモ](#%E3%83%A1%E3%83%A2)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
