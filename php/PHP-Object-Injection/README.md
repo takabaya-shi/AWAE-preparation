@@ -24,8 +24,8 @@
   - [Vanilla Forums ImportController index file_exists Unserialize Remote Code Execution](#vanilla-forums-importcontroller-index-file_exists-unserialize-remote-code-execution)
   - [phar / getimagesize / custom gadget (AceBear CTF2019 best band of asia)](#phar--getimagesize--custom-gadget-acebear-ctf2019-best-band-of-asia)
   - [ZendFramework / phpggc (AceBear CTF2019 web 100)](#zendframework--phpggc-acebear-ctf2019-web-100)
+  - [MySQL UTF-8 / don't invoke \_\_wakeup() (hitcon2016 babytrick)](#mysql-utf-8--dont-invoke-%5C_%5C_wakeup-hitcon2016-babytrick)
   - [](#)
-  - [](#-1)
 - [参考](#%E5%8F%82%E8%80%83)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
