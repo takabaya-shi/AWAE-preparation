@@ -14,11 +14,11 @@
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # writeup
-## 
+## ASP.NET / bypass filter with .NET request validation (hitcon2019 buggy.net)
 https://github.com/orangetw/My-CTF-Web-Challenges#buggy.net  
 https://ctftime.org/writeup/16802  
 - **entrypoint**  
-以下のソースが与えられる。  
+以下のソース`default.aspx`が与えられる。  
 明らかにLFIできそうだけど`Request.Form["filename"].Contains("..")`でそれを検知している。  
 ```aspx
 bool isBad = false;
