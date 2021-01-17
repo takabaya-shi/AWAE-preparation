@@ -3,12 +3,12 @@
 **Table of Contents**
 
 - [writeup](#writeup)
+  - [ASP.NET / bypass filter with .NET request validation (hitcon2019 buggy.net)](#aspnet--bypass-filter-with-net-request-validation-hitcon2019-buggynet)
   - [](#)
   - [](#-1)
   - [](#-2)
   - [](#-3)
   - [](#-4)
-  - [](#-5)
 - [memo](#memo)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
