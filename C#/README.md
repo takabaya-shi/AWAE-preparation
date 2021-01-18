@@ -4,11 +4,11 @@
 
 - [writeup](#writeup)
   - [ASP.NET / bypass filter with .NET request validation (hitcon2019 buggy.net)](#aspnet--bypass-filter-with-net-request-validation-hitcon2019-buggynet)
+  - [ASP.NET / SSI / Viewstate serialize / ysoserial.net (why so serials?)](#aspnet--ssi--viewstate-serialize--ysoserialnet-why-so-serials)
   - [](#)
   - [](#-1)
   - [](#-2)
   - [](#-3)
-  - [](#-4)
 - [memo](#memo)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
