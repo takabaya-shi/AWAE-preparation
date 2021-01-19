@@ -7,6 +7,8 @@
   - [文字列のDeserialize](#%E6%96%87%E5%AD%97%E5%88%97%E3%81%AEdeserialize)
   - [脆弱なクラス](#%E8%84%86%E5%BC%B1%E3%81%AA%E3%82%AF%E3%83%A9%E3%82%B9)
   - [gadget](#gadget)
+- [writeup](#writeup)
+  - [Deserialize readObject() to RCE / craft UNC SMB-Server's path (CVE-2018-16364)](#deserialize-readobject-to-rce--craft-unc-smb-servers-path-cve-2018-16364)
 - [DeserLab](#deserlab)
   - [setup](#setup)
   - [serializedデータの抽出](#serialized%E3%83%87%E3%83%BC%E3%82%BF%E3%81%AE%E6%8A%BD%E5%87%BA)
