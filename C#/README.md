@@ -12,7 +12,94 @@
 - [memo](#memo)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
+# Deserialization
+## XmlSerialize
+https://ivan1ee.gitbook.io/-netdeserialize/fan-xu-lie-hua-lou-dong-xi-lie/1xmlserializer-fan-xu-lie-hua-lou-dong  
+https://paper.seebug.org/365/  
+`XmlSerializer`を使ってオブジェクトをシリアライズできる！メソッドまではシリアライズできず、シリアライズできるのは値だけ。  
+`XmlSerializer serializers = new XmlSerializer(typeof(TestClass))`でTestClassのタイプを引数にとって`XmlSerializer`のインスタンスを作成する。  
+`serializers.Serialize(writer, testClass);`でTextWriterクラスのインスタンス(ファイルの中身を読み込んだもの)とシリアライズしたいオブジェクトのインスタンスを引数にとってシリアライズする。  
+` new XmlSerializer(testClass.GetType());`のように、全てのオブジェクトが継承しているObjectクラスで定義された`GetType()`メソッドを使ってもよい。  
+また、`new XmlSerializer(Type.GetType("TestClass"));`のように文字列を指定してもできる。この場合に文字列を攻撃者が制御できる場合、脆弱性につながる。  
+```C
+using System.IO;
+using System.Diagnostics;
+using System.Xml.Serialization;
 
+public class Hello{
+    public static void Main(){        
+        TestClass testClass = new TestClass();
+        testClass.Classname = "test";
+        testClass.Name = "Ivanlee";
+        testClass.Age = 18;
+        
+        FileStream fileStream = File.OpenWrite(@"test.txt");
+        using (TextWriter writer = new StreamWriter(fileStream)){
+            XmlSerializer serializers = new XmlSerializer(typeof(TestClass));
+            serializers.Serialize(writer, testClass);
+        }
+        
+        ProcessStartInfo pInfo = new ProcessStartInfo();
+        pInfo.FileName = "cat";
+        pInfo.Arguments = "test.txt";
+        Process.Start(pInfo);        
+    }
+}
+public class TestClass{
+    private string classname;
+    private string name;
+    private int age;
+    [XmlAttribute]
+    public string Classname { get => classname; set => classname = value; }
+    [XmlElement]
+    public string Name { get => name; set => name = value; }
+    [XmlElement]
+    public int Age { get => age; set => age = value; }
+    
+    public override string ToString(){
+        return base.ToString();
+    }
+
+    public static void ClassMethod(string value){
+        Process.Start(value);
+    }
+}
+```
+```txt
+<?xml version="1.0" encoding="utf-8"?>
+<TestClass xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Classname="test">
+  <Name>Ivanlee</Name>
+  <Age>18</Age>
+</TestClass>
+```
+## ObjectDataProvider ExpandedWrapper
+上のままでもdeserializeの脆弱性を使えば任意のクラスのフィールドとかに値をセットすること自体はできるが、それだけしかできず任意のクラスの任意のメソッドを実行するみたいなことはできない。  
+しかし、`ObjectDataProvider`クラスの`.ObjectInstance`,`.MethodName`,`MethodParameters`フィールドに値を設定した状態でシリアライズすれば、デシリアライズ時にセットした任意のクラスの任意のメソッドを実行してくれるらしい！  
+`ObjectDataProvider`は`.NET`の機能っぽいからPaiza上ではないっぽい？？  
+ただしこのままでは`XmlSerializer`が`.ObjectInstance`のタイプが不定だから(???)エラーとなってシリアル化に失敗する。  
+なので、ExpandedWrapperの拡張属性タイプを使用する必要があるらしい。  
+```C
+            ExpandedWrapper<TestClass, ObjectDataProvider> wrapper = new ExpandedWrapper<TestClass, ObjectDataProvider>();
+            wrapper.ProjectedProperty0 = new ObjectDataProvider();
+            wrapper.ProjectedProperty0.ObjectInstance = new TestClass();
+            wrapper.ProjectedProperty0.MethodName = "ClassMethod";
+            wrapper.ProjectedProperty0.MethodParameters.Add("calc.exe");
+
+            FileStream fileStream = File.OpenWrite(@"D:\Users\OSWE\DNN\Serialized-ExpandedObjectdataprovider.txt");
+            using (TextWriter writer = new StreamWriter(fileStream))
+            {
+                XmlSerializer serializers = new XmlSerializer(typeof(ExpandedWrapper<TestClass, ObjectDataProvider>));
+                serializers.Serialize(writer, wrapper);
+            }
+```
+## Dot Net Nuke (CVE-2017-9822)
+https://paper.seebug.org/365/  
+`XmlSerializer`を使ってCookieの値にXML形式で書き込まれている値をデシリアライズする。  
+ここで、以下のようにCookieのXMLから`<type></type>`の値を読み取ってそれを`new XmlSerializer`の中に入れているので脆弱！  
+```C
+string typename = xmlItem.GetAttribute("type");
+var xser = new XmlSerializer(Type.GetType(typename));
+```
 # writeup
 ## ASP.NET / bypass filter with .NET request validation (hitcon2019 buggy.net)
 https://github.com/orangetw/My-CTF-Web-Challenges#buggy.net  
