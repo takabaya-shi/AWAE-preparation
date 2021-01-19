@@ -2,6 +2,10 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**
 
+- [Deserialization](#deserialization)
+  - [XmlSerialize](#xmlserialize)
+  - [ObjectDataProvider ExpandedWrapper](#objectdataprovider-expandedwrapper)
+  - [Dot Net Nuke (CVE-2017-9822)](#dot-net-nuke-cve-2017-9822)
 - [writeup](#writeup)
   - [ASP.NET / bypass filter with .NET request validation (hitcon2019 buggy.net)](#aspnet--bypass-filter-with-net-request-validation-hitcon2019-buggynet)
   - [ASP.NET / SSI / Viewstate serialize / ysoserial.net (why so serials?)](#aspnet--ssi--viewstate-serialize--ysoserialnet-why-so-serials)
