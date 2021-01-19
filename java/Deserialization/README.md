@@ -408,6 +408,15 @@ root@kali:~/Documents/AWAE/javaDeserialization/ex1# cat Exp.ser | hexdump -C
 000007d7
 root@kali:~/Documents/AWAE/javaDeserialization/ex1# 
 ```
+# writeup
+## Deserialize readObject() to RCE / craft UNC SMB-Server's path (CVE-2018-16364)
+https://blog.jamesotten.com/post/applications-manager-rce/  
+Windows上ではUNCパス`\\ip\path\to\file\test.txt`(実際にローカルにあるわけではないがSMBとかでローカルにあるようにして扱えるパス？)を作成することができるので、ここにPayload仕込んでおけばアクセスしたときにそのPayloadを読み込める。  
+Zoho ManageEngine Applications Manager before build 13740の`CustomFieldsFeedServlet`クラス(?)の`customFieldObject`フィールドに`/servlet/CustomFieldsFeedServlet?customFieldObject=`みたいにして値をセットできるらしくて、そこにパスを書いておけばそのパスを`readObject`でデシリアライズしようとする脆弱性らしい。  
+攻撃者SMBサーバーにysoserialで作成したCommonsCollections1のガジェットを用意しておいて、SMBへのパスをフィールドにセットすればそのガジェットを読み込んでRCE！  
+
+多分JDGuiとかでjarファイルをデコンパイルして発見したのかな？？？  
+
 # DeserLab
 ## setup
 server側は以下でJARファイルを実行して9000ポートで待ち受け。   
