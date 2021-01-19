@@ -488,6 +488,18 @@ XXE,SSTI,C#関係、XSS関係がイマイチ。まだ具体例が少なすぎる
 あとある程度理解したらHTBで腕試すのがよさそう？？   
 `sudo service apache2 start`  
 
+以下程度はある程度大きめのMVCとか読んでどんな感じで実現されてるのか確認した方がよさそう！  
+```txt
+ログイン
+パスワードリセット
+セッション、認証
+ファイルアップロード
+フォーム
+MVC
+ルーティング
+用意されてる入力のサニタイジング
+API
+```
 # ToDO
 https://github.com/wectf/2020   
 https://github.com/TeamHarekaze/HarekazeCTF2019-challenges   
