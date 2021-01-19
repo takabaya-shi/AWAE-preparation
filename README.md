@@ -55,6 +55,7 @@ Injection系はevalを探す。
 `eval`,`eval(`,`html`,`escape`,`new Buffer(`,`unserialize`,`node-serialize`,`deserialize`,`new Function`   
 ### Java Deserialization
 `readObject`,`readExternal`,`readUnshared`,`XStream`,`AC ED`で始まるバイトストリーム(Serializeされたことを示すマジックナンバー)、`ObjectInputStream`,`ObjectOutputStream`,`defaultReadObject`,`Apache Commons Collections`   
+シリアライズされたデータにファイル名が含まれていればそこを`/etc/passwd`とかに変更してファイル改竄。  
 ### ASP.NET 
 `XmlSerializer`,`Deserialize`,`Type.GetType`  
 変数名`DeSerialize`,`hashTable`,`xser`,`xml`  
