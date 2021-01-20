@@ -54,7 +54,7 @@ Injection系はevalを探す。
 ### Node.js
 `eval`,`eval(`,`html`,`escape`,`new Buffer(`,`unserialize`,`node-serialize`,`deserialize`,`new Function`   
 ### Java Deserialization
-`readObject`,`readExternal`,`readUnshared`,`XStream`,`AC ED`で始まるバイトストリーム(Serializeされたことを示すマジックナンバー)、`ObjectInputStream`,`ObjectOutputStream`,`defaultReadObject`,`Apache Commons Collections`   
+`readObject`,`readExternal`,`readUnshared`,`XStream`,`AC ED`で始まるバイトストリーム,`%C2%AC%C3%AD%00%05`のURLエンコード,`rO0AB`のBase64エンコード(Serializeされたことを示すマジックナンバー)、`ObjectInputStream`,`ObjectOutputStream`,`defaultReadObject`,`Apache Commons Collections`   
 シリアライズされたデータにファイル名が含まれていればそこを`/etc/passwd`とかに変更してファイル改竄。  
 ### ASP.NET 
 `XmlSerializer`,`Deserialize`,`Type.GetType`  
