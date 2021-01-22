@@ -1614,3 +1614,5 @@ https://diablohorn.com/2017/09/09/understanding-practicing-java-deserialization-
 DeserLabの解説記事。神。ゴッド。   
 https://github.com/NickstaDB/SerialBrute/   
 ysoserialのどれが刺さるか不明なときに全部試してくれるスクリプト   
+https://qiita.com/yoshi389111/items/63c5b496ea308593bc92  
+Apache Commons Collectionsの脆弱性のExploit手順について詳しく書かれてる。いつかちゃんと理解したい…(´・ω・｀)  
