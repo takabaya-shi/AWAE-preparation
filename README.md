@@ -54,10 +54,18 @@ Injection系はevalを探す。
 ### Node.js
 `eval`,`eval(`,`html`,`escape`,`new Buffer(`,`unserialize`,`node-serialize`,`deserialize`,`new Function`   
 ### Java Deserialization
-`readObject`,`readExternal`,`readUnshared`,`XStream`,`AC ED`で始まるバイトストリーム,`%C2%AC%C3%AD%00%05`のURLエンコード,`rO0AB`のBase64エンコード(Serializeされたことを示すマジックナンバー)、`ObjectInputStream`,`ObjectOutputStream`,`defaultReadObject`,`Apache Commons Collections`   
+Cookie,パラメータの値,VIEWの値などを確認。RMI,JMX。  
+`readObject`,`readExternal`,`readUnshared`,`XStream`,`AC ED`で始まるバイトストリーム,`%C2%AC%C3%AD%00%05`のURLエンコード,`rO0AB`のBase64エンコード(Serializeされたことを示すマジックナンバー)、`ObjectInputStream`,`ObjectOutputStream`,`defaultReadObject`,`org.apache.commons.collections`   
 シリアライズされたデータにファイル名が含まれていればそこを`/etc/passwd`とかに変更してファイル改竄。  
+loginID的なものが含まれていればそこを`0`とか`1`に変更してみる。  
+それでもダメならysoserialのPayloadを試す。  
+`Commons Collections`,`Spring`,`CommonsBeanutils`,`Hibernate1`なら見たことある。  
+WebLogic, WebSphere, JBoss, Jenkins, OpenNMSはApache Commons Collectionsの脆弱性を受けるバージョンが存在する。  
+https://piyolog.hatenadiary.jp/entry/20151110/1447175137  
+https://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/  
 ### ASP.NET 
 `XmlSerializer`,`Deserialize`,`Type.GetType`  
+`Type.GetType(typeName)`のように外部からここに入力を制御できる場合、DotNetNukeみたいに脆弱かも？  
 変数名`DeSerialize`,`hashTable`,`xser`,`xml`  
 ### PHP
 #### webshell
