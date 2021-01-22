@@ -63,6 +63,8 @@ loginID的なものが含まれていればそこを`0`とか`1`に変更して�
 WebLogic, WebSphere, JBoss, Jenkins, OpenNMSはApache Commons Collectionsの脆弱性を受けるバージョンが存在する。  
 https://piyolog.hatenadiary.jp/entry/20151110/1447175137  
 https://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/  
+  
+`Runtime.exec()`は`ls -al`とかなら普通に実行できるけどRever shell Paylaodみたいな複雑なものは、パイプ、リダイレクト、クオーテーションがあると失敗するっぽい。なので配列として渡したり、工夫したりする。  
 ### ASP.NET 
 `XmlSerializer`,`Deserialize`,`Type.GetType`  
 `Type.GetType(typeName)`のように外部からここに入力を制御できる場合、DotNetNukeみたいに脆弱かも？  
