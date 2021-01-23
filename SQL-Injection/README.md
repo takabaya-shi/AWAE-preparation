@@ -41,7 +41,75 @@
 - [メモ](#%E3%83%A1%E3%83%A2)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
+# PostgreSQL
+## largeobject ReverseShell
+`pg_largeObject`というテーブルにデータを書き込んで、それを別のファイルに上書きするみたいな手法があるらしい。  
+WSLにpostgreSQLを入れて検証した。  
+なお、`pg_largeobject`テーブルにはsuperuser権限を持ったUserのpostgresしかアクセスできない。  
+  
+`pg_largeobject`テーブルの構成は以下。  
+```txt
+postgres=# \d pg_largeobject
+         Table "pg_catalog.pg_largeobject"
+ Column |  Type   | Collation | Nullable | Default
+--------+---------+-----------+----------+---------
+ loid   | oid     |           | not null |
+ pageno | integer |           | not null |
+ data   | bytea   |           | not null |
+Indexes:
+    "pg_largeobject_loid_pn_index" UNIQUE, btree (loid, pageno)
 
+```
+デフォルトではlargeObjectは空。  
+```txt
+postgres=# select loid from pg_largeobject;
+ loid
+------
+(0 rows)
+```
+これで作成できるっぽい？  
+このloidを覚えておいて、ここに書き込んでいく。  
+```txt
+postgres=# select lo_creat(-1);
+ lo_creat
+----------
+    16389
+(1 row)
+```
+`ABCD`という文字列をlargeObjectに書き込むにはこうするらしい。第一引数がloid、第二引数がOffset、第三引数が書き込む値。  
+```txt
+postgres=# select lo_put(16389, 0, '\x41424344');
+ lo_put
+--------
+
+(1 row)
+
+postgres=# select lo_put(16389, 4, '\x41424344');
+ lo_put
+--------
+
+(1 row)
+```
+実際に確認してみると以下のように書き込めていることがわかる。  
+```txt
+postgres=# select loid,pageno,data from pg_largeobject;
+ loid  | pageno |        data
+-------+--------+--------------------
+ 16389 |      0 | \x4142434441424344
+(1 row)
+```
+この書き込んだデータを以下のようにしてファイルに出力できるらしい。  
+上書きもできるけど、`postgres`ユーザーが上書きできる権限のファイルじゃないとダメっぽい。  
+```txt
+postgres=# select lo_export(16389, '/tmp/largeobject.txt');
+ lo_export
+-----------
+         1
+(1 row)
+
+$ cat /tmp/largeobject.txt
+ABCDABCD
+```
 # writeup
 ## blind / identify admin's password (TJCTF 2020  Weak Password)
 http://itsvipul.com/writeups/TJCTF_2020/Weak_Password.html  
