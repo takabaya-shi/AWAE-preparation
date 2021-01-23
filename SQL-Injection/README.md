@@ -44,7 +44,7 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 # PostgreSQL
-## largeobject ReverseShell
+## largeobject
 `pg_largeObject`というテーブルにデータを書き込んで、それを別のファイルに上書きするみたいな手法があるらしい。  
 WSLにpostgreSQLを入れて検証した。  
 なお、`pg_largeobject`テーブルにはsuperuser権限を持ったUserのpostgresしかアクセスできない。  
@@ -112,6 +112,26 @@ postgres=# select lo_export(16389, '/tmp/largeobject.txt');
 $ cat /tmp/largeobject.txt
 ABCDABCD
 ```
+## UDF ReverShell
+https://medium.com/@afinepl/postgresql-code-execution-udf-revisited-3b08412f47c1  
+`select lo_put(16389, 0, '\x41424344');`の書き込む値を任意コマンドを実行するような共有ライブラリ形式のバイナリにして、それを`select lo_export`で`/tmp/exploit.so`に書き込んで、  
+以下のようにしてUDF(User Definde Function)を作成すれば、`exec()`でコマンド実行ができるようになるらしい！  
+`Create`関数を使う必要があるので、Stack Query型(`;`でSQL文を複数つなげて実行できる)じゃないと無理。  
+```txt
+create or replace function exec(char) returns char as ‘/tmp/exploit.so’,’sys_eval’ language c strict;
+
+
+select exec(‘ifconfig’);
+```
+ちなみに、以下によると最新のPostgeSQLでは`C:\Program Files\PostgreSQL\11\lib`または`/var/lib/postgresql/11/lib`からしか共有ライブラリ`.so`ファイルをロードできないようになったらしい。(上記のような`/tmp/exploit.so`は無理)  
+でも、`C:\Program Files\PostgreSQL\11\data`には書き込むことができて、さらに`CREATE FUNCTION`では`../data/exploit.so`みたいにすれば`/lib`から読み込んだ体で読み込めるらしい！(Directry TraversalらしいけどCVEはないらしい)  
+```txt
+create function connect_back(text, integer) returns void as '../data/poc', 'connect_back' language C strict;
+```
+https://srcincite.io/blog/2020/06/26/sql-injection-double-uppercut-how-to-achieve-remote-code-execution-against-postgresql.html  
+ここにはそのためのExploitソースもある。よさそう。  
+##
+
 # writeup
 ## blind / identify admin's password (TJCTF 2020  Weak Password)
 http://itsvipul.com/writeups/TJCTF_2020/Weak_Password.html  
