@@ -179,3 +179,20 @@ class ChildClass extends ParentClass{
 }
 ?>
 ```
+
+# fuelCMS
+## install手順
+https://www.youtube.com/watch?v=TLpgSnqqWlo  
+を参考にKaliに入れた。  
+php-curlがphp7.3に入らなかったりしたのでphp7.4に変えて、apache2でphp7.4をロードするように`a2enmod php7.4`したり、いろいろした。KaliのレポジトリのApt Keyが古かったので更新したりめちゃくちゃ手間取ってしまった…  
+まあはじめはこんなもんか…  
+他のトラブルシューティング  
+https://forum.getfuelcms.com/discussion/3022/object-not-found-fuel-start  
+## login
+## password reset
+## session
+## file upload
+## MVC
+## routing
+## sanitizing
+## API
