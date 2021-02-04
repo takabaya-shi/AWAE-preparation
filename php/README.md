@@ -271,11 +271,64 @@ https://forum.getfuelcms.com/discussion/3022/object-not-found-fuel-start
 		return FALSE;	
 	}
 ```
+```txt
+root@kali:/var/www/fuel# cat ./fuel/modules/fuel/models/Fuel_users_model.php | grep "public function"
+	public function __construct()
+	public function valid_user($user, $pwd)
+	public function valid_old_user($user, $pwd)
+	public function list_items($limit = NULL, $offset = NULL, $col = 'email', $order = 'desc', $just_count = FALSE)
+	 public function user_info($user_id)
+	public function get_reset_password_token($email)
+	public function validate_reset_token($token)
+	public function reset_password_from_token($email, $token, $password)
+	public function generate_token()
+	public function user_exists($email)
+	public function salt()
+	public function salted_password_hash($password, $salt)
+	public function options_list($key = 'id', $val = 'name', $where = array(), $order = 'name')
+	public function related_items($values = array())
+	public function form_fields($values = array(), $related = array())
+	public function _create_permission_fields($params = array())
+	public function on_before_clean($values)
+	public function on_before_validate($values)
+	public function check_password_strength($value)
+	public function on_before_save($values)
+	public function on_after_save($values)
+	public function delete($where)
+	public function is_new_email($email)
+	public function is_editable_email($email, $id)
+	public function _common_query($params = NULL)
+
+```
 ## password reset
 `pwd_reset`が`fuel/modules/fuel/controllers/Login.php`にある。  
 `Reset.php`のそれっぽい。  
 ## session
 `fuel/modules/fuel/helpers/session_helper.php`に`function session_set_userdata`とかがあるっぽい。  
+`fuel/modules/fuel/libraries/Fuel_auth.php`でログインしてるかどうかとかの処理があるっぽい。  
+```txt
+root@kali:/var/www/fuel# cat ./fuel/modules/fuel/libraries/Fuel_auth.php | grep "public function"
+	public function __construct($params = array())
+	public function login($user, $pwd)
+	public function set_valid_user($valid_user)
+	public function valid_user()
+	public function set_user_data($key, $value)
+	public function user_data($key = NULL)
+	public function get_session_namespace()
+	public function get_fuel_trigger_cookie_name()
+	public function can_access()
+	public function check_valid_ip($ips)
+	public function is_logged_in()
+	public function has_permission($permission, $type = '')
+	public function accessible_module($module)
+	public function get_permissions()
+	public function is_super_admin()
+	public function module_has_action($action)
+	public function is_fuelified()
+	public function user_lang()
+	public function logout()
+
+```
 ## file upload
 `fuel/modules/fuel/controllers/Pages.php`に`function upload()`があってサニタイジングとかしてる？  
 ```php
@@ -477,6 +530,7 @@ $config['module_sanitize_funcs'] = array(
 );
 ```
 ## API
+なさげ？  
 ## CVEs
 https://www.cvedetails.com/vulnerability-list/vendor_id-19221/product_id-49911/Thedaylightstudio-Fuel-Cms.html  
 ### CVE-2020-17463
