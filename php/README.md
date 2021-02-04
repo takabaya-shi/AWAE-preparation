@@ -22,6 +22,11 @@
   - [routing](#routing)
   - [sanitizing](#sanitizing)
   - [API](#api)
+  - [CVEs](#cves)
+    - [CVE-2020-17463](#cve-2020-17463)
+    - [CVE-2019-15228](#cve-2019-15228)
+    - [CVE-2018-20137](#cve-2018-20137)
+    - [CVE-2018-16763](#cve-2018-16763)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
