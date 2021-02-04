@@ -1,3 +1,19 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Contributing to CodeIgniter](#contributing-to-codeigniter)
+  - [Guidelines](#guidelines)
+    - [PHP Style](#php-style)
+    - [Documentation](#documentation)
+    - [Compatibility](#compatibility)
+    - [Branching](#branching)
+    - [Signing](#signing)
+  - [How-to Guide](#how-to-guide)
+    - [Keeping your fork up-to-date](#keeping-your-fork-up-to-date)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Contributing to CodeIgniter
 
 CodeIgniter is a community driven project and accepts contributions of code and documentation from the community. These contributions are made in the form of Issues or [Pull Requests](http://help.github.com/send-pull-requests/) on the [CodeIgniter repository](https://github.com/bcit-ci/CodeIgniter) on GitHub.

@@ -1,3 +1,13 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Software License Agreement](#software-license-agreement)
+  - [Sources of Intellectual Property Included in this plugin](#sources-of-intellectual-property-included-in-this-plugin)
+  - [Trademarks](#trademarks)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 Software License Agreement
 ==========================
 

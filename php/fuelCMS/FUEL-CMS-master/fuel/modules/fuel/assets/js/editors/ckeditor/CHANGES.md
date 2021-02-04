@@ -1,3 +1,54 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [CKEditor 4 Changelog](#ckeditor-4-changelog)
+  - [CKEditor 4.5.11](#ckeditor-4511)
+  - [CKEditor 4.5.10](#ckeditor-4510)
+  - [CKEditor 4.5.9](#ckeditor-459)
+  - [CKEditor 4.5.8](#ckeditor-458)
+  - [CKEditor 4.5.7](#ckeditor-457)
+  - [CKEditor 4.5.6](#ckeditor-456)
+  - [CKEditor 4.5.5](#ckeditor-455)
+  - [CKEditor 4.5.4](#ckeditor-454)
+  - [CKEditor 4.5.3](#ckeditor-453)
+  - [CKEditor 4.5.2](#ckeditor-452)
+  - [CKEditor 4.5.1](#ckeditor-451)
+  - [CKEditor 4.5](#ckeditor-45)
+  - [CKEditor 4.5 Beta](#ckeditor-45-beta)
+  - [CKEditor 4.4.8](#ckeditor-448)
+  - [CKEditor 4.4.7](#ckeditor-447)
+  - [CKEditor 4.4.6](#ckeditor-446)
+  - [CKEditor 4.4.5](#ckeditor-445)
+  - [CKEditor 4.4.4](#ckeditor-444)
+  - [CKEditor 4.4.3](#ckeditor-443)
+  - [CKEditor 4.4.2](#ckeditor-442)
+  - [CKEditor 4.4.1](#ckeditor-441)
+  - [CKEditor 4.4](#ckeditor-44)
+  - [CKEditor 4.3.5](#ckeditor-435)
+  - [CKEditor 4.3.4](#ckeditor-434)
+  - [CKEditor 4.3.3](#ckeditor-433)
+  - [CKEditor 4.3.2](#ckeditor-432)
+  - [CKEditor 4.3.1](#ckeditor-431)
+  - [CKEditor 4.3](#ckeditor-43)
+  - [CKEditor 4.3 Beta](#ckeditor-43-beta)
+  - [CKEditor 4.2.3](#ckeditor-423)
+  - [CKEditor 4.2.2](#ckeditor-422)
+  - [CKEditor 4.2.1](#ckeditor-421)
+  - [CKEditor 4.2](#ckeditor-42)
+  - [CKEditor 4.1.3](#ckeditor-413)
+  - [CKEditor 4.1.2](#ckeditor-412)
+  - [CKEditor 4.1.1](#ckeditor-411)
+  - [CKEditor 4.1](#ckeditor-41)
+  - [CKEditor 4.1 RC](#ckeditor-41-rc)
+  - [CKEditor 4.0.3](#ckeditor-403)
+  - [CKEditor 4.0.2](#ckeditor-402)
+  - [CKEditor 4.0.1.1](#ckeditor-4011)
+  - [CKEditor 4.0.1](#ckeditor-401)
+  - [CKEditor 4.0](#ckeditor-40)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 CKEditor 4 Changelog
 ====================
 

@@ -1,3 +1,19 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [Software License Agreement](#software-license-agreement)
+  - [Sources of Intellectual Property Included in CKEditor](#sources-of-intellectual-property-included-in-ckeditor)
+  - [Trademarks](#trademarks)
+  - [Appendix A: The GPL License](#appendix-a-the-gpl-license)
+  - [Appendix B: The LGPL License](#appendix-b-the-lgpl-license)
+  - [Appendix C: The MPL License](#appendix-c-the-mpl-license)
+  - [Appendix D: The MIT License](#appendix-d-the-mit-license)
+  - [Appendix E: The SIL Open Font License Version 1.1](#appendix-e-the-sil-open-font-license-version-11)
+  - [Appendix F: The BSD-3 License](#appendix-f-the-bsd-3-license)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 Software License Agreement
 ==========================
 
