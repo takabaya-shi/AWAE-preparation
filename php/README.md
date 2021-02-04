@@ -205,6 +205,67 @@ https://forum.getfuelcms.com/discussion/3022/object-not-found-fuel-start
 `fuel/application/config/MY_fuel.php`に`$config['admin_enabled'] = TRUE;`とかでadminモードを実行するかどうかとかの設定を行うっポイ。  
 ## login
 `fuel\modules\fuel\controllers\Login.php`にログイン処理があるっぽい。  
+`if ($this->fuel->auth->login($this->input->post('user_name', TRUE), $this->input->post('password', TRUE)))`でログイン成功かどうか判断してるっぽい。  
+```php
+				if ($this->input->post('user_name') AND $this->input->post('password'))
+				{
+					if ($this->fuel->auth->login($this->input->post('user_name', TRUE), $this->input->post('password', TRUE)))
+					{
+						// reset failed login attempts
+						$user_data['failed_login_timer'] = 0;
+						// set the cookie for viewing the live site with added FUEL capabilities
+						$config = array(
+							'name' => $this->fuel->auth->get_fuel_trigger_cookie_name(), 
+							'value' => serialize(array('id' => $this->fuel->auth->user_data('id'), 'language' => $this->fuel->auth->user_data('language'))),
+							'expire' => 0,
+							//'path' => WEB_PATH
+							'path' => $this->fuel->config('fuel_cookie_path')
+						);
+
+						set_cookie($config);
+
+						$forward = $this->input->post('forward');
+						$forward_uri = uri_safe_decode($forward);
+
+```
+
+```php
+	public function login($user, $pwd)
+	{
+		$this->CI->load->module_model(FUEL_FOLDER, 'fuel_users_model');
+		$valid_user = $this->CI->fuel_users_model->valid_user($user, $pwd);
+
+		// check old password logins
+		if (empty($valid_user))
+		{
+			$valid_user = $this->CI->fuel_users_model->valid_old_user($user, $pwd);
+		}
+		
+		if (!empty($valid_user)) 
+		{
+			// update the hashed password & add a salt
+			$salt = $this->CI->fuel_users_model->salt();
+			$updated_user_profile = array('password' => $this->CI->fuel_users_model->salted_password_hash($pwd, $salt), 'salt' => $salt);
+			$updated_where = array('user_name' => $user, 'active' => 'yes');
+
+
+			// update salt on login
+			if ($this->CI->fuel_users_model->update($updated_user_profile, $updated_where))
+			{
+				$this->set_valid_user($valid_user);
+				$this->CI->fuel->logs->write(lang('auth_log_login_success', $valid_user['user_name'], $this->CI->input->ip_address()), 'debug');
+				return TRUE;
+			}
+			else
+			{
+				$this->CI->fuel->logs->write(lang('auth_log_failed_updating_login_info', $valid_user['user_name'], $this->CI->input->ip_address()), 'debug');
+				return FALSE;
+			}
+		}
+
+		return FALSE;	
+	}
+```
 ## password reset
 `pwd_reset`が`fuel/modules/fuel/controllers/Login.php`にある。  
 `Reset.php`のそれっぽい。  
@@ -328,8 +389,122 @@ https://codeigniter.jp/user_guide/3/libraries/input.html
 ```
 ## MVC
 `fuel/moduels/fuel/core/MY_Model.php`で`public function find_one($where = array(), $order_by = NULL, $return_method = NULL)`とかで多分データベースに実際にアクセスしてるっぽい？？  
-
+`fuel/modules/fuel/models/`以下にDB関係の処理があるっぽい？？  
 ## routing
 
 ## sanitizing
+`fuel/modules/fuel/controllers/Module.php`にサニタイジングが書かれてる。  
+でもその処理自体は書かれてなくて、`$posted[$key] = $func($posted[$key]);`で中身を実際にサニタイジングしてるっぽい。  
+`$func`には`$valid_funcs = $this->fuel->config('module_sanitize_funcs');`が入っている。  
+```php
+	/**
+	 * Sanitizes the input based on the module's settings
+	 *
+	 * @access	protected
+	 * @param	array	The array of posted data to sanitize
+	 * @return	array
+	 */	
+	protected function _sanitize($data)
+	{
+		$posted = $data;
+
+		if ( ! empty($this->sanitize_input))
+		{
+			// functions that are valid for sanitizing
+			$valid_funcs = $this->fuel->config('module_sanitize_funcs');
+
+			if ($this->sanitize_input === TRUE)
+			{
+				$this->sanitize_input = array('xss');
+			}
+
+			// force to array to normalize
+			$sanitize_input = (array) $this->sanitize_input;
+
+			if (is_array($data))
+			{
+				foreach($data as $key => $post)
+				{
+					if (is_array($post))
+					{
+						$posted[$key] = $this->_sanitize($post);
+					}
+					else
+					{
+						// loop through sanitization functions 
+						foreach($sanitize_input as $func)
+						{
+							$func = (isset($valid_funcs[$func])) ? $valid_funcs[$func] : FALSE;
+
+							if ($func)
+							{
+								$posted[$key] = $func($posted[$key]);
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				// loop through sanitization functions 
+				foreach($sanitize_input as $key => $val)
+				{
+					$func = (isset($valid_funcs[$val])) ? $valid_funcs[$val] : FALSE;
+
+					if ($func)
+					{
+						$posted = $func($posted);
+					}
+				}
+			}
+		}
+
+		return $posted;
+	}
+```
+`$this->fuel->config('module_sanitize_funcs');`は`fuel/modules/fuel/config/fuel.php`で定義されてるっぽい。`xss_clean`とかはcodeigniterで定義されてる安全なフィルタっぽい？？  
+```php
+$config['module_sanitize_funcs'] = array(
+	'xss' => 'xss_clean', 
+	'php' => 'encode_php_tags', 
+	'template' => 'php_to_template_syntax', 
+	'entities' => 'htmlentities'
+);
+```
 ## API
+## CVEs
+https://www.cvedetails.com/vulnerability-list/vendor_id-19221/product_id-49911/Thedaylightstudio-Fuel-Cms.html  
+### CVE-2020-17463
+https://www.exploit-db.com/exploits/48741  
+```txt
+/fuelcms/pages/items/?search_term=&published=&layout=&limit=50&view_type=list&offset=0&order=asc&col=location+AND+(SELECT+1340+FROM+(SELECT(SLEEP(5)))ULQV)&fuel_inline=0
+```
+で`col`の値(カラム名を指定するっぽい)にTime basedSQL Injectionがあるらしい。1.4.7で発見されてるけど1.4.13で試すと確かに成功してる！！？？よな？？  
+`fuel/modules/fuel/models/Base_module_model.php`で定義されてる`public function list_items($limit = NULL, $offset = 0, $col = 'id', $order = 'asc', $just_count = FALSE)`でDBとやり取りするあたりが怪しいっぽい？？  
+多分SQLMapで発見してるっぽいから手動ではかなりきつそう？？？  
+生のSQL文を生成してる箇所はなくて、codeigniterの`$this->db->select()`みたいにしてSQL文を操作してるっぽい。  
+
+### CVE-2019-15228
+![image](https://user-images.githubusercontent.com/56021519/106925451-73f03280-6753-11eb-96c1-0aad99ecd21d.png)  
+ここにXSSがあるらしいけど今はうまく行ってない…  
+発見されたバージョンは1.4.4だから1.4.13では動かないっぽい？  
+https://www.cvedetails.com/cve/CVE-2019-15228/  
+https://github.com/daylightstudio/FUEL-CMS/commit/10b7583a2b7176ec5553c8ddab3c870dd485efc0  
+https://www.sevenlayers.com/index.php/237-fuelcms-1-4-4-xss  
+以前はサニタイジングがなかったってことか？？？  
+`fuel/modules/fuel/libraries/Data_table.php`でサニタイジングがなかったのが原因らしい。  
+```php
+$this->name = xss_clean($name);
+```
+### CVE-2018-20137
+https://www.cvedetails.com/cve/CVE-2018-20137/  
+https://github.com/CCCCCrash/POCs/tree/master/Web/fuel-cms/xss1  
+似たようなXSSがPagesのところにあったらしい。  
+https://github.com/daylightstudio/FUEL-CMS/issues/552  
+別のフィールドで格納型がまだ残ってたらしい？？  
+
+### CVE-2018-16763
+https://www.cvedetails.com/cve/CVE-2018-16763/  
+https://github.com/daylightstudio/FUEL-CMS/issues/478  
+SQL Injectionがあるらしいけど正直見つけ方が全然わからん…  
+CodeigniterでDB関係やってるからマジでよくわからん…  
