@@ -198,11 +198,137 @@ php-curlがphp7.3に入らなかったりしたのでphp7.4に変えて、apache
 まあはじめはこんなもんか…  
 他のトラブルシューティング  
 https://forum.getfuelcms.com/discussion/3022/object-not-found-fuel-start  
+## 基本構成
+`fuel/install/fuel_shema.sql`でDBの初期設定を行う。これを`mysql fuel > fuel_schema.sql`でfuelという事前に手動で作成したおいたDBにテーブルとかを作成するっぽい。  
+`fuel/application/config/database.php`にMariaDBへの接続用のパスワードとかを設定する。  
+`fuel/application/config/MY_fuel.php`に`$config['admin_enabled'] = TRUE;`とかでadminモードを実行するかどうかとかの設定を行うっポイ。  
 ## login
+`fuel\modules\fuel\controllers\Login.php`にログイン処理があるっぽい。  
 ## password reset
+`pwd_reset`が`fuel/modules/fuel/controllers/Login.php`にある。  
+`Reset.php`のそれっぽい。  
 ## session
+`fuel/modules/fuel/helpers/session_helper.php`に`function session_set_userdata`とかがあるっぽい。  
 ## file upload
+`fuel/modules/fuel/controllers/Pages.php`に`function upload()`があってサニタイジングとかしてる？  
+```php
+	public function upload()
+	{
+
+// snip
+
+		$this->js_controller_params['method'] = 'upload';
+
+		if ( ! empty($_POST) AND !empty($_FILES))
+		{
+			$params['upload_path'] = sys_get_temp_dir();
+			$params['allowed_types'] = 'php|html|txt';
+
+			// to ensure we check the proper mime types
+			$this->upload->initialize($params);
+
+			// Hackery to ensure that a proper php mimetype is set. 
+			// Would set in mimes.php config but that may be updated with the next version of CI which does not include the text/plain
+			/*$this->upload->mimes['php'] =  array(
+				'application/x-httpd-php', 
+				'application/php', 
+				'application/x-php', 
+				'text/php',
+				'text/html', 
+				'text/x-php', 
+				'application/x-httpd-php-source', 
+				'text/plain'
+			);*/
+
+			if ($this->upload->do_upload('file'))
+			{
+				$upload_data = $this->upload->data();
+				$error = FALSE;
+
+				// sanitize the file before saving
+				$id = $this->input->post('id', TRUE);
+				$pagevars = $this->fuel->pages->import($id);
+
+				if ( ! empty($pagevars))
+				{
+					$layout = $this->fuel->layouts->get($pagevars['layout']);
+					unset($pagevars['layout']);
+
+					foreach($pagevars as $key => $val)
+					{
+						$where['page_id'] = $id;
+						$where['name'] = $key;
+
+						$page_var = $this->fuel_pagevariables_model->find_one_array($where);
+
+						$save['id'] = (empty($page_var['id'])) ? NULL : $page_var['id'];
+						$save['name'] = $key;
+						$save['page_id'] = $id;
+						$save['value'] = $val;
+
+						if ( ! $this->fuel_pagevariables_model->save($save))
+						{
+							add_error(lang('error_upload'));
+						}
+					}
+// snip
+		}
+// snip
+```
+codeigniterで事前に用意されている`CI_Loader`,`CI_Upload`クラスとかを使ってファイルを処理してる。  
+詳しくはここ参照。  
+http://www.ci-guide.info/practical/library/upload/  
+  
+これでPOSTリクエストを発生させてるっぽい。`add_session`の中で`curl`を呼び出してる。(sanitizingしてるところの`$id = $this->input->post('id', TRUE);`はこの関数とは多分無関係)  
+```php
+	public function post($url, $post = array())
+	{
+		// NOTE TO SELF: to add a file to upload, you can do the following as a value:
+		//'@path/to/file.txt;type=text/html';
+		$opts = $this->_opts('post', $post);
+		$this->add_session($url, $opts);
+		return $this->exec_single();
+	}
+```
+`$id = $this->input->post('id', TRUE);`では、`CI_Input`クラスのメソッドを使って、`id=1234`とかでPOSTされてきたデータを`$id`に代入するっぽい。  
+https://codeigniter.jp/user_guide/3/libraries/input.html  
+  
+`$pagevars = $this->fuel->pages->import($id);`では、`fuel/modules/fuel/libraries/Fuel_pages.php`で定義されてる`public function import($page, $sanitize = TRUE)`でPOSTされた`id=1234`の`1234`というコンテンツを検索して見つかればそのファイルの中身を読み込んで値を返してるっぽい？？  
+```php
+	public function import($page, $sanitize = TRUE)
+	{
+		$this->CI->load->helper('file');
+
+		if (!isset($this->CI->fuel_pages_model))
+		{
+			$this->CI->load->module_model(FUEL_FOLDER, 'fuel_pages_model');
+		}
+		$model =& $this->CI->fuel_pages_model;
+
+		if (!is_numeric($page))
+		{
+			$page_data = $model->find_by_location($page, FALSE);
+		}
+		else
+		{
+			$page_data = $model->find_by_key($page, 'array');
+		}
+		
+		$view_twin = APPPATH.'views/'.$page_data['location'].EXT;
+
+		$pagevars = array();
+		if (file_exists($view_twin))
+		{
+
+			// must have content in order to not return error
+			$output = file_get_contents($view_twin);
+      
+      // snip
+```
 ## MVC
+`fuel/moduels/fuel/core/MY_Model.php`で`public function find_one($where = array(), $order_by = NULL, $return_method = NULL)`とかで多分データベースに実際にアクセスしてるっぽい？？  
+
 ## routing
+
 ## sanitizing
 ## API
