@@ -13,7 +13,6 @@
     - [PHP](#php)
       - [webshell](#webshell)
       - [PHP Deserialization](#php-deserialization)
-      - [PHP XXE Injection](#php-xxe-injection)
       - [PHP Type Juggling](#php-type-juggling)
       - [PHP XSS](#php-xss)
       - [PHP XXE](#php-xxe)
