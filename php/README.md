@@ -34,6 +34,7 @@
   - [XSSできない例](#xss%E3%81%A7%E3%81%8D%E3%81%AA%E3%81%84%E4%BE%8B)
   - [file upload](#file-upload-1)
   - [XXE](#xxe)
+- [デバッグ環境](#%E3%83%87%E3%83%90%E3%83%83%E3%82%B0%E7%92%B0%E5%A2%83)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
