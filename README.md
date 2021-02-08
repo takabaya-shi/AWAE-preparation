@@ -103,8 +103,6 @@ PHAR形式のファイルをアップロードできてその場所が特定で�
   
 PHP 5.6.25 and 7.x before 7.0.10では`__wakeup()`を呼び出さず`__destruct`を呼び出せるらしい。   
 - monolog POP gadgestがPHPGCCにある。よく見かける気がする。  
-#### PHP XXE Injection
-変数名`xml`,`loadXML`,`simplexml_load_string`,`svg`
 #### PHP Type Juggling
 `==`,`!=`,`eval`,`strcasecmp`,`strcmp`  
 #### PHP XSS
@@ -112,7 +110,9 @@ PHP 5.6.25 and 7.x before 7.0.10では`__wakeup()`を呼び出さず`__destruct`
 https://vulners.com/myhack58/MYHACK58:62201234463  
 https://qiita.com/addictionwhite/items/4e9c9cc4570c0bcaa656  
 #### PHP XXE
-`file_get_contents`,`loadXML`,`simplexml_load_string`  
+`file_get_contents`,`loadXML`,`simplexml_load_string`,`svg`,変数名`xml`  
+`libxml_disable_entity_loader();`が書かれてるとXXEはできない。  
+`simplexml_load_string($string,'SimpleXMLElement', LIBXML_NOENT)`みたいに第三引数がこれになってないと実体参照できないらしい。(なくても良い場合もあるらしい)  
 #### PHP SQL Injection
 `mysql_real_escape_string`(`mysqli_real_escape_string`は安全?),`mysql_escape_string`(`%`,`_`は通す)  
 #### PHP Directory Traversal
