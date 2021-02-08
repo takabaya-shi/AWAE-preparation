@@ -1144,3 +1144,46 @@ function file_mime_type($file) {
 	$request = new API_Request();
 	$request->add_data($in);
 ```
+
+# デバッグ環境
+Ubuntu 20.04.01にphp7.4とかを入れて、Xdebugとかを入れた。これをUbuntu上のVScodeでデバッグする。    
+Xdebugは以下を参考にして入れたが、これだけだとなんかデバッグできなかったので、追加で`sudo apt install php-xdebug`で入れると動いた！なんか設定ファイルが足りてなかったんだと思う。  
+https://60can.hatenablog.jp/entry/wsl2-ubuntu%25e3%2581%25aephp%25e3%2581%25abxdebug%25e3%2582%2592%25e8%25bf%25bd%25e5%258a%25a0%25e3%2581%2597%25e3%2581%25a6vscode%25e3%2581%25a7%25e3%2583%2587%25e3%2583%2590%25e3%2583%2583%25e3%2582%25b0%25e3%258  
+最終的な設定ファイルは以下。  
+`.vscode/launch.json`
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Listen for XDebug",
+            "type": "php",
+            "request": "launch",
+            "port": 9000,
+            "pathMappings": {
+                "${workspaceRoot}" : "${workspaceRoot}"
+            }
+        },
+        {
+            "name": "Launch currently open script",
+            "type": "php",
+            "request": "launch",
+            "program": "${file}",
+            "cwd": "${fileDirname}",
+            "port": 9000
+        }
+    ]
+}
+```
+`/etc/php/7.4/apache2/php.ini`  
+以下をこのファイルに追加する。  
+```txt
+[XDebug]
+zend_extension = /usr/lib/php/20190902/xdebug.so
+xdebug.remote_enable = 1
+xdebug.remote_connect_back = 1
+xdebug.remote_autostart = 1
+xdebug.remote_port = 9000
+xdebug.remote_host="127.0.0.1"
+```
+VSCodeにはPHP Intellisenseっている拡張を入れて、関数とかの定義もとにジャンプできるようにした。  
