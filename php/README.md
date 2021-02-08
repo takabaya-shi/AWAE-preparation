@@ -922,7 +922,7 @@ if ($id){
 ```
 
 
-## 
+## XSSできない例
 `http://localhost/admin/edit.php?title=aaaaaa%3Ch1%3Ebbba%3C/h1%3E`でアクセスすると、`$id`がないからifの中には入らないっぽい。  
 `$_GET['title'] = "aaaaaa<h1>bbba</h1>"`  
 `$title = "aaaaaa&#60;h1&#62;bbba&#60;/h1&#62;"`  
@@ -985,3 +985,160 @@ if ($id){
 }
 ```
 
+## file upload
+`admin/upload.php`  
+一見`str_replace`で一回だけ`../`のパターンをはじいてるのでDirectry Traversal行けそうに見えるが`path_is_safe()`で安全な場所を抜けてるかどうかチェックしてるので無理。  
+```php
+if (isset($_GET['path']) && !empty($_GET['path'])) {
+	$path = str_replace('../','', $_GET['path']);
+	$path = tsl("../data/uploads/".$path);
+	// die if path is outside of uploads
+	if(!path_is_safe($path,GSDATAUPLOADPATH)) die();
+	$subPath = str_replace('../','', $_GET['path']);
+	$subFolder = tsl($subPath);
+} else { 
+	$path = "../data/uploads/";
+	$subPath = ''; 
+	$subFolder = '';
+}
+```
+`if(getDef('GSUPLOADSLC',true)) $extension = lowercase($extension);`で拡張子を小文字に直してる。これで`.Php`とかでブラックリストをバイパスしようとしても`.php`と直されるのでダメ。  
+というか、拡張子とMIME Typeにブラックリストを使用してる時点でかなりやばいのでそこを中心に見ていく。  
+https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Upload%20Insecure%20Files#other-extensions  
+を見てみるとどうやら`.php7`がブラックリストに入ってない！  
+MIME TypeはBurpでテキトーに`image/webp`とかに書き換えてみる。  
+ファイルの検証をしている部分は`validate_safe_file()`なので次はそこを見る。  
+```php
+			//set variables
+			$count = '1';
+			$file = $_FILES["file"]["name"][$i];
+
+			$extension = pathinfo($file,PATHINFO_EXTENSION);
+			if(getDef('GSUPLOADSLC',true)) $extension = lowercase($extension);
+	  		$name      = pathinfo($file,PATHINFO_FILENAME);
+			$name      = clean_img_name(to7bit($name));
+			$base      = $name . '.' . $extension;
+
+			$file_loc = $path . $base;
+			
+			//prevent overwriting
+			while ( file_exists($file_loc) ) {
+				$file_loc = $path . $count.'-'. $base;
+				$base = $count.'-'. $base;
+				$count++;
+			}
+			
+			//validate file
+			if (validate_safe_file($_FILES["file"]["tmp_name"][$i], $_FILES["file"]["name"][$i])) {
+				move_uploaded_file($_FILES["file"]["tmp_name"][$i], $file_loc);
+				if (defined('GSCHMOD')) {
+					chmod($file_loc, GSCHMOD);
+				} else {
+					chmod($file_loc, 0644);
+				}
+				exec_action('file-uploaded');
+				
+				// generate thumbnail				
+				require_once('inc/imagemanipulation.php');	
+				genStdThumb($subFolder,$base);					
+				$messages[] = i18n_r('FILE_SUCCESS_MSG').': <a href="'. $SITEURL .'data/uploads/'.$subFolder.$base.'">'. $SITEURL .'data/uploads/'.$subFolder.$base.'</a>';
+			} else {
+				$errors[] = $_FILES["file"]["name"][$i] .' - '.i18n_r('ERROR_UPLOAD');
+			}
+```
+
+コメントにもある通り、Burpで改竄した`$_FILES`のMIME Typeは見てくれなくて、`file_mime_type()`でファイルの内容から判断している。  
+```php
+/**
+ * Validate Safe File
+ * NEVER USE MIME CHECKING FROM BROWSERS, eg. $_FILES['userfile']['type'] cannot be trusted
+ * @since 3.1
+ * @uses file_mime_type
+ * @uses $mime_type_blacklist
+ * @uses $file_ext_blacklist
+ *
+ * @param string $file, absolute path
+ * @param string $name, filename
+ * @param string $mime, optional
+ * @return bool
+ */	
+function validate_safe_file($file, $name, $mime = null){
+	global $mime_type_blacklist, $file_ext_blacklist, $mime_type_whitelist, $file_ext_whitelist;
+
+	include(GSADMININCPATH.'configuration.php');
+
+	$file_extension = lowercase(pathinfo($name,PATHINFO_EXTENSION));
+	if(!$mime)$mime = file_mime_type($file);
+
+	if ($mime && $mime_type_whitelist && in_arrayi($mime, $mime_type_whitelist)) {
+		return true;
+	}
+	if ($file_ext_whitelist && in_arrayi($file_extension, $file_ext_whitelist)) {
+		return true;
+	}
+
+	// skip blackist checks if whitelists exist
+	if($mime_type_whitelist || $file_ext_whitelist) return false;
+
+	if ($mime && in_arrayi($mime, $mime_type_blacklist)) {
+		return false;	
+	} elseif (in_arrayi($file_extension, $file_ext_blacklist)) {
+		return false;	
+	} else {
+		return true;	
+	}
+}
+```
+`admin/inc/basic.php`  
+実際には`finfo_file()`,`mime_content_type()`のどっちかかで判断してる。つまりWebshellはきつそう…？？  
+でもPHARファイルならいけるのでは？？？  
+```php
+/**
+ * Get File Mime-Type
+ *
+ * @since 3.1
+ * @param $file, absolute path
+ * @return string/bool
+ */
+function file_mime_type($file) {
+	if (!file_exists($file)) {
+		return false;
+		exit;
+	}
+	if(function_exists('finfo_open')) {
+		# http://www.php.net/manual/en/function.finfo-file.php
+		$finfo = finfo_open(FILEINFO_MIME_TYPE);
+		$mimetype = finfo_file($finfo, $file);
+		finfo_close($finfo);
+		
+	} elseif(function_exists('mime_content_type')) {
+		# Depreciated: http://php.net/manual/en/function.mime-content-type.php
+		$mimetype = mime_content_type($file);
+	} else {
+		return false;
+		exit;	
+	}
+	return $mimetype;
+}
+```
+
+## XXE
+`admin/api.php`の以下にXXEがあるのでは？？  
+と思ったけど、`libxml_disable_entity_loader();`によってXMLの外部参照を禁止しているのでXXE対策はされている。  
+また、`simplexml_load_string($_POST['data'], 'SimpleXMLExtended', LIBXML_NOCDATA);`のうち第三引数が`LIBXML_NOENT`になってないと実体参照はできないらしい。でもPHPのコンパイルオプションによっては第一引数だけで実体参照できたりすることもあるらしい。  
+```php
+	// disable entity loading to avoid xxe
+	libxml_disable_entity_loader();
+
+	#step 1 - check post for data
+	if (!isset($_POST['data'])) {
+		$message = array('status' => 'error', 'message' => i18n_r('API_ERR_MISSINGPARAM'));
+		echo json_encode($message);
+		exit;
+	};
+	
+	#step 2 - setup request
+	$in = simplexml_load_string($_POST['data'], 'SimpleXMLExtended', LIBXML_NOCDATA);
+	$request = new API_Request();
+	$request->add_data($in);
+```
