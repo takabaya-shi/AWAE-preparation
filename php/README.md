@@ -203,6 +203,37 @@ class ChildClass extends ParentClass{
 }
 ?>
 ```
+# 基本的な実装
+## session
+## file upload
+拡張子とMIME Typeをブラックリスト、ホワイトリストで制限。  
+ブラックリストなら回避は容易だけど、ファイルの中身を見て`mime_content_type()`,`finfo_file`とかでMIME Typeを判断する場合はBurp SuiteでContents-Typeを偽装しても無意味。`$_FILE`から得られるMIME Typeで判断してるかどうか注意。    
+## HTMLフィルタリング
+ここら辺みたいに入力されたものをユーザーが定義したフィルタリングの関数に通す。  
+大体がHTMLエンティティ化したりHTMLタグを取ったりバックスラッシュを記号前に付与したり？  
+ただし、HTMLエンティティ化はデコードした後にechoしてる場合もあるので、一度エンティティ化していてもXSSの可能性あり。  
+```php
+$id    = isset($_GET['id'])    ? var_out( $_GET['id']    ): null;
+$title = var_out(xss_clean($_POST['post-title']));
+$metak = safe_slash_html(strip_tags($_POST['post-metak']));
+```
+## Directry Traversal対策
+`str_replace()`による一回だけの`../`の置き換えはほぼ無意味。  
+でも、`path_is_safe()`とかで指定されたディレクトリを抜けてるかどうかのチェックがあればTraversalは無理そう…  
+```php
+if (isset($_GET['path']) && !empty($_GET['path'])) {
+	$path = str_replace('../','', $_GET['path']);	
+	if(!path_is_safe($path,GSDATAUPLOADPATH)) die();
+```
+## urlフィルタリング
+`phar://`が可能かどうかチェック。  
+## XML
+実体参照が許可されていない場合はXXEは無理。  
+```php
+	libxml_disable_entity_loader();
+	$in = simplexml_load_string($_POST['data'], 'SimpleXMLExtended', LIBXML_NOCDATA);
+```
+ユーザーからのいろんな入力をXMLオブジェクトとして管理したり(GetSimpleCMS)。  
 
 # fuelCMS
 ## install手順
@@ -1095,6 +1126,7 @@ function validate_safe_file($file, $name, $mime = null){
 `admin/inc/basic.php`  
 実際には`finfo_file()`,`mime_content_type()`のどっちかかで判断してる。つまりWebshellはきつそう…？？  
 でもPHARファイルならいけるのでは？？？  
+でも`phar://`のパスを`file_exists()`とかに挿入することができないと意味ないけど…  
 ```php
 /**
  * Get File Mime-Type
