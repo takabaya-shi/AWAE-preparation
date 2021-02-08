@@ -567,3 +567,416 @@ https://www.cvedetails.com/cve/CVE-2018-16763/
 https://github.com/daylightstudio/FUEL-CMS/issues/478  
 SQL Injectionがあるらしいけど正直見つけ方が全然わからん…  
 CodeigniterでDB関係やってるからマジでよくわからん…  
+
+# GetSimpleCMS
+## filtering
+`admin/inc/security_functions.php`  
+```php
+/**
+ * Security
+ *
+ * @package GetSimple
+ * @subpackage init
+ */
+/*
+ * File and File MIME-TYPE Blacklist arrays
+ */
+$mime_type_blacklist = array(
+	# HTML may contain cookie-stealing JavaScript and web bugs
+	'text/html', 'text/javascript', 'text/x-javascript',  'application/x-shellscript',
+	# PHP scripts may execute arbitrary code on the server
+	'application/x-php', 'text/x-php',
+	# Other types that may be interpreted by some servers
+	'text/x-python', 'text/x-perl', 'text/x-bash', 'text/x-sh', 'text/x-csh',
+	# Client-side hazards on Internet Explorer
+	'text/scriptlet', 'application/x-msdownload',
+	# Windows metafile, client-side vulnerability on some systems
+	'application/x-msmetafile',
+	# MS Office OpenXML and other Open Package Conventions files are zip files
+	# and thus blacklisted just as other zip files
+	'application/x-opc+zip'
+);
+$file_ext_blacklist = array(
+	# HTML may contain cookie-stealing JavaScript and web bugs
+	'html', 'htm', 'js', 'jsb', 'mhtml', 'mht',
+	# PHP scripts may execute arbitrary code on the server
+	'php', 'pht', 'phtm', 'phtml', 'php3', 'php4', 'php5', 'ph3', 'ph4', 'ph5', 'phps',
+	# Other types that may be interpreted by some servers
+	'shtml', 'jhtml', 'pl', 'py', 'cgi', 'sh', 'ksh', 'bsh', 'c', 'htaccess', 'htpasswd',
+	# May contain harmful executables for Windows victims
+	'exe', 'scr', 'dll', 'msi', 'vbs', 'bat', 'com', 'pif', 'cmd', 'vxd', 'cpl' 
+);
+
+/**
+ * Anti-XSS
+ *
+ * Attempts to clean variables from XSS attacks
+ * @since 2.03
+ *
+ * @author Martijn van der Ven
+ *
+ * @param string $str The string to be stripped of XSS attempts
+ * @return string
+ */
+function antixss($str){
+	$strdirty = $str;
+	// attributes blacklist:
+	$attr = array('style','on[a-z]+');
+	// elements blacklist:
+	$elem = array('script','iframe','embed','object');
+	// extermination:
+	$str = preg_replace('#<!--.*?-->?#', '', $str);
+	$str = preg_replace('#<!--#', '', $str);
+	$str = preg_replace('#(<[a-z]+(\s+[a-z][a-z\-]+\s*=\s*(\'[^\']*\'|"[^"]*"|[^\'">][^\s>]*))*)\s+href\s*=\s*(\'javascript:[^\']*\'|"javascript:[^"]*"|javascript:[^\s>]*)((\s+[a-z][a-z\-]*\s*=\s*(\'[^\']*\'|"[^"]*"|[^\'">][^\s>]*))*\s*>)#is', '$1$5', $str);
+	foreach($attr as $a) {
+	    $regex = '(<[a-z]+(\s+[a-z][a-z\-]+\s*=\s*(\'[^\']*\'|"[^"]*"|[^\'">][^\s>]*))*)\s+'.$a.'\s*=\s*(\'[^\']*\'|"[^"]*"|[^\'">][^\s>]*)((\s+[a-z][a-z\-]*\s*=\s*(\'[^\']*\'|"[^"]*"|[^\'">][^\s>]*))*\s*>)';
+	    $str = preg_replace('#'.$regex.'#is', '$1$5', $str);
+	}
+	foreach($elem as $e) {
+		$regex = '<'.$e.'(\s+[a-z][a-z\-]*\s*=\s*(\'[^\']*\'|"[^"]*"|[^\'">][^\s>]*))*\s*>.*?<\/'.$e.'\s*>';
+	    $str = preg_replace('#'.$regex.'#is', '', $str);
+	}
+	// if($strdirty !== $str) debugLog("string cleaned: removed ". (strlen($strdirty) - strlen($str)) .' chars');
+	return $str;
+}
+function xss_clean($data){
+	$datadirty = $data;
+	// Fix &entity\n;
+	$data = str_replace(array('&amp;','&lt;','&gt;'), array('&amp;amp;','&amp;lt;','&amp;gt;'), $data);
+	$data = preg_replace('/(&#*\w+)[\x00-\x20]+;/u', '$1;', $data);
+	$data = preg_replace('/(&#x*[0-9A-F]+);*/iu', '$1;', $data);
+	$data = html_entity_decode($data, ENT_COMPAT, 'UTF-8');
+
+	// Remove any attribute starting with "on" or xmlns
+	$data = preg_replace('#(<[^>]+?[\x00-\x20"\'/])(?:on|xmlns)[^>]*+>#iu', '$1>', $data);
+	
+	// Remove javascript: and vbscript: protocols
+	$data = preg_replace('#([a-z]*)[\x00-\x20]*=[\x00-\x20]*([`\'"]*)[\x00-\x20]*j[\x00-\x20]*a[\x00-\x20]*v[\x00-\x20]*a[\x00-\x20]*s[\x00-\x20]*c[\x00-\x20]*r[\x00-\x20]*i[\x00-\x20]*p[\x00-\x20]*t[\x00-\x20]*:#iu', '$1=$2nojavascript...', $data);
+	$data = preg_replace('#([a-z]*)[\x00-\x20]*=([\'"]*)[\x00-\x20]*v[\x00-\x20]*b[\x00-\x20]*s[\x00-\x20]*c[\x00-\x20]*r[\x00-\x20]*i[\x00-\x20]*p[\x00-\x20]*t[\x00-\x20]*:#iu', '$1=$2novbscript...', $data);
+	$data = preg_replace('#([a-z]*)[\x00-\x20]*=([\'"]*)[\x00-\x20]*-moz-binding[\x00-\x20]*:#u', '$1=$2nomozbinding...', $data);
+	
+	// Only works in IE: <span style="width: expression(alert('Ping!'));"></span>
+	$data = preg_replace('#(<[^>]+?)style[\x00-\x20]*=[\x00-\x20]*[`\'"]*.*?expression[\x00-\x20]*\([^>]*+>#i', '$1>', $data);
+	$data = preg_replace('#(<[^>]+?)style[\x00-\x20]*=[\x00-\x20]*[`\'"]*.*?behaviour[\x00-\x20]*\([^>]*+>#i', '$1>', $data);
+	$data = preg_replace('#(<[^>]+?)style[\x00-\x20]*=[\x00-\x20]*[`\'"]*.*?s[\x00-\x20]*c[\x00-\x20]*r[\x00-\x20]*i[\x00-\x20]*p[\x00-\x20]*t[\x00-\x20]*:*[^>]*+>#iu', '$1>', $data);
+	
+	// Remove namespaced elements (we do not need them)
+	$data = preg_replace('#</*\w+:\w[^>]*+>#i', '', $data);
+	
+	do
+	{
+		// Remove really unwanted tags
+		$old_data = $data;
+		$data = preg_replace('#</*(?:applet|b(?:ase|gsound|link)|embed|frame(?:set)?|i(?:frame|layer)|l(?:ayer|ink)|meta|object|s(?:cript|tyle)|title|xml)[^>]*+>#i', '', $data);
+	}
+	while ($old_data !== $data);
+
+	// we are done...
+	// if($datadirty !== $data) debugLog("string cleaned: removed ". (strlen($datadirty) - strlen($data)) .' chars');
+	return $data;
+}
+```
+## 見つけたXSS
+3.3.16で探してたらなんか見つけた。  
+`admin/changedata.php`  
+`$title`だけかかっているフィルタリング違うことがわかる。  
+`safe_slash_html(strip_tags())`がなくて`xss_clean()`と`var_out()`に入ってることがわかる。  `sage_slash_html()`はHTMLエンティティ化して記号に`addslashes`でバックスラッシュを付ける、`var_out()`はなんかフィルターでサニタイジングした後にHTMLエンティティ化してる。  
+この二つは`admin/inc/security_functions.php`で定義されてるフィルタリングの関数で正常に動いていそうだけど…なんでXSS行けるんだ？？？  
+そのあとはフィルタリングした各データを`$note->addCData($title);`でXML形式のオブジェクトとして保存してるっぽい。  
+あと、`$redirect_url = $_POST['redirectto']; // @todo sanitize redirects, not sure what this is for, js sets pages.php always?`ではサニタイジングなしでURLをセットしてるけど、開発者がOpen Redirectを指摘されてTODOでサニタイジングすることになってるけどまだ適用はされてないっぽい。  
+```php
+		// format and clean the responses
+		if(isset($_POST['post-title'])) 			{	$title = var_out(xss_clean($_POST['post-title']));	}
+		if(isset($_POST['post-metak'])) 			{	$metak = safe_slash_html(strip_tags($_POST['post-metak']));	}
+		if(isset($_POST['post-metad'])) 			{	$metad = safe_slash_html(strip_tags($_POST['post-metad']));	}
+		if(isset($_POST['post-author'])) 			{	$author = safe_slash_html($_POST['post-author']);	}
+		if(isset($_POST['post-template'])) 		{ $template = $_POST['post-template']; }
+		if(isset($_POST['post-parent'])) 			{ $parent = $_POST['post-parent']; }
+		if(isset($_POST['post-menu'])) 				{ $menu = var_out(xss_clean($_POST['post-menu'])); }
+		if(isset($_POST['post-menu-enable'])) { $menuStatus = "Y"; } else { $menuStatus = ""; }
+		if(isset($_POST['post-private']) ) 		{ $private = safe_slash_html($_POST['post-private']); }
+		if(isset($_POST['post-content'])) 		{	$content = safe_slash_html($_POST['post-content']);	}
+		if(isset($_POST['post-menu-order'])) 	{ 
+			if (is_numeric($_POST['post-menu-order'])) 
+			{
+				$menuOrder = $_POST['post-menu-order']; 
+			} 
+			else 
+			{
+				$menuOrder = "0";
+			}
+		}		
+		// If saving a new file do not overwrite existing, get next incremental filename, file-count.xml
+		// @todo this is a mess, new file existing file should all be determined at beginning of block and defined
+		if ( (file_exists($file) && $url != $existingurl) ||  in_array($url,$reservedSlugs) ) {
+			$count = "1";
+			$file = GSDATAPAGESPATH . $url ."-".$count.".xml";
+			while ( file_exists($file) ) {
+				$count++;
+				$file = GSDATAPAGESPATH . $url ."-".$count.".xml";
+			}
+			$url = $url .'-'. $count;
+		}		
+		// if we are editing an existing page, create a backup
+		if ( file_exists($file) ) 
+		{
+			$bakfile = GSBACKUPSPATH."pages/". $url .".bak.xml";
+			copy($file, $bakfile);
+		}	
+		
+		$xml = new SimpleXMLExtended('<?xml version="1.0" encoding="UTF-8"?><item></item>');
+		$xml->addChild('pubDate', date('r'));
+
+		$note = $xml->addChild('title');
+		$note->addCData($title);
+		
+		$note = $xml->addChild('url');
+		$note->addCData($url);
+		
+		$note = $xml->addChild('meta');
+		$note->addCData($metak);
+	
+		$note = $xml->addChild('metad');
+		$note->addCData($metad);
+		
+		$note = $xml->addChild('menu');
+		$note->addCData($menu);
+		
+		$note = $xml->addChild('menuOrder');
+		$note->addCData($menuOrder);
+		
+		$note = $xml->addChild('menuStatus');
+		$note->addCData($menuStatus);
+		
+		$note = $xml->addChild('template');
+		$note->addCData($template);
+		
+		$note = $xml->addChild('parent');
+		$note->addCData($parent);
+		
+		$note = $xml->addChild('content');
+		$note->addCData($content);
+		
+		$note = $xml->addChild('private');
+		$note->addCData($private);
+		
+		$note = $xml->addChild('author');
+		$note->addCData($author);
+
+		exec_action('changedata-save');
+		if (isset($_POST['autosave']) && $_POST['autosave'] == 'true' && $autoSaveDraft == true) {
+			$status = XMLsave($xml, GSAUTOSAVEPATH.$url);
+		} else {
+			$status = XMLsave($xml, $file);
+		}
+		
+		//ending actions
+		exec_action('changedata-aftersave');
+		generate_sitemap();
+	
+		// redirect user back to edit page 
+		if (isset($_POST['autosave']) && $_POST['autosave'] == 'true') {
+			echo $status ? 'OK' : 'ERROR';
+		} else {
+			if(!$status) redirect("edit.php?id=". $url ."&upd=edit-error&type=edit"); 
+
+			if ($_POST['redirectto']!='') {
+				$redirect_url = $_POST['redirectto']; // @todo sanitize redirects, not sure what this is for, js sets pages.php always?
+			} else {
+				$redirect_url = 'edit.php';
+			}
+			
+			if(isset($existingurl)){
+				if ($url == $existingurl) {
+					// redirect save new file
+					redirect($redirect_url."?id=". $url ."&upd=edit-success&type=edit");
+				} else {
+					// redirect new slug, undo for old slug
+					redirect($redirect_url."?id=". $url ."&old=".$existingurl."&upd=edit-success&type=edit");
+				}
+			}	
+			else {
+				// redirect new slug
+				redirect($redirect_url."?id=". $url ."&upd=edit-success&type=new"); 
+			}
+		}
+	}
+} else {
+	redirect('pages.php');
+}
+```
+`admin/inc/basic.php`  
+
+```php
+/**
+ * Safe AddSlashes HTML
+ *
+ * @since 2.04
+ * @author ccagle8
+ *
+ * @param string $text
+ * @return string
+ */
+function safe_slash_html($text) {
+	if (get_magic_quotes_gpc()==0) {
+		$text = addslashes(htmlspecialchars($text, ENT_QUOTES, 'UTF-8'));
+	} else {
+		$text = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+	}
+
+	return xmlFilterChars($text);
+}
+
+/**
+ * xmlFilterChars
+ *
+ * @since  3.3.3
+ * @param  str $str string to prepare for xml cdata
+ * @return str      filtered string
+ */
+function xmlFilterChars($str){
+	$chr = getRegexUnicode();
+	// filter only xml allowed characters
+	return preg_replace ('/[^'.$chr['ht'].$chr['lf'].$chr['cr'].$chr['lower'].$chr['upper'].']+/u', ' ', $str);
+}
+
+/**
+ * getRegexUnicode
+ * defines unicode char and char ranges for use in regex filters
+ *
+ * @since  3.3.3
+ * @param  str $id key to return from char range array
+ * @return mixed     array or str if id specified of regex char strings
+ */
+function getRegexUnicode($id = null){
+	$chars = array(
+		'null'       => '\x{0000}',            // 0 null
+		'ht'         => '\x{0009}',            // 9 horizontal tab
+		'lf'         => '\x{000a}',            // 10 line feed
+		'vt'         => '\x{000b}',            // 11 vertical tab
+		'FF'         => '\x{000c}',            // 12 form feed
+		'cr'         => '\x{000d}',            // 13 carriage return
+		'cntrl'      => '\x{0001}-\x{0019}',   // 1-31 control codes
+		'cntrllow'   => '\x{0001}-\x{000c}',   // 1-12 low end control codes
+		'cntrlhigh'  => '\x{000e}-\x{0019}',   // 14-31 high end control codes
+		'bom'        => '\x{FEFF}',            // 65279 BOM byte order mark
+		'lower'      => '\x{0020}-\x{D7FF}',   // 32 - 55295
+		'surrogates' => '\x{D800}-\x{DFFF}',   // 55296 - 57343
+		'upper'      => '\x{E000}-\x{FFFD}',   // 57344 - 65533
+		'nonchars'   => '\x{FFFE}-\x{FFFF}',   // 65534 - 65535
+		'privateb'   => '\x{10000}-\x{10FFFD}' // 65536 - 1114109
+	);
+	if(isset($id)) return $chars[$id];
+	return $chars;
+}
+```
+
+`admin/inc/theme_functions.php`  
+どうやらちゃんとHTMLエンティティ化してたのに`strip_decode($title)`でそれをわざわざ解除して`echo`してしまってる様子。なるほどねー。フィルタリングしてるかだけしか確認してないとXSSが発生してるのに気づかないのかー。    
+![image](https://user-images.githubusercontent.com/56021519/107235885-7e1e7380-6a68-11eb-9f17-26223685eaeb.png)  
+
+`admin/inc/basic.php`でHTMLエンティティを解除してるのが確認できる。  
+```php
+/**
+ * StripSlashes HTML Decode
+ *
+ * @since 2.04
+ * @author ccagle8
+ *
+ * @param string $text
+ * @return string
+ */
+function strip_decode($text) {
+	$text = stripslashes(htmlspecialchars_decode($text, ENT_QUOTES));
+	return $text;
+}
+```
+titleじゃなくてcontentの方は、`<script>alert(1);</alert>`をエンティティ化して`<p>`で囲んで、`<p>&lt;script&gt;alert(1);&lt;/script&gt;</p>`を作ってから、さらにそれをHTMLエンティティ化して`&lt;p&gt;&amp;lt;script&amp;gt;alert(1);&amp;lt;/script&amp;gt;&lt;/p&gt;`として扱ってる。  
+だからcontentの場合は`strip_decode()`を一回しても`<p>&lt;script&gt;alert(1);&lt;/script&gt;</p>`になってXSSは防げてる！  
+つまり、titleの方では`strip_decode()`の使い方を間違えてるってことかな？(本来は二重にエンティティ化したものでないと使っちゃダメ？)  
+![image](https://user-images.githubusercontent.com/56021519/107237501-254fda80-6a6a-11eb-8fcc-671fe33b1fd9.png)  
+![image](https://user-images.githubusercontent.com/56021519/107237323-f3d70f00-6a69-11eb-9a31-e264615428c0.png)  
+## Directory Traversal
+`admin/edit.php`  
+`$path`には`"/var/www/html/GetSimpleCMS-3.3.16/data/pages/"`が入ってて、`$_GET['id']`には何のフィルタリングもないから、`file_exists(/var/www/html/GetSimpleCMS-3.3.16/data/pages/../../../etc/passwd\0.xml)`みたいになってヌルバイト文字列攻撃で`/etc/passwd`を読み込める。ちなみにヌルバイト文字列攻撃が成立するのはPHP5.3.4まででそれ以降はエラーとか正常に処理される。(7.4ではerror)  
+```php
+// Get passed variables
+$id    = isset($_GET['id'])    ? var_out( $_GET['id']    ): null;
+$uri   = isset($_GET['uri'])   ? var_out( $_GET['uri']   ): null; 
+$ptype = isset($_GET['type'])  ? var_out( $_GET['type']  ): null;    
+$nonce = isset($_GET['nonce']) ? var_out( $_GET['nonce'] ): null;
+$path  = GSDATAPAGESPATH;
+
+if ($id){
+	// get saved page data
+	$file = $id .'.xml';
+
+	if (!file_exists($path . $file)){ 
+		redirect('pages.php?error='.urlencode(i18n_r('PAGE_NOTEXIST')));
+	}
+```
+
+
+## 
+`http://localhost/admin/edit.php?title=aaaaaa%3Ch1%3Ebbba%3C/h1%3E`でアクセスすると、`$id`がないからifの中には入らないっぽい。  
+`$_GET['title'] = "aaaaaa<h1>bbba</h1>"`  
+`$title = "aaaaaa&#60;h1&#62;bbba&#60;/h1&#62;"`  
+```php
+// Get passed variables
+$id    = isset($_GET['id'])    ? var_out( $_GET['id']    ): null;
+$uri   = isset($_GET['uri'])   ? var_out( $_GET['uri']   ): null; 
+$ptype = isset($_GET['type'])  ? var_out( $_GET['type']  ): null;    
+$nonce = isset($_GET['nonce']) ? var_out( $_GET['nonce'] ): null;
+$path  = GSDATAPAGESPATH;
+
+// Page variables reset
+$theme_templates = ''; 
+$parents_list = ''; 
+$keytags = '';
+$parent = '';
+$template = '';
+$menuStatus = ''; 
+$private = ''; 
+$menu = ''; 
+$content = '';
+$author = '';
+$title = '';
+$url = '';
+$metak = '';
+$metad = '';
+
+if ($id){
+	// get saved page data
+	$file = $id .'.xml';
+	if (!file_exists($path . $file)){ 
+		redirect('pages.php?error='.urlencode(i18n_r('PAGE_NOTEXIST')));
+	}
+
+	$data_edit = getXML($path . $file);
+	$title = stripslashes($data_edit->title);
+	$pubDate = $data_edit->pubDate;
+	$metak = stripslashes($data_edit->meta);
+	$metad = stripslashes($data_edit->metad);
+	$url = $data_edit->url;
+	$content = stripslashes($data_edit->content);
+	$template = $data_edit->template;
+	$parent = $data_edit->parent;
+	$author = $data_edit->author;
+	$menu = stripslashes($data_edit->menu);
+	$private = $data_edit->private;
+	$menuStatus = $data_edit->menuStatus;
+	$menuOrder = $data_edit->menuOrder;
+	$buttonname = i18n_r('BTN_SAVEUPDATES');
+} else {
+	// prefill fields is provided
+	$title      =  isset( $_GET['title']      ) ? var_out( $_GET['title']      ) : '';
+	$template   =  isset( $_GET['template']   ) ? var_out( $_GET['template']   ) : '';
+	$parent     =  isset( $_GET['parent']     ) ? var_out( $_GET['parent']     ) : '';
+	$menu       =  isset( $_GET['menu']       ) ? var_out( $_GET['menu']       ) : '';
+	$private    =  isset( $_GET['private']    ) ? var_out( $_GET['private']    ) : '';
+	$menuStatus =  isset( $_GET['menuStatus'] ) ? var_out( $_GET['menuStatus'] ) : '';
+	$menuOrder  =  isset( $_GET['menuOrder']  ) ? var_out( $_GET['menuOrder']  ) : '';
+	$buttonname =  i18n_r('BTN_SAVEPAGE');
+}
+```
+
