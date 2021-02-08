@@ -27,6 +27,11 @@
     - [CVE-2019-15228](#cve-2019-15228)
     - [CVE-2018-20137](#cve-2018-20137)
     - [CVE-2018-16763](#cve-2018-16763)
+- [GetSimpleCMS](#getsimplecms)
+  - [filtering](#filtering)
+  - [見つけたXSS](#%E8%A6%8B%E3%81%A4%E3%81%91%E3%81%9Fxss)
+  - [Directory Traversal](#directory-traversal)
+  - [](#)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
