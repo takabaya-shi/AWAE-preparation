@@ -14,6 +14,36 @@
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # 概要
+文字列と数値を比較する場合は文字列は`0`の数値として解釈されるので以下はTrueとなる！  
+```txt
+php > var_dump("admin" == 0);
+php shell code:1:
+bool(true)
+php >
+```
+magic hash(ハッシュ化したら`0e数字...`)は数値の`0`と解釈されるので以下はTrueとなる  
+magic hashに使えるものは以下にいろんなハッシュ方式ごとにまとまってて神。  
+https://github.com/spaze/hashes  
+```txt
+php > var_dump("0e66507019969427134894567494305185566735" == "0");
+php shell code:1:
+bool(true)
+php > 
+php > var_dump("0e66507019969427134894567494305185566735" == 0);
+php shell code:1:
+bool(true)
+php > 
+```
+以下のように文字列でも先頭に1が書かれていて、そのあとに`-1`があれば文字列はこの比較の時だけ数字`1`と解釈されてTrueとなる。  
+```txt
+php > var_dump(0 == "1 aa" - 1);
+PHP Notice:  A non well formed numeric value encountered in php shell code on line 1
+PHP Stack trace:
+PHP   1. {main}() php shell code:0
+php shell code:1:
+bool(true)
+php > 
+```
 
 # writeup
 ##
@@ -174,3 +204,6 @@ print(response)
 
 # メモ
 https://www.hamayanhamayan.com/entry/2020/08/09/193357  
+https://medium.com/@Q2hpY2tlblB3bnk/php-type-juggling-c34a10630b10  
+https://github.com/spaze/hashes  
+https://www.whitehatsec.com/blog/magic-hashes/  
