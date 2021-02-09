@@ -213,6 +213,15 @@ class ChildClass extends ParentClass{
 ```
 # 基本的な実装
 ## session
+## login
+入力がハッシュ化されたりされなかったり。  
+以下ではType JugglingできるのでMagic Hashならバイパス可能。ただ、事前に定義済みのsaltを使ってハッシュ化する場合は無理。  
+```php
+			if ( ($userid == $USR) && ($password == $PASSWD) ) {
+				$authenticated = true;
+			} else {
+				$authenticated = false;
+```
 ## file upload
 拡張子とMIME Typeをブラックリスト、ホワイトリストで制限。  
 ブラックリストなら回避は容易だけど、ファイルの中身を見て`mime_content_type()`,`finfo_file`とかでMIME Typeを判断する場合はBurp SuiteでContents-Typeを偽装しても無意味。`$_FILE`から得られるMIME Typeで判断してるかどうか注意。  
@@ -964,7 +973,7 @@ if ($id){
 	}
 ```
 
-
+`admin/zip.php`にZIPを解凍する機能があって、zip slipできるかと思ったけど、ZIPファイルは`$saved_zip_file = GSBACKUPSPATH.'zip/'. $timestamp .'_archive.zip';	`しか開けなくて外部から制御できないので無理そう…  
 ## XSSできない例
 `http://localhost/admin/edit.php?title=aaaaaa%3Ch1%3Ebbba%3C/h1%3E`でアクセスすると、`$id`がないからifの中には入らないっぽい。  
 `$_GET['title'] = "aaaaaa<h1>bbba</h1>"`  
@@ -1280,6 +1289,34 @@ if(isset($_POST['submitted'])) {
 ただ、開発者はsha1ハッシュ時にsaltを指定していればそれも使えるようにしているので、それならこれは無理だしそもそもmagichashのパスワードをadminとして指定してなければ影響はないので、まあほぼ悪用不可能ではある。  
 ![image](https://user-images.githubusercontent.com/56021519/107338118-888b4c80-6afe-11eb-990f-77fee3e11971.png)  
 ![image](https://user-images.githubusercontent.com/56021519/107338221-a658b180-6afe-11eb-866d-1a670d4bd24b.png)  
+
+## password reset
+別におかしな箇所なし。  
+多分XSSで、CSRFトークン付きのPassword resetリクエストを投げれば権限昇格とかができるっぽい？？  
+```txt
+# was the form submitted?
+if(isset($_POST['submitted'])) {
+	
+	# first check for csrf
+	if (!defined('GSNOCSRF') || (GSNOCSRF == FALSE) ) {
+		$nonce = $_POST['nonce'];
+		if(!check_nonce($nonce, "save_settings")) {
+			die("CSRF detected!");	
+		}
+	}
+	
+	# check to see if passwords are changing
+	if(isset($_POST['sitepwd'])) { $pwd1 = $_POST['sitepwd']; }
+	if(isset($_POST['sitepwd_confirm'])) { $pwd2 = $_POST['sitepwd_confirm']; }
+	if ($pwd1 != $pwd2 && $pwd2 != '')	{
+		#passwords do not match 
+		$error = i18n_r('PASSWORD_NO_MATCH');
+	} else {
+		# password cannot be null
+		if ( $pwd1 != '' && $pwd2 != '') { 
+			$PASSWD = passhash($pwd1); 
+		}	
+```
 
 # デバッグ環境
 Ubuntu 20.04.01にphp7.4とかを入れて、Xdebugとかを入れた。これをUbuntu上のVScodeでデバッグする。    
