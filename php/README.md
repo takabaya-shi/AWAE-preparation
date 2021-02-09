@@ -13,6 +13,7 @@
     - [スコープ定義(::)と$this](#%E3%82%B9%E3%82%B3%E3%83%BC%E3%83%97%E5%AE%9A%E7%BE%A9%E3%81%A8this)
 - [基本的な実装](#%E5%9F%BA%E6%9C%AC%E7%9A%84%E3%81%AA%E5%AE%9F%E8%A3%85)
   - [session](#session)
+  - [login](#login)
   - [file upload](#file-upload)
   - [HTMLフィルタリング](#html%E3%83%95%E3%82%A3%E3%83%AB%E3%82%BF%E3%83%AA%E3%83%B3%E3%82%B0)
   - [Directry Traversal対策](#directry-traversal%E5%AF%BE%E7%AD%96)
@@ -21,7 +22,7 @@
 - [fuelCMS](#fuelcms)
   - [install手順](#install%E6%89%8B%E9%A0%86)
   - [基本構成](#%E5%9F%BA%E6%9C%AC%E6%A7%8B%E6%88%90)
-  - [login](#login)
+  - [login](#login-1)
   - [password reset](#password-reset)
   - [session](#session-1)
   - [file upload](#file-upload-1)
@@ -42,6 +43,7 @@
   - [file upload](#file-upload-2)
   - [XXE](#xxe)
   - [login bypass](#login-bypass)
+  - [password reset](#password-reset-1)
 - [デバッグ環境](#%E3%83%87%E3%83%90%E3%83%83%E3%82%B0%E7%92%B0%E5%A2%83)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
