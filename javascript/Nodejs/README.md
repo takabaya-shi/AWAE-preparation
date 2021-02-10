@@ -333,7 +333,29 @@ flag: hitcon{4nother h34rtbleed in n0dejs? or do u solved by other way?}
 
 # サンプルアプリ
 ## progate
-プロゲートの無料のアプリ。
+プロゲートの無料のアプリ。  
+## node-express-realworld-example-app
+https://github.com/gothinkster/node-express-realworld-example-app  
+### routes
+```txt
+.
+├── app.js				// expressサーバーの設定
+├── package.json
+├── public				// 静的ファイル置き場
+│   ├── .keep
+├── routes				// サーバー側のコントローラ
+│   ├── index.js
+│   └── auth.js
+|   └──api
+|       ├── articles.js
+|       ├── index.js
+|       ├── profiles.js
+|       ├── tags.js
+|       └── users.js            
+└── config					// 
+    ├── index.js
+    └── passport.js
+```
 # フォルダ構成
 ```txt
 .
@@ -354,6 +376,9 @@ flag: hitcon{4nother h34rtbleed in n0dejs? or do u solved by other way?}
     ├── index.jade
     └── layout.jade
 ```
+
+
+
 # メモ
 https://www.smrrd.de/nodejs-hacking-challenge.html   
 にNodeJSのハッキングチャレンジ記事がある   
