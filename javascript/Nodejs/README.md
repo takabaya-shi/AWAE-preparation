@@ -338,7 +338,13 @@ flag: hitcon{4nother h34rtbleed in n0dejs? or do u solved by other way?}
 プロゲートの無料のアプリ。  
 ## node-express-realworld-example-app
 https://github.com/gothinkster/node-express-realworld-example-app  
+このアプリで定義されているルーティングは以下の通り。  
+今回はapiのルーティングしか定義されてないっぽい。  
+https://github.com/gothinkster/realworld/blob/master/api/README.md  
+ちなみにデバッグ時に`app.get()`とかにブレークポイントをセットしてもそこでブレークするのは、最初にNode.jsを立ち上げるときだけで、実際にそのルーティングにアクセスしていてもそこでは止まらない。  
+中の処理にブレークポイントをセットしないとだめ。  
 ### routes
+ファイル構成は以下。ルーティングはroutesで定義されてる。  
 ```txt
 .
 ├── app.js				// expressサーバーの設定
@@ -358,6 +364,292 @@ https://github.com/gothinkster/node-express-realworld-example-app
     ├── index.js
     └── passport.js
 ```
+`app.js`の一部は以下。  
+mongooseでMongoDBに接続する。  
+`require('./models/User')`とかでモデルを定義して読み込んでる。つまり、MongoDBに作成するデータをここで定義している。  
+`app.use(require('./routes'))`でroutesフォルダ内のjsファイルを読みこんでいる。  
+ここら辺のルーティングに一致しない場合はそのあとに`app.js`で404エラーとなる。  
+```js
+if(isProduction){
+  mongoose.connect(process.env.MONGODB_URI);
+} else {
+  mongoose.connect('mongodb://localhost/conduit');
+  mongoose.set('debug', true);
+}
+
+require('./models/User');
+require('./models/Article');
+require('./models/Comment');
+require('./config/passport');
+
+app.use(require('./routes'));
+
+/// catch 404 and forward to error handler
+app.use(function(req, res, next) {
+  var err = new Error('Not Found');
+  err.status = 404;
+  next(err);
+});
+```
+`routes/index.js`で以下のように`/api`にアクセスした場合に`./api`フォルダを読み込んでいる。  
+```js
+var router = require('express').Router();
+
+router.use('/api', require('./api'));
+
+module.exports = router;
+```
+`routes/api/index.js`に以下のように`api/`にアクセスしたら`./users`の`users.js`を読み込む、`api/profiles`にアクセスしたら`./profiles`の`profiles.js`を読み込むみたいにする。  
+ここら辺のルーティングのAPIにアクセスした際に、もしJWTトークンをセットしている必要があるAPIをアクセスしていればErrorが返って、  
+`if(err.name === 'ValidationError'){`でそのエラーをキャッチする。  
+JWTトークンが必要ないAPIもある。  
+```js
+var router = require('express').Router();
+
+router.use('/', require('./users'));
+router.use('/profiles', require('./profiles'));
+router.use('/articles', require('./articles'));
+router.use('/tags', require('./tags'));
+
+router.use(function(err, req, res, next){
+  if(err.name === 'ValidationError'){
+    return res.status(422).json({
+      errors: Object.keys(err.errors).reduce(function(errors, key){
+        errors[key] = err.errors[key].message;
+
+        return errors;
+      }, {})
+    });
+  }
+
+  return next(err);
+});
+
+module.exports = router;
+```
+#### routes/api/users.js
+例えば、このルーティングには`/api/user`,`/api/users/login`とかでアクセスする。  
+例えば、GETで`/api/user`にアクセスした場合は、JWTトークンを`Authorization: Bearer`ヘッダにセットする必要があって、現在ログインしているユーザを`User.findById(req.payload.id)`でidからデータベースで検索してそのidに対するユーザがいればそのデータをreturnしている。  
+`req.payload.id`はJWT tokenが`{header: {…}, payload: {…}, signature: 'ysAYbiUpuK8gqJXTxK-wcIzrsOIkM119ciPHELj7q34'}`となっているうちのDataの部分。  
+![image](https://user-images.githubusercontent.com/56021519/107498657-6fa29a00-6bd7-11eb-9fe4-3eedd332c666.png)  
+```js
+var mongoose = require('mongoose');
+var router = require('express').Router();
+var passport = require('passport');
+var User = mongoose.model('User');
+var auth = require('../auth');
+
+router.get('/user', auth.required, function(req, res, next){
+  User.findById(req.payload.id).then(function(user){
+    if(!user){ return res.sendStatus(401); }
+
+    return res.json({user: user.toAuthJSON()});
+  }).catch(next);
+});
+
+router.put('/user', auth.required, function(req, res, next){
+  User.findById(req.payload.id).then(function(user){
+    if(!user){ return res.sendStatus(401); }
+
+    // only update fields that were actually passed...
+    if(typeof req.body.user.username !== 'undefined'){
+      user.username = req.body.user.username;
+    }
+    if(typeof req.body.user.email !== 'undefined'){
+      user.email = req.body.user.email;
+    }
+    if(typeof req.body.user.bio !== 'undefined'){
+      user.bio = req.body.user.bio;
+    }
+    if(typeof req.body.user.image !== 'undefined'){
+      user.image = req.body.user.image;
+    }
+    if(typeof req.body.user.password !== 'undefined'){
+      user.setPassword(req.body.user.password);
+    }
+
+    return user.save().then(function(){
+      return res.json({user: user.toAuthJSON()});
+    });
+  }).catch(next);
+});
+
+router.post('/users/login', function(req, res, next){
+  if(!req.body.user.email){
+    return res.status(422).json({errors: {email: "can't be blank"}});
+  }
+
+  if(!req.body.user.password){
+    return res.status(422).json({errors: {password: "can't be blank"}});
+  }
+
+  passport.authenticate('local', {session: false}, function(err, user, info){
+    if(err){ return next(err); }
+
+    if(user){
+      user.token = user.generateJWT();
+      return res.json({user: user.toAuthJSON()});
+    } else {
+      return res.status(422).json(info);
+    }
+  })(req, res, next);
+});
+
+router.post('/users', function(req, res, next){
+  var user = new User();
+
+  user.username = req.body.user.username;
+  user.email = req.body.user.email;
+  user.setPassword(req.body.user.password);
+
+  user.save().then(function(){
+    return res.json({user: user.toAuthJSON()});
+  }).catch(next);
+});
+
+module.exports = router;
+
+```
+この`api/user`機能を使うには事前に`api/users/login`とかでログインしておいてJWTトークンを取得しておいて、以下のようにトークン付きのリクエストを送信すればよい。  
+```txt
+$ curl -X GET http://127.0.0.1:3000/api/user -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYwMjNhZDhmNTI5Y2UwYzgzMTI2ZjYxNSIsInVzZXJuYW1lIjoiamFjb2IiLCJleHAiOjE2MTgxMzgwMTEsImlhdCI6MTYxMjk1NDAxMX0.boL07nDPTtO7tohbM1Py3b9Tly-nPWPbmo06548OfKs' -v
+Note: Unnecessary use of -X or --request, GET is already inferred.
+*   Trying 127.0.0.1:3000...
+* TCP_NODELAY set
+* Connected to 127.0.0.1 (127.0.0.1) port 3000 (#0)
+> GET /api/user HTTP/1.1
+> Host: 127.0.0.1:3000
+> User-Agent: curl/7.68.0
+> Accept: */*
+> Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYwMjNhZDhmNTI5Y2UwYzgzMTI2ZjYxNSIsInVzZXJuYW1lIjoiamFjb2IiLCJleHAiOjE2MTgxMzgwMTEsImlhdCI6MTYxMjk1NDAxMX0.boL07nDPTtO7tohbM1Py3b9Tly-nPWPbmo06548OfKs
+> 
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 200 OK
+< X-Powered-By: Express
+< Access-Control-Allow-Origin: *
+< Content-Type: application/json; charset=utf-8
+< Content-Length: 261
+< ETag: W/"105-HVVvJzymW9Jj23GWzlu1pA"
+< Date: Wed, 10 Feb 2021 10:48:24 GMT
+< Connection: keep-alive
+< 
+* Connection #0 to host 127.0.0.1 left intact
+{"user":{"username":"jacob","email":"jake@jake.jake","token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYwMjNhZDhmNTI5Y2UwYzgzMTI2ZjYxNSIsInVzZXJuYW1lIjoiamFjb2IiLCJleHAiOjE2MTgxMzgxMDQsImlhdCI6MTYxMjk1NDEwNH0.UKBvLkh69r9N72B3ba1WVA7XPJc4T8dq_NJsMbc5loQ"}}
+```
+### Model
+`models/User.js`でUserSchemaインスタンスを作成して、Userモデルを作成してるっぽい。  
+MongoDBに保存するときはこの形式で保存されるっぽい。ちなみにValidationもしてる。  
+https://thinkster.io/tutorials/node-json-api/creating-the-user-model  
+```js
+var UserSchema = new mongoose.Schema({
+  username: {type: String, lowercase: true, unique: true, required: [true, "can't be blank"], match: [/^[a-zA-Z0-9]+$/, 'is invalid'], index: true},
+  email: {type: String, lowercase: true, unique: true, required: [true, "can't be blank"], match: [/\S+@\S+\.\S+/, 'is invalid'], index: true},
+  bio: String,
+  image: String,
+  favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Article' }],
+  following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  hash: String,
+  salt: String
+}, {timestamps: true});
+```
+また、以下でPasswordの検証とかJWTトークンの生成とかのメソッドを定義してる。  
+```js
+UserSchema.plugin(uniqueValidator, {message: 'is already taken.'});
+
+UserSchema.methods.validPassword = function(password) {
+  var hash = crypto.pbkdf2Sync(password, this.salt, 10000, 512, 'sha512').toString('hex');
+  return this.hash === hash;
+};
+
+UserSchema.methods.setPassword = function(password){
+  this.salt = crypto.randomBytes(16).toString('hex');
+  this.hash = crypto.pbkdf2Sync(password, this.salt, 10000, 512, 'sha512').toString('hex');
+};
+
+UserSchema.methods.generateJWT = function() {
+  var today = new Date();
+  var exp = new Date(today);
+  exp.setDate(today.getDate() + 60);
+
+  return jwt.sign({
+    id: this._id,
+    username: this.username,
+    exp: parseInt(exp.getTime() / 1000),
+  }, secret);
+};
+
+UserSchema.methods.toAuthJSON = function(){
+  return {
+    username: this.username,
+    email: this.email,
+    token: this.generateJWT(),
+    bio: this.bio,
+    image: this.image
+  };
+};
+```
+### login
+http://knimon-software.github.io/www.passportjs.org/guide/configure/  
+認証リクエストは、認証リクエストをおこなうための必要最低限の機能をもつPassportというNode.jsのミドルウェアを使用している。  
+`config/passport.js`で定義されてる。  
+`passport.use(new LocalStrategy({`でストラテジを定義してそのあとのfunctionの中で認証or認証失敗の処理を記述する。  
+ここで定義したログイン検証は、`passport.authenticate('local')`を呼び出すときに内部で呼び出されていて成功か失敗かを返している。  
+`passport.authenticate('local')`は`routes/api/users.js`で`/api/users/login`にリクエストが来たときに呼び出される。  
+```js
+var passport = require('passport');
+var LocalStrategy = require('passport-local').Strategy;
+var mongoose = require('mongoose');
+var User = mongoose.model('User');
+
+passport.use(new LocalStrategy({
+  usernameField: 'user[email]',
+  passwordField: 'user[password]'
+}, function(email, password, done) {
+  User.findOne({email: email}).then(function(user){
+    if(!user || !user.validPassword(password)){
+      return done(null, false, {errors: {'email or password': 'is invalid'}});
+    }
+
+    return done(null, user);
+  }).catch(done);
+}));
+
+```
+### JWT token
+`routes/auth.js`で以下のようにJWTトークンを取得するメソッドが定義されてる。  
+ここら辺の処理は`router.put('/user', auth.required, function(req, res, next){`みたいにJWTトークンが必要な場合は、第二引数に`auth.required`が指定されていて、`jwt({})`が該当していて、トークンをヘッダーから取り出す処理が実行される。  
+あと、多分それが終わったら`node_modules/express-jwt/lib/index.js`で`jwt.decode`や`jwt.verify`によってJWTトークンのデコードや署名の検証まで自動で行ってくれるっポイ。  
+もし検証に失敗したら、`err`オブジェクトを投げるっぽい。  
+```js
+var jwt = require('express-jwt');
+var secret = require('../config').secret;
+
+function getTokenFromHeader(req){
+  if (req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Token' ||
+      req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer') {
+    return req.headers.authorization.split(' ')[1];
+  }
+
+  return null;
+}
+
+var auth = {
+  required: jwt({
+    secret: secret,
+    userProperty: 'payload',
+    getToken: getTokenFromHeader
+  }),
+  optional: jwt({
+    secret: secret,
+    userProperty: 'payload',
+    credentialsRequired: false,
+    getToken: getTokenFromHeader
+  })
+};
+
+module.exports = auth;
+```
+
 # フォルダ構成
 ```txt
 .
@@ -404,3 +696,9 @@ https://developer.mozilla.org/ja/docs/Learn/Server-side/Express_Nodejs/Introduct
 Node.jsの基本   
 https://qiita.com/ganariya/items/85e51e718e56e7d128b8  
 Node.jsの基本。わかりやすい。ミドルウェアとかのわかりやすい解説。  
+https://thinkster.io/tutorials/node-json-api/configuring-middleware-for-authentication  
+途中までだけどreal-worldのNode.js版のModelとJWTの実装手順が書かれてる。  
+https://qiita.com/tinymouse/items/fa910bf80a038c7f9ccb  
+Node.js+express+Passport  
+https://qiita.com/sa9ra4ma/items/67edf18067eb64a0bf40  
+Node.js+JWT  
