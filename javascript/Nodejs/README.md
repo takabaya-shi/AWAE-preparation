@@ -996,7 +996,87 @@ TreeController.prototype.getTree = function( theRoot ) {
 ![image](https://user-images.githubusercontent.com/56021519/107691901-67d61900-6cef-11eb-8ad7-6e169b7c7ca0.png)  
 ![image](https://user-images.githubusercontent.com/56021519/107691970-81776080-6cef-11eb-8c97-e6dd676bcba5.png)  
 ![image](https://user-images.githubusercontent.com/56021519/107692109-ae2b7800-6cef-11eb-9da2-47bb381193a9.png)  
+  
+同様のXSSが`Images`の場所にもあるっぽい。  
+![image](https://user-images.githubusercontent.com/56021519/107693603-b389c200-6cf1-11eb-9fee-717fcd8bb270.png)  
+![image](https://user-images.githubusercontent.com/56021519/107693640-bdabc080-6cf1-11eb-9488-50004687bd6f.png)  
+  
+こう考えると、Node.jsの場合はXSSできるかどうかは`grep '<%-' -r . | grep 'views' | grep '<%-' `でHTMLエスケープせずに表示しているデータの中にHTMLタグを挿入できるかどうかを調べればよさそう？？  
+```txt
+$ grep '<%-' -r . | grep 'views' | grep '<%-' 
+./mysite/views/index.ejs:          <%- render() %>
+./mysite/views/menu-left.ejs:          <li><a <%- (page == subpage) ? 'class="active"' : '' %>
+./mysite/views/footer.ejs:    <span class="first"><%- first.render() %></span>
+./mysite/views/footer.ejs:    <span class="second"><%- second.render() %></span>
+./mysite/views/footer.ejs:    <span class="third"><%- third.render() %></span>
+./mysite/views/content.ejs:          <%- render({intro: 'N'}) %>
+./mysite/views/page.ejs:          <%- render() %>
+./mysite/views/intros.ejs:      <%- render() %>
+./mysite/views/intros.ejs:        <%- render({page: CP, intro: 'Y'}) %>
+./mysite/views/menu-top.ejs:  <a id="logo" href="/<%=page.language%>/"><img src="<%- dynamic %>/images/11.png" alt=""></a>
+./node_modules/cody/doc/empty/views/index.ejs:          <%- render() %>
+./node_modules/cody/doc/empty/views/menu-left.ejs:          <li><a <%- (page == subpage) ? 'class="active"' : '' %>
+./node_modules/cody/doc/empty/views/footer.ejs:    <span class="first"><%- first.render() %></span>
+./node_modules/cody/doc/empty/views/footer.ejs:    <span class="second"><%- second.render() %></span>
+./node_modules/cody/doc/empty/views/footer.ejs:    <span class="third"><%- third.render() %></span>
+./node_modules/cody/doc/empty/views/content.ejs:          <%- render({intro: 'N'}) %>
+./node_modules/cody/doc/empty/views/page.ejs:          <%- render() %>
+./node_modules/cody/doc/empty/views/intros.ejs:      <%- render() %>
+./node_modules/cody/doc/empty/views/intros.ejs:        <%- render({page: CP, intro: 'Y'}) %>
+./node_modules/cody/doc/empty/views/menu-top.ejs:  <a id="logo" href="/<%=page.language%>/"><img src="<%- dynamic %>/images/11.png" alt=""></a>
+./node_modules/cody/views/front/index.ejs:<%- context.cody.unitTests.controller(context) %>
+./node_modules/cody/views/cms/pages.ejs:                <%- controller.getTree() %>
+./node_modules/cody/views/cms/pages.ejs:                <%- controller.getOrphansTree() %>
+./node_modules/cody/views/cms/pages.ejs:                  <%- controller.getDashboardTree() %>
+./node_modules/cody/views/cms/files.ejs:              <%- controller.getTree() %>
+./node_modules/cody/views/cms/comments-ajax.ejs:     <%- atom.note %>
+./node_modules/cody/views/cms/contacts.ejs:          <input type="hidden" name="id" value="<%- record.id %>" />
+./node_modules/cody/views/cms/contacts.ejs:              <input name="name" id="name" type="text" value="<%- record.name %>" class="required"/>
+./node_modules/cody/views/cms/contacts.ejs:              <input name="cie" id="cie" type="text" value="<%- record.cie %>" />
+./node_modules/cody/views/cms/contacts.ejs:              <input name="title" id="titles" type="text" value="<%- record.title %>" />
+./node_modules/cody/views/cms/contacts.ejs:              <input name="phone" id="phone" type="text" value="<%- record.phone %>" />
+./node_modules/cody/views/cms/contacts.ejs:               <input name="origin" id="origin" type="text" value="<%- record.origin %>" />
+./node_modules/cody/views/cms/contacts.ejs:              <input name="email" id="email" type="text" value="<%- record.email %>"  class="required email"/>
+./node_modules/cody/views/cms/contacts.ejs:            <tr <%- (u.active=='Y') ? '' : 'class="inactive"' %>>
+./node_modules/cody/views/cms/contacts.ejs:              <td><%- (u.nomail=='N') ? '' : '(' %><%= u.email %><%- (u.nomail=='N') ? '' : ')' %></td>
+./node_modules/cody/views/cms/pages-ajax.ejs:                  <%- cody.FormController.menuList( app.atoms, c.atom ) %>
+./node_modules/cody/views/cms/pages-ajax.ejs:						  <%- optionList(app.templates, page.item.templateId, "id", "name") %>
+./node_modules/cody/views/cms/pages-ajax.ejs:            <%- optionList(cody.Item.orderbyList, page.item.orderby) %>
+./node_modules/cody/views/cms/pages-ajax.ejs:              <%- optionList(cody.Item.showcontentList, page.item.showcontent) %>
+./node_modules/cody/views/cms/pages-ajax.ejs:              <%- optionList(app.domains, '') %>
+./node_modules/cody/views/cms/forms.ejs:          <%- controller.getTree() %>
+./node_modules/cody/views/cms/forms-data.ejs:    <%- meta.html( page.language, { name: "Edit", options: {}, extraButtons: CancelAndDelete, labels: label })  %>
+./node_modules/cody/views/cms/images.ejs:              <%- controller.getTree() %>
+./node_modules/cody/views/cms/images.ejs:              <%- controller.getTree(4) %>
+./node_modules/cody/views/cms/users.ejs:   			<input type="hidden" name="id" value="<%- user.id %>" /> 
+./node_modules/cody/views/cms/users.ejs:					<input name="name" id="name" type="text" value="<%- user.name %>" class="required"/>
+./node_modules/cody/views/cms/users.ejs:					<input name="username" id="username" type="text" value="<%- user.username %>" class="required" />
+./node_modules/cody/views/cms/users.ejs:					<input name="domain" id="domain" type="text" value="<%- user.domain %>" />
+./node_modules/cody/views/cms/users.ejs:             <%- optionList(domains, -1) %>
+./node_modules/cody/views/cms/users.ejs:					  <%- optionList(levels, user.level) %>
+./node_modules/cody/views/cms/users.ejs:          <input name="badlogins" id="badlogins" type="text" class="number" value="<%- user.badlogins %>"  class="required number"/>
+./node_modules/cody/views/cms/users.ejs:          <input name="maxbadlogins" id="maxbadlogins" type="text" class="number" value="<%- user.maxbadlogins %>"  class="required number"/>
+./node_modules/cody/views/cms/users.ejs:					<input name="email" id="email" type="text" value="<%- user.email %>"  class="required email"/>
+./node_modules/cody/views/cms/templates.ejs:      <input type="hidden" name="id" value="<%- template.id %>" />
+./node_modules/cody/views/cms/templates.ejs:					<input name="name" id="name" type="text" value="<%- template.name %>" class="required"/>
+./node_modules/cody/views/cms/templates.ejs:          <textarea name="description" id="description"><%- template.description %></textarea>
+./node_modules/cody/views/cms/templates.ejs:					<input name="controller" id="controller" type="text" value="<%- template.controllerName %>" class="required" />
+./node_modules/cody/views/cms/templates.ejs:					<input name="fn" id="fn" type="text" value="<%- template.fn %>" class="required" />
+./node_modules/cody/views/cms/templates.ejs:          <input name="maxnumber" id="maxnumber" type="text" class="number" value="<%- template.maxnumber %>"  class="required number"/>
+./node_modules/cody/views/cms/templates.ejs:            <%- optionList(app.templates, template.defaultchild, "id", "name") %>
+./node_modules/cody/views/cms/templates.ejs:          <input name="allowedtemplates" id="allowedtemplates" type="text" value="<%- template.allowedtemplates %>" />
 
+```
+
+このXSSは以下のページであるっぽいな。  
+```txt
+$ grep '<%-' -r . | grep 'views' | grep -v render| grep '<%-'  | grep 'controller.getTree'
+./node_modules/cody/views/cms/pages.ejs:                <%- controller.getTree() %>
+./node_modules/cody/views/cms/files.ejs:              <%- controller.getTree() %>
+./node_modules/cody/views/cms/forms.ejs:          <%- controller.getTree() %>
+./node_modules/cody/views/cms/images.ejs:              <%- controller.getTree() %>
+./node_modules/cody/views/cms/images.ejs:              <%- controller.getTree(4) %>
+```
 # フォルダ構成
 ```txt
 .
