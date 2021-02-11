@@ -851,6 +851,10 @@ LoginController.prototype.doRequest = function( finish ) {
 
 ```
 実際のLogin検証をしている`self.tryLogin(finish)`の中身は以下。  
+`cody.User.getUser`でログイン検証してるっぽい。  
+この中では`this.connection.query(sql, params, callback);`が呼び出されていて、  
+`sql:'select * from users where username = 'admin' and password = password('empty 0')'`みたいにしてエスケープした状態でSQL文を実行するっぽいからSQL Injection対策になっている。  
+https://kaworu.jpn.org/javascript/node.js%E3%81%A7MySQL%E3%81%AE%E7%96%91%E5%95%8F%E7%AC%A6%E3%83%97%E3%83%AC%E3%83%BC%E3%82%B9%E3%83%9B%E3%83%AB%E3%83%80%E3%81%AB%E3%82%88%E3%82%8BSQL%E3%82%A4%E3%83%B3%E3%82%B8%E3%82%A7%E3%82%AF%E3%82%B7%E3%83%A7%E3%83%B3%E5%AF%BE%E7%AD%96  
 ```js
 LoginController.prototype.markLogin = function( theUserName, theLogin, locked, finish ) {
   // override this one if you want to log the login (= ! isActive() -> failed)
@@ -925,6 +929,27 @@ Application.prototype.buildContext = function (path, req, res) {
 
   return context;
 };
+```
+
+### 見つけた?XSS
+`cody/views/cms/pages.ejs`の以下の`<%- controller.getTree() %>`ではHTMLエスケープをせずにデータを表示している。  
+`<%-`の場合はエスケープせずにデータを表示、`<%=`の場合はエスケープして表示。  
+ここで、HTMLを仕込んだtitleを動的にHTMLを作成しているため、XSSが可能！！！  
+```html
+          <div id="tree" class="ui-corner-bottom">
+            <ul>
+              <li id="id_1" class="open" rel="root"><a href="#"><ins>&nbsp;</ins><%= __("Website")%></a>
+                <%- controller.getTree() %>
+              </li>
+              <li id="id_3" class="closed" rel="root"><a href="#"><ins>&nbsp;</ins><%= __("Pages")%></a>
+                <%- controller.getOrphansTree() %>
+              </li>
+
+              <% if ((login) && (login.level >= 99)) { %>
+               <li id="id_9" class="closed" rel="root"><a href="#"><ins>&nbsp;</ins><%= __("Dashboard")%></a>
+                  <%- controller.getDashboardTree() %>
+               </li>
+              <% } %>
 ```
 
 # フォルダ構成
