@@ -952,6 +952,50 @@ Application.prototype.buildContext = function (path, req, res) {
                </li>
               <% } %>
 ```
+`controller.getTree()`は`node_modules/cody/controllers/TreeController.js`で以下のように定義されている。  
+動的にHTMLを生成してるっぽい。  
+```js
+// The complete tree for the admin part of the essen
+TreeController.prototype.getTree = function( theRoot ) {
+  var self = this;
+  var aRoot = (typeof theRoot === "number") ? self.app.getAtom(theRoot) :
+              (typeof theRoot === "object") ? theRoot :
+              self.getObject((typeof theRoot === "undefined") ? self.getRoot() : theRoot);
+  
+  function renderTree( theNode, open, descend ) {
+    var aTree = "";
+    if (typeof theNode != "undefined") {
+      var aList = theNode.getChildren();
+      for (var x in aList) { var p = aList[x];
+         var name = (p.isActive()) ? p.getName() : "("+p.getName()+")";
+         var classes = (open ? "open " : "") +
+                       (p.isVisible() ? "" : "invisible ") +
+                       (p.isActive() ? "" : "deleted");
+           aTree += "<li id=\"id_" + p.getId() + "\" class=\"" + classes + "\"" +
+                 " rel=\""+ self.getType(p) + "\"" +
+                "><a href=\"#\">" + name + "</a>";
+           if (descend > 0) {
+             aTree += renderTree(p, false, descend-1);
+           }
+           aTree += "</li>";
+      }
+    }
+    if (aTree.length === 0) {
+       return "";
+    } else {
+       return "<ul>" + aTree + "</ul>";
+    }
+  }
+
+  return renderTree( aRoot, false, 99 );
+};
+```
+以下PoC  
+ただこれってXSSカウントなんかなー？  
+修正結構めんどそうだし修正されなそう…  
+![image](https://user-images.githubusercontent.com/56021519/107691901-67d61900-6cef-11eb-8ad7-6e169b7c7ca0.png)  
+![image](https://user-images.githubusercontent.com/56021519/107691970-81776080-6cef-11eb-8c97-e6dd676bcba5.png)  
+![image](https://user-images.githubusercontent.com/56021519/107692109-ae2b7800-6cef-11eb-9da2-47bb381193a9.png)  
 
 # フォルダ構成
 ```txt
