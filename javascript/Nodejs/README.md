@@ -1083,6 +1083,8 @@ $ grep '<%-' -r . | grep 'views' | grep -v render| grep '<%-'  | grep 'controlle
 ./node_modules/cody/views/cms/contacts.ejs:              <input name="title" id="titles" type="text" value="<%- record.title %>" />
 ./node_modules/cody/views/cms/templates.ejs:					<input name="name" id="name" type="text" value="<%- template.name %>" class="required"/>
 ```
+  
+あとは`www.mysite.com/[page]"><`みたいな設定するとこにもXSSできそうだけどこれはJS実行前提なのか？？だからXSSではない？？  
 # フォルダ構成
 ```txt
 .
