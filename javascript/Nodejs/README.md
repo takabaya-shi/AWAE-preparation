@@ -1077,6 +1077,11 @@ $ grep '<%-' -r . | grep 'views' | grep -v render| grep '<%-'  | grep 'controlle
 ./node_modules/cody/views/cms/images.ejs:              <%- controller.getTree() %>
 ./node_modules/cody/views/cms/images.ejs:              <%- controller.getTree(4) %>
 ```
+ちなみに以下でもXSSできそう感あるけど、`contacts.ejs`をrenderする方法がイマイチよくわからんのと`templates.ejs`でこのXSSできそうなやつを表示するには変数`template`が定義されている必要があるっぽいけどその方法がイマイチよくわからん…  
+```txt
+./node_modules/cody/views/cms/contacts.ejs:              <input name="title" id="titles" type="text" value="<%- record.title %>" />
+./node_modules/cody/views/cms/templates.ejs:					<input name="name" id="name" type="text" value="<%- template.name %>" class="required"/>
+```
 # フォルダ構成
 ```txt
 .
@@ -1134,6 +1139,10 @@ SQL Injection対策になってるっぽい。
 Node.jsの場合はどんなファイルをアップロードできたとしてもそれを実行できないと意味ないのでは？？  
 `evil.ejs`ファイルとかをアップロードしたとしてもそれを`app.js`から`render('evil')`とかで読み込まない限り実行できないのでは？？  
 もともとある`.ejs`ファイルを上書きできる場合にはRCE可能っぽい。  
+## XSS
+`<%- user.name %>`とかで`<%-`で`.ejs`テンプレートエンジンで値を出力する場合はHTMLエスケープされない。  
+`<%=`の場合はエスケープされる。なので、XSS対策としてHTMLエスケープするような箇所は基本ない？？  
+
 
 # メモ
 https://www.smrrd.de/nodejs-hacking-challenge.html   
