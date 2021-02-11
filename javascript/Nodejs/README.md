@@ -24,6 +24,7 @@
     - [JWT token](#jwt-token)
   - [cody CMS](#cody-cms)
     - [概要](#%E6%A6%82%E8%A6%81)
+    - [model](#model-1)
     - [login](#login-1)
     - [body content](#body-content)
 - [フォルダ構成](#%E3%83%95%E3%82%A9%E3%83%AB%E3%83%80%E6%A7%8B%E6%88%90)
