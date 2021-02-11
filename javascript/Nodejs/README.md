@@ -654,6 +654,82 @@ var auth = {
 module.exports = auth;
 ```
 
+## cody CMS
+### 概要
+このCMSの主要部分の処理は`node_modules/cody/apps/Application.js`に書かれている。  
+`http://mysite.local:3001/en/pages`とかにアクセスしたときに、リクエストを処理する部分のメインの処理は以下で行われる。  
+```js
+//////////////////
+// Page serving //
+//////////////////
+Application.prototype.servePage = function(req, res) {
+  var self = this;
+  var path = new cody.Path(req._parsedUrl.pathname, self.defaultlanguage);
+
+  var ip = req.headers['x-forwarded-for'] ||
+    req.connection.remoteAddress ||
+    req.socket.remoteAddress ||
+    req.connection.socket.remoteAddress;
+  console.log("--LOG--A--|" + ip + "|" + new Date() + "|" + req.headers['host'] + "|" + req._parsedUrl.pathname);
+
+  self.log("servePage - path -> " + path.link);
+  
+   
+  var aContext = self.buildContext( path, req, res );
+  if (typeof aContext !== "undefined") {
+    self.handToController(aContext);
+  }
+};
+```
+
+### login
+`node_modules/cody/apps/Application.js`で以下の部分でログインが必要な処理をする場合に、ログインしてるかどうかチェックしてる。  
+```js
+  // check if authentication is required for this action
+  //  and if so and not yet done: store this action and perform login first
+  if (controller.needsLogin()) {
+    if (controller.isLoggedIn()) {
+      self.log("Application - check login", "already logged in");
+      if (! controller.isAllowed(context.page)) {
+        controller.close();
+        self.notAllowed(context);
+        return;
+      }
+    } else {
+      self.log("Application - check login", "needs login, redirect/remember");
+
+      controller.close();
+      self.logInFirst(context);
+      return;
+    }
+```
+### body content
+`node_modules/cody/apps/Application.js`  
+```js
+Application.prototype.buildContext = function (path, req, res) {
+  var self = this;
+  
+  // get the page
+  var page = self.findPage(path);
+  
+  if (typeof page === "undefined") {
+      self.err("servePage", "No page found for path = " + path.pagelink, res);
+      return undefined;
+  }
+
+  self.log("buildContext -> page", page.language + "/" + page.itemId + " - " + page.title);
+  
+  // build a context
+  var context = new cody.Context(path, page, self, req, res);
+  console.log("servePage - params -> "); console.log(context.params);
+  console.log("servePage - session -> "); console.log(context.session);
+
+  if (typeof req.files !== "undefined") { console.log("servePage - files -> "); console.log(req.files); }
+
+  return context;
+};
+```
+
 # フォルダ構成
 ```txt
 .
@@ -674,8 +750,43 @@ module.exports = auth;
     ├── index.jade
     └── layout.jade
 ```
-
-
+## MySQL
+https://qiita.com/PianoScoreJP/items/7ed172cd0e7846641e13  
+https://www.webprofessional.jp/using-node-mysql-javascript-client/  
+以下でMySQLに接続する。  
+```js
+const con = mysql.createConnection({
+  host: 'localhost',
+  user: 'user',
+  password: 'password',
+  database: 'sitepoint',
+  multipleStatements: true
+});
+```
+そのあと、以下でSQL文実行。  
+ここではid=`userLandVariable`をエスケープしてない。  
+```js
+con.query(
+  `SELECT * FROM employees WHERE id = ${userLandVariable}`,
+  (err, rows) => {
+    if(err) throw err;
+    console.log(rows);
+  }
+);
+```
+以下のように`?`を使えば、第二引数に配列を指定して値をエスケープした後に渡せるらしい！！！  
+SQL Injection対策になってるっぽい。  
+```js
+ con.query(
+  'SELECT * FROM employees WHERE id = ?',
+  [userLandVariable],
+  (err, rows) => { ... }
+);
+```
+## file upload
+Node.jsの場合はどんなファイルをアップロードできたとしてもそれを実行できないと意味ないのでは？？  
+`evil.ejs`ファイルとかをアップロードしたとしてもそれを`app.js`から`render('evil')`とかで読み込まない限り実行できないのでは？？  
+もともとある`.ejs`ファイルを上書きできる場合にはRCE可能っぽい。  
 
 # メモ
 https://www.smrrd.de/nodejs-hacking-challenge.html   
