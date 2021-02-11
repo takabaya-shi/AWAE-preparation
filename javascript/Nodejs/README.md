@@ -664,6 +664,15 @@ module.exports = auth;
 ### 概要
 このCMSの主要部分の処理は`node_modules/cody/apps/Application.js`に書かれている。  
 `http://mysite.local:3001/en/pages`とかにアクセスしたときに、リクエストを処理する部分のメインの処理は以下で行われる。  
+http://cody-cms.org/en/BigPicture  
+ここに詳しく書いてある。  
+`Application.prototype.servePage = function(req, res)`は、実質ApplicationクラスにservePageメソッドを定義するみたいなものっぽい。  
+`new cody.Path(req._parsedUrl.pathname, self.defaultlanguage);`でリクエストの内容から、`language`,`domain`,`request`,`id`の情報をURLから分割して得る。  
+`var aContext = self.buildContext( path, req, res );`で`aContext`という名前の`Context`オブジェクトを生成する。この`Context`オブジェクトはコントローラーとビューに必要なデータを渡す際に使われる。  
+実際には以下のようなデータが保存されている。  
+これらの情報から次はこのデータをどのControllerで使用するかを`self.handToController(aContext);`で判断して処理を実行する。  
+![image](https://user-images.githubusercontent.com/56021519/107660017-26337700-6ccb-11eb-9421-43d39a9adb39.png)  
+
 ```js
 //////////////////
 // Page serving //
@@ -687,6 +696,103 @@ Application.prototype.servePage = function(req, res) {
   }
 };
 ```
+`buildContext`でContextオブジェクトを作成している。  
+`console.log("servePage - params -> "); console.log(context.params);`とかからもわかる通りリクエストとかの内容をContextオブジェクトに保存している。  
+```txt
+servePage - params -> {request: 'getnode', node: 'id_103'}
+servePage - session -> Session {cookie: Cookie, login: {…}, req: IncomingMessage, id: 'a3BDAob-G1hN3g8rlz7MVXjqg7U4Q5mA', reload: ƒ, …}
+```
+```js
+Application.prototype.buildContext = function (path, req, res) {
+  var self = this;
+  
+  // get the page
+  var page = self.findPage(path);
+  
+  if (typeof page === "undefined") {
+      self.err("servePage", "No page found for path = " + path.pagelink, res);
+      return undefined;
+  }
+
+  self.log("buildContext -> page", page.language + "/" + page.itemId + " - " + page.title);
+  
+  // build a context
+  var context = new cody.Context(path, page, self, req, res);
+  console.log("servePage - params -> "); console.log(context.params);
+  console.log("servePage - session -> "); console.log(context.session);
+
+  if (typeof req.files !== "undefined") { console.log("servePage - files -> "); console.log(req.files); }
+
+  return context;
+};
+```
+`handToController`メソッドの中ではContextオブジェクトの内容から使用するControllerを`var controller = context.page.getController(context);`で判断する。  
+以下のように今回は`PageController`を使用すると判断している。  
+![image](https://user-images.githubusercontent.com/56021519/107661115-4e6fa580-6ccc-11eb-9323-5ca20659ef99.png)  
+`controller.needsLogin()`ではそのControllerを使用するのにAuthenticationが必要かどうかを`true`,`false`で返して判断する。この`needsLogin()`メソッドは`node_modules/cody/models/Context.js`で定義されてる。  
+`controller.doRequest( function(fn, header) {`でそれぞれのControllerオブジェクトで定義されているController固有の処理を実行する。  
+例えばPagesControllerなら、`node_modules/cody/controllers/PageController.js`で定義されている`PageController.prototype.doRequest = function( finish ) {`の中身を実行する。  
+で、多分実行結果とかも`context`オブジェクトに格納されていて、最後にその保存されたデータを`self.renderView( context );`のようにしてViewにレンダリングしている。  
+```js
+Application.prototype.handToController = function(context) {
+  var self = this;
+  
+  // make a controller and send it 'doRequest'
+  self.log("handToController", context.page.item.template.controllerName);
+  var controller = context.page.getController(context);
+  
+  if (typeof controller === "undefined") {
+    self.err("handToController", "No controller found for " + context.page.item.template.controllerName);
+    return;
+  }
+  
+  // check if authentication is required for this action
+  //  and if so and not yet done: store this action and perform login first
+  if (controller.needsLogin()) {
+    if (controller.isLoggedIn()) {
+      self.log("Application - check login", "already logged in");
+      if (! controller.isAllowed(context.page)) {
+        controller.close();
+        self.notAllowed(context);
+        return;
+      }
+    } else {
+      self.log("Application - check login", "needs login, redirect/remember");
+
+      controller.close();
+      self.logInFirst(context);
+      return;
+    }
+  }
+  
+  controller.doRequest( function(fn, header) {
+    // callback function should always be called by doRequest
+    //  render with the specified or the template in the context (controller may have changed it)
+    //  if no render template present ( == "") either
+    //    -- assume the controller performed res.writeHead() / .write() / .end() -- ajax req?
+    //    -- another controller has taken over
+
+    if (typeof fn === "object") {
+      controller.gen(fn, header);
+      
+    } else {
+      if (typeof fn !== "undefined") {
+        context.fn = fn; 
+      }
+      
+      self.log("Application.handToController -> finished -> render view", (context.fn==="") ? "** none **" : context.fn);
+
+      self.renderView( context );
+    }
+      
+    controller.close();
+  });
+};
+```
+### model
+大体使われているオブジェクトは`Model`,`Context`,`Controller`の三つくらい。  
+`Controller`オブジェクトは`node_modules/cody/controllers/Controller.js`で定義されていて、他の`PageController`,`LoginController`とかのControllerのベースのオブジェクト。  
+`Context`オブジェクトは一つのリクエストごとに毎回作成されて、いろんなデータをとりあえずぶち込んでいる的な？  
 
 ### login
 `node_modules/cody/apps/Application.js`で以下の部分でログインが必要な処理をする場合に、ログインしてるかどうかチェックしてる。  
@@ -708,6 +814,90 @@ Application.prototype.servePage = function(req, res) {
       self.logInFirst(context);
       return;
     }
+```
+実際の処理は`node_modules/cody/controllers/LoginController.js`の`LoginController.prototype.doRequest`メソッドで以下のように定義されている。  
+```js
+LoginController.prototype.doRequest = function( finish ) {
+  var self = this;
+  
+  self.context.fn = this.adminView;
+		
+  if (self.isRequest("")) {
+   // request for displaying the login screen
+   finish( self.loginView );
+		
+  } else if (self.isRequest("login")) {
+    // request for trying to log in with the given parameters
+    self.tryLogin( finish );
+ 
+  } else if (self.isRequest("logout")) {
+    // clear login data from the session
+    self.setLogin({});
+
+    // redirect internally
+    var anApp = self.app;
+
+    var aPath = new cody.Path("/" + self.loggedOutUrl, self.app.defaultlanguage);
+    var aContext = anApp.buildContext( aPath, self.context.req, self.context.res );
+    anApp.handToController(aContext);    
+    
+  } else {
+   finish();
+  }
+  
+  return undefined;
+};
+
+```
+実際のLogin検証をしている`self.tryLogin(finish)`の中身は以下。  
+```js
+LoginController.prototype.markLogin = function( theUserName, theLogin, locked, finish ) {
+  // override this one if you want to log the login (= ! isActive() -> failed)
+  // don't forget to call "finish"...
+  
+  console.log("LoginController.markLogin -> " +
+    (theLogin.isActive() ? "Successfully log in for: " : locked ? "User locked: " : "Login failed for: ") +
+    theUserName);
+    
+  finish();
+};
+	
+LoginController.prototype.tryLogin = function( finish ) {
+  var self = this;  
+  var aUserName = self.getParam("username");
+  var locked = false;
+  
+  // remove login from context and session -> there is no way back...
+  self.setLogin({});
+  
+  cody.User.getUser(self, aUserName, this.getParam("password"), function (aUser) {
+    
+    console.log("login rec: " + aUserName + " - " + aUser.id + " - " + aUser.badlogins + " - " + aUser.maxbadlogins);
+    if (aUser && (aUser.badlogins >= aUser.maxbadlogins)) {
+      aUser.active = false;
+      locked = true;
+    }
+   
+    self.markLogin(aUserName, aUser, locked, function() {
+      if (aUser.isActive()) {
+        self.feedBack(true, "login-successful");
+        
+        // remember the user in the context and session
+        self.setLogin(aUser);
+        aUser.clearBadLogins(self, function() {
+          self.continueRequest( finish );
+        });
+        
+      } else {
+        // failed to login, go back to the same screen
+        self.feedBack(false, locked ? "login-locked" : "login-failed");
+        cody.User.addBadLogin(self, aUserName, function() {
+          finish(self.loginView);
+        });
+      }      
+    });        
+  });
+};
 ```
 ### body content
 `node_modules/cody/apps/Application.js`  
