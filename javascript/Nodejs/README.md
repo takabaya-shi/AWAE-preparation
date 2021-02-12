@@ -1001,6 +1001,12 @@ TreeController.prototype.getTree = function( theRoot ) {
 同様のXSSが`Images`の場所にもあるっぽい。  
 ![image](https://user-images.githubusercontent.com/56021519/107693603-b389c200-6cf1-11eb-9fee-717fcd8bb270.png)  
 ![image](https://user-images.githubusercontent.com/56021519/107693640-bdabc080-6cf1-11eb-9488-50004687bd6f.png)  
+`Files`にもある。  
+![image](https://user-images.githubusercontent.com/56021519/107746098-a5bb5780-6d58-11eb-94de-1c5ae4094384.png)  
+![image](https://user-images.githubusercontent.com/56021519/107746136-b4097380-6d58-11eb-8d27-982849ee58ed.png)  
+`Forms`にもある。  
+![image](https://user-images.githubusercontent.com/56021519/107746256-dac7aa00-6d58-11eb-881e-a2352e15fdf2.png)  
+![image](https://user-images.githubusercontent.com/56021519/107746271-e2874e80-6d58-11eb-8d5d-a4d81b23bba5.png)  
   
 こう考えると、Node.jsの場合はXSSできるかどうかは`grep '<%-' -r . | grep 'views' | grep '<%-' `でHTMLエスケープせずに表示しているデータの中にHTMLタグを挿入できるかどうかを調べればよさそう？？  
 ```txt
@@ -1084,7 +1090,10 @@ $ grep '<%-' -r . | grep 'views' | grep -v render| grep '<%-'  | grep 'controlle
 ./node_modules/cody/views/cms/templates.ejs:					<input name="name" id="name" type="text" value="<%- template.name %>" class="required"/>
 ```
   
-あとは`www.mysite.com/[page]"><`みたいな設定するとこにもXSSできそうだけどこれはJS実行前提なのか？？だからXSSではない？？  
+あとは`www.mysite.com/[page]"><`みたいな設定するとこにもXSSできそうだけどこれはJS実行前提なのか？？だからXSSではない？？ 
+以下PoC  
+![image](https://user-images.githubusercontent.com/56021519/107747493-d69c8c00-6d5a-11eb-99ce-9b90cb5b6e2f.png)  
+![image](https://user-images.githubusercontent.com/56021519/107747554-f0d66a00-6d5a-11eb-98a3-695d7c24299a.png)  
 # フォルダ構成
 ```txt
 .
