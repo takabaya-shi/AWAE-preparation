@@ -167,7 +167,38 @@ class Dog implements Animal{
   }
 }
 ```
-
+# geostore
+https://github.com/geosolutions-it/geostore  
+setupしてるけど`mvn clean install`でビルドはできるっぽいけどそのあとのWebサーバー実行の段階で以下のerrorが出てて解決しない…  
+`maven-jetty-plugin:6.1.26:run`のビルドがうまく行ってないっぽいけど解決策がよくわからん…  
+```txt
+takabayashi@takabayashi-VirtualBox:~/AWAE/geostore/src/web/app$ mvn jetty:run 
+WARNING: An illegal reflective access operation has occurred
+WARNING: Illegal reflective access by com.google.inject.internal.cglib.core.$ReflectUtils$1 (file:/usr/share/maven/lib/guice.jar) to method java.lang.ClassLoader.defineClass(java.lang.String,byte[],int,int,java.security.ProtectionDomain)
+WARNING: Please consider reporting this to the maintainers of com.google.inject.internal.cglib.core.$ReflectUtils$1
+WARNING: Use --illegal-access=warn to enable warnings of further illegal reflective access operations
+WARNING: All illegal access operations will be denied in a future release
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------< it.geosolutions.geostore:geostore-webapp >--------------
+[INFO] Building GeoStore - Webapp 1.7-SNAPSHOT
+[INFO] --------------------------------[ war ]---------------------------------
+[INFO] 
+[INFO] >>> maven-jetty-plugin:6.1.26:run (default-cli) > test-compile @ geostore-webapp >>>
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  4.123 s
+[INFO] Finished at: 2021-02-13T02:00:50+09:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal on project geostore-webapp: Could not resolve dependencies for project it.geosolutions.geostore:geostore-webapp:war:1.7-SNAPSHOT: Failed to collect dependencies at it.geosolutions.geostore:geostore-persistence:jar:1.7-SNAPSHOT: Failed to read artifact descriptor for it.geosolutions.geostore:geostore-persistence:jar:1.7-SNAPSHOT: Failure to find it.geosolutions:geostore:pom:1.7-SNAPSHOT in http://maven.geo-solutions.it was cached in the local repository, resolution will not be reattempted until the update interval of geosolutions has elapsed or updates are forced -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/DependencyResolutionException
+```
 
 # メモ
 # 参考
