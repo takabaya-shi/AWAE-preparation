@@ -1090,7 +1090,8 @@ $ grep '<%-' -r . | grep 'views' | grep -v render| grep '<%-'  | grep 'controlle
 ./node_modules/cody/views/cms/templates.ejs:					<input name="name" id="name" type="text" value="<%- template.name %>" class="required"/>
 ```
   
-あとは`www.mysite.com/[page]"><`みたいな設定するとこにもXSSできそうだけどこれはJS実行前提なのか？？だからXSSではない？？ 
+あとは`www.mysite.com/[page]"><`みたいな設定するとこにもXSSできそうだけどこれはJS実行前提なのか？？だからXSSではない？？   
+これは、そもそも`[text edit]`みたいなところで任意のJavaScript記述できるから、そこにFacebookのURLを書くかの違いなだけだからそもそもJavaScript実行を許可してるっぽい。Textの編集の部分から同じことできるし…  だからXSSではなさそう？  
 以下PoC  
 ![image](https://user-images.githubusercontent.com/56021519/107747493-d69c8c00-6d5a-11eb-99ce-9b90cb5b6e2f.png)  
 ![image](https://user-images.githubusercontent.com/56021519/107747554-f0d66a00-6d5a-11eb-98a3-695d7c24299a.png)  
