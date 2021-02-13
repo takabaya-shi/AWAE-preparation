@@ -168,6 +168,105 @@ class Dog implements Animal{
   }
 }
 ```
+# サーブレット
+https://www.fujitsu.com/jp/group/fap/services/java-education-kc/course/technology/web-apl/  
+JSPのわかりやすい解説。  
+https://www.javadrive.jp/servlet/  
+JSPのわかりやすい解説。  
+## HttpServlet /  HttpServletRequest
+以下みたいにしてHttpServletインターフェースを実装して使用する。  
+`doGet`,`doPost`を使う。  
+`request.getParameter("name")`のようにして送信されたパラメータ値を取り出す。  
+`request.getCookies();`でクライアントから送信されてきたCookieを取得する。  
+https://www.javadrive.jp/servlet/ini/index4.html  
+https://qiita.com/freeworker1105/items/39eceec8d08e19f56d76  
+リダイレクトは  
+`((HttpServletResponse)response).sendRedirect("/Login");`とか  
+`request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(request, response);`  
+```java
+@WebServlet(urlPatterns = "/login.do")
+public class LoginServlet extends HttpServlet {
+
+	protected void doGet(HttpServletRequest request,
+			HttpServletResponse response) throws ServletException, IOException {
+		request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(
+				request, response);
+	}
+
+	protected void doPost(HttpServletRequest request,
+			HttpServletResponse response) throws ServletException, IOException {
+        String name = request.getParameter("name");
+	}
+
+}
+```
+https://spring.pleiades.io/specifications/platform/8/apidocs/javax/servlet/http/httpservletrequest  
+## session
+```java
+public class SessionTest7 extends HttpServlet {
+  public void doGet(HttpServletRequest request, HttpServletResponse response)
+    throws IOException, ServletException{
+    HttpSession session = request.getSession(true);  // sessionをサーバー上に作成
+    String session_id = session.getId();  // JSESSIONIDの値を取得
+
+```
+`request.getSession().setAttribute("name", name);`でセッションに値を保存できる。  
+https://www.javadrive.jp/servlet/session/index7.html  
+http://itdoc.hitachi.co.jp/manuals/3020/30203M0360/EM030096.HTM  
+https://www.javadrive.jp/servlet/dispatch/index3.html  
+## routes
+Annotationかweb.xmlに書くかで実装するらしい。  
+```java
+@WebServlet("/url-pattern")
+```
+サーブレットでのマッピングは以下。  
+https://eng-entrance.com/servlet-web-annotation  
+## Filter
+`Filter`インターフェースを実装して、`doFilter`メソッドを定義して使う。`doFilter`メソッドはFilterインターフェースを実装したフィルタクラスがフィルタとして呼び出された時に実行されるメソッド。  
+`FilterChain`インターフェースは一つ目のフィルター処理を実行した後は次はどのフィルター処理を実行するのか、みたいなことを管理しているらしい。  
+フィルター処理を実行した後にとりあえず`chain.doFilter`メソッドを呼び出せば次のフィルタ(もしあれば)を実行する処理に移る？  
+```java
+import java.io.*;
+import javax.servlet.*;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+
+public class FilterTest implements Filter{
+  public void doFilter(ServletRequest request, ServletResponse response,
+    FilterChain chain){
+
+    try{
+      /* フィルタで行う処理 */
+      if (認証が行われている) then{
+        // FilterChainインターフェースで定義されている"doFilter"メソッドを呼び出す
+        chain.doFilter(request, response);
+      }else{
+        // 認証されてなければそもそも次のフィルタ処理に行かないでログイン画面にリダイレクト
+        ((HttpServletResponse)response).sendRedirect("/Login");
+      }
+    }catch (ServletException se){
+    }catch (IOException e){
+    }
+  }
+
+  public void init(FilterConfig filterConfig) throws ServletException{
+  }
+
+  public void destroy(){
+  }
+}
+```
+https://www.javadrive.jp/servlet/filter/index3.html  
+
+# JavaWebApplicationStepByStep
+ガチ基本で良さげなシンプルなサーブレット。  
+https://github.com/in28minutes/JavaWebApplicationStepByStep  
+## 実行
+ソースをgithubからcloneして、`pom.xml`上で`mvn clean install`,`mvn tomcat7:run`  
+Eclipse上で構築とかは以下に描いてる。  
+https://github.com/in28minutes/SpringIn28Minutes/blob/master/InstallationGuide-JavaEclipseAndMaven_v2.pdf  
+## http
+
 # geostore
 https://github.com/geosolutions-it/geostore  
 setupしてるけど`mvn clean install`でビルドはできるっぽいけどそのあとのWebサーバー実行の段階で以下のerrorが出てて解決しない…  
@@ -202,6 +301,20 @@ WARNING: All illegal access operations will be denied in a future release
 ```
 
 # メモ
+ここら辺ちゃんとまとめたい。  
+```txt
+Generics  
+Attribute  
+クロージャ  
+プリミティブ型  
+コレクション  
+```
 # 参考
 https://paiza.io/projects/11jytFgPbDyTvWeETVlJ3A?language=java    
 ここでWeb上でJavaを実行できる。   
+https://www.fujitsu.com/jp/group/fap/services/java-education-kc/course/technology/web-apl/  
+JSPのわかりやすい解説。  
+https://www.javadrive.jp/servlet/  
+JSPのわかりやすい解説。  
+http://www.tohoho-web.com/java/index.htm  
+とほほのわかりやすいやつ。  
