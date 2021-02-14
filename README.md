@@ -108,6 +108,7 @@ PHP 5.6.25 and 7.x before 7.0.10では`__wakeup()`を呼び出さず`__destruct`
 `==`,`!=`,`eval`,`strcasecmp`,`strcmp`  
 #### PHP XSS
 `$_SERVER['PHP_SELF']`,`preg_replace`,`urldecode`(`$_GET[]で既にdecodeされるので不要`),`htmlspecialchars`(引数無しは`'`をエスケープしない)  
+`str_replace`,`preg_replace`は１回しかreplaceしないので`scrscriptipt`とかは`script`になってこれは通す。 
 https://vulners.com/myhack58/MYHACK58:62201234463  
 https://qiita.com/addictionwhite/items/4e9c9cc4570c0bcaa656  
 #### PHP XXE
@@ -120,6 +121,7 @@ https://qiita.com/addictionwhite/items/4e9c9cc4570c0bcaa656
 `file_get_contetns`(外部のURLも可),`include`  
 変数名`$path`,`$url`,`$image`  
 関数名`fetch`が含まれているものは外部からのurl入力したURLにアクセスしてることが多い？(pharの問題で複数)  
+`str_replace("../", "", $file);`は一回しか取り除かないので`../`の中に入れ込んだ`..././`でバイパスできる。また、Windows環境では`..\`でDirectry Traversal可能。  
 #### PHP Command Injection
 `backtick演算子`(バッククォート),`shell_exec`,`exec`,`passthru`,`system`,`pcntl_exec`,`popen`,`proc_open`,`eval`  
 `preg_replace`,`escapeshellcmd`,`escapeshellarg`,`filter_var`  
@@ -157,7 +159,7 @@ https://github.com/w181496/Web-CTF-Cheatsheet#mysql
 `filter_var('aaa."bbb"@b.c',FILTER_VALIDATE_EMAIL)`とかで`aaa."bbb"@b.c`を通すことができる。`aaa."bbb@b.c`なら通さないのに…  
 `"'whoami'"@example.com`とかでCommand Injectionにつながるかも。`'||1#@i.i`も通すのでSQL Injectionできるかも。  
 - `preg_replace`  
-１回しかreplaceしないので`scrscriptipt`とかは`script`になってこれは通す。  
+ 
 - `\x00lambda_%d`  
 https://www.cnblogs.com/leixiao-/p/9818602.html  
 ``$MY = create_function("","die(`cat flag.php`);");``みたいにラムダ関数が定義されているとき、`\x00lambda_49()`みたいにすると同じラムダ関数を実行できるらしい？？  
