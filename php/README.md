@@ -10,6 +10,7 @@
   - [class](#class)
     - [基本](#%E5%9F%BA%E6%9C%AC)
     - [継承(extends) Override](#%E7%B6%99%E6%89%BFextends-override)
+    - [アロー演算子(->)](#%E3%82%A2%E3%83%AD%E3%83%BC%E6%BC%94%E7%AE%97%E5%AD%90-)
     - [スコープ定義(::)と$this](#%E3%82%B9%E3%82%B3%E3%83%BC%E3%83%97%E5%AE%9A%E7%BE%A9%E3%81%A8this)
 - [基本的な実装](#%E5%9F%BA%E6%9C%AC%E7%9A%84%E3%81%AA%E5%AE%9F%E8%A3%85)
   - [session](#session)
