@@ -142,7 +142,14 @@ class ChildClass extends ParentClass{
 }
 ?>
 ```
+### アロー演算子(->)
+アロー演算子`->`はクラスのメソッドやプロパティにアクセスするための演算子。  
+`user->get_user()`とかの場合は`user`インスタンスの`public function get_user`メソッドを実行する。左側の`user`はインスタンス名であってクラス名ではない。  
+https://qiita.com/sho91/items/c6503e7d344ca29aa03f  
 ### スコープ定義(::)と$this
+scope定義演算子`::`を使うのはクラスの定数や静的なメソッドにアクセスする場合。  
+`users::get_user()`とかの場合は、`users`クラスに`public static function get_user(`が定義されていてそれを呼び出している。  
+こういう`users`クラスは`application/models/users.php`とかによく定義されてる。  
 ```php
 <?php
 // Your code here!
