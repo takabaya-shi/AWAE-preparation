@@ -117,11 +117,16 @@ https://qiita.com/addictionwhite/items/4e9c9cc4570c0bcaa656
 `simplexml_load_string($string,'SimpleXMLElement', LIBXML_NOENT)`みたいに第三引数がこれになってないと実体参照できないらしい。(なくても良い場合もあるらしい)  
 #### PHP SQL Injection
 `mysql_real_escape_string`(`mysqli_real_escape_string`は安全?),`mysql_escape_string`(`%`,`_`は通す)  
-#### PHP Directory Traversal
+#### PHP Directory Traversal 
 `file_get_contetns`(外部のURLも可),`include`  
 変数名`$path`,`$url`,`$image`  
 関数名`fetch`が含まれているものは外部からのurl入力したURLにアクセスしてることが多い？(pharの問題で複数)  
-`str_replace("../", "", $file);`は一回しか取り除かないので`../`の中に入れ込んだ`..././`でバイパスできる。また、Windows環境では`..\`でDirectry Traversal可能。  
+`str_replace("../", "", $file);`は一回しか取り除かないので`../`の中に入れ込んだ`..././`でバイパスできる。また、Windows環境では`..\`でDirectry Traversal可能。このチェックをし忘れてることが多い。  
+でも大体はそのあとに`path_is_safe($filepath)`みたいにして変なとこに抜けてないかのチェックが入ってる。  
+
+#### PHP LFI
+`readfile()`,`file()`,`file_get_contents()`,`fopen()`でファイルを読み込む。PHPファイルを読み込んでも実行はできない。`include`,`require`なら実行可能。    
+
 #### PHP Command Injection
 `backtick演算子`(バッククォート),`shell_exec`,`exec`,`passthru`,`system`,`pcntl_exec`,`popen`,`proc_open`,`eval`  
 `preg_replace`,`escapeshellcmd`,`escapeshellarg`,`filter_var`  
