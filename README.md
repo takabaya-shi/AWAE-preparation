@@ -18,6 +18,7 @@
       - [PHP XXE](#php-xxe)
       - [PHP SQL Injection](#php-sql-injection)
       - [PHP Directory Traversal](#php-directory-traversal)
+      - [PHP LFI](#php-lfi)
       - [PHP Command Injection](#php-command-injection)
       - [その他](#%E3%81%9D%E3%81%AE%E4%BB%96)
     - [Command Injection](#command-injection)
