@@ -221,7 +221,74 @@ class ChildClass extends ParentClass{
 }
 ?>
 ```
+### 参照代入 =&
+
+### @ エラー制御演算子
+`@mkdir`とかでエラーが発生してもそれを出力しないようにする。  
+https://php1st.com/2665  
 # 基本的な実装
+## よく見る関数
+- `pathinfo`  
+ファイル名から拡張子を取り出すときによく使う。  
+例: `pathinfo('/fruits/melon/eat/index.php');`  
+中身は以下の通り。  
+```txt
+array(4) {
+  ["dirname"]=>
+  string(17) "/fruits/melon/eat"
+  ["basename"]=>
+  string(9) "index.php"
+  ["extension"]=>
+  string(3) "php"
+  ["filename"]=>
+  string(5) "index"
+}
+```
+https://www.sejuku.net/blog/50670  
+- `trim`  
+文字列の先頭および末尾にあるホワイトスペースを取り除く  
+実質ほぼ何もしないのでこれでSanitizeしたことにしてる場合は脆弱  
+例: `echo(trim(" aa bb cc ")); // "aa bb cc"`  
+https://www.php.net/manual/ja/function.trim.php  
+- `explode`  
+文字列を文字列により分割する。空白で配列に分割することが多そう。  
+例: `var_dump(explode(" "," aa bb cc "));`  
+```txt
+array(5) {
+  [0]=>
+  string(0) ""
+  [1]=>
+  string(2) "aa"
+  [2]=>
+  string(2) "bb"
+  [3]=>
+  string(2) "cc"
+  [4]=>
+  string(0) ""
+}
+```
+https://www.php.net/manual/ja/function.explode.php  
+- `mysqli_real_escape_string`  
+`mysqli::real_escape_string`,`mysqli::escape_string`と同じ。  
+SQLのクエリを`'`なら`\'`とかにエスケープしてSQL Injectionを防ぐ。これがあるとSQL Injectionは無理。  
+`\x00`,`\n`,`\r`,`\`,`'`,`"`,`ctr-z`をエスケープする。  
+例: `mysqli_real_escape_string(mysqli_connect("localhost", "my_user", "my_password", "world"), "AAAAAA'");`  
+https://www.php.net/manual/ja/mysqli.real-escape-string.php  
+- `real_escape_string`  
+上と同じ。  
+例: `$city = $mysqli->real_escape_string("AAAA'");`  
+- `mysql_real_escape_string`  
+PHP 5.5.0 で非推奨になり、PHP 7.0.0 で削除された。  
+例: `mysql_real_escape_string($user);`  
+- `mysql_escape_string`  
+`%`,`_`は通すらしい。  
+
+- `addslashes`  
+- `mysqli_connect`  
+
+- ``  
+- ``  
+- ``  
 ## session
 ## login
 入力がハッシュ化されたりされなかったり。  
