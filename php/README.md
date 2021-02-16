@@ -310,10 +310,13 @@ https://shiflett.org/blog/2006/addslashes-versus-mysql-real-escape-string
 			} else {
 				$authenticated = false;
 ```
+SQL Injectionによってadminのハッシュは持ってるけど復号ができない場合は、passwordを送信する時点でハッシュを送信してないか確認。そうなら送信する値をadminのハッシュにすればよい。  
 ## file upload
 拡張子とMIME Typeをブラックリスト、ホワイトリストで制限。  
 ブラックリストなら回避は容易だけど、ファイルの中身を見て`mime_content_type()`,`finfo_file`とかでMIME Typeを判断する場合はBurp SuiteでContents-Typeを偽装しても無意味。`$_FILE`から得られるMIME Typeで判断してるかどうか注意。  
 ただ、拡張子を`evil.phar`としてファイルの先頭に`GIF89a;`を付けとけば`mime_content_type()`はバイパスできて`image/gif`だと思ってくれる。  
+`/var/upload`とかのWebルート外にアップロードする場合は、Directry TraversalとかでWebroot内に強引に書き込む。zip slipとか。  
+
 ## HTMLフィルタリング
 ここら辺みたいに入力されたものをユーザーが定義したフィルタリングの関数に通す。  
 大体がHTMLエンティティ化したりHTMLタグを取ったりバックスラッシュを記号前に付与したり？  
