@@ -12,10 +12,7 @@
     - [継承(extends) Override](#%E7%B6%99%E6%89%BFextends-override)
     - [アロー演算子(->)](#%E3%82%A2%E3%83%AD%E3%83%BC%E6%BC%94%E7%AE%97%E5%AD%90-)
     - [スコープ定義(::)と$this](#%E3%82%B9%E3%82%B3%E3%83%BC%E3%83%97%E5%AE%9A%E7%BE%A9%E3%81%A8this)
-    - [参照代入 =&](#%E5%8F%82%E7%85%A7%E4%BB%A3%E5%85%A5-)
-    - [@ エラー制御演算子](#-%E3%82%A8%E3%83%A9%E3%83%BC%E5%88%B6%E5%BE%A1%E6%BC%94%E7%AE%97%E5%AD%90)
 - [基本的な実装](#%E5%9F%BA%E6%9C%AC%E7%9A%84%E3%81%AA%E5%AE%9F%E8%A3%85)
-  - [よく見る関数](#%E3%82%88%E3%81%8F%E8%A6%8B%E3%82%8B%E9%96%A2%E6%95%B0)
   - [session](#session)
   - [login](#login)
   - [file upload](#file-upload)
@@ -271,6 +268,12 @@ array(5) {
 }
 ```
 https://www.php.net/manual/ja/function.explode.php  
+- `mysqli_connect`  
+DBに接続する。  
+例: `mysqli_connect("localhost", "my_user", "my_password", "world");`  
+- `mysqli_query`  
+SQL文を実行する。  
+例: `mysqli_query($link, "CREATE TEMPORARY TABLE myCity LIKE City");`  
 - `mysqli_real_escape_string`  
 `mysqli::real_escape_string`,`mysqli::escape_string`と同じ。  
 SQLのクエリを`'`なら`\'`とかにエスケープしてSQL Injectionを防ぐ。これがあるとSQL Injectionは無理。  
@@ -282,16 +285,18 @@ https://www.php.net/manual/ja/mysqli.real-escape-string.php
 例: `$city = $mysqli->real_escape_string("AAAA'");`  
 - `mysql_real_escape_string`  
 PHP 5.5.0 で非推奨になり、PHP 7.0.0 で削除された。  
+`where id=%s`みたいな場合、`1 or 1=1`みたいな`'`を使わないSQL Injectionなら可能となってしまう！  
 例: `mysql_real_escape_string($user);`  
+https://stackoverflow.com/questions/5741187/sql-injection-that-gets-around-mysql-real-escape-string  
 - `mysql_escape_string`  
 `%`,`_`は通すらしい。  
-
 - `addslashes`  
-- `mysqli_connect`  
-
-- ``  
-- ``  
-- ``  
+`'`,`"`,`\`,`\x00`の前にバックスラッシュを付けてくれる。  
+文字コードによっては危険。  
+`\x95'`を`\x95\x5c'`とエスケープするがこれはShift-JISでは「表」という文字を指す。  
+`%bf%22`を`%bf%5c%22`とエスケープするがこれはbig5tblではなんかの漢字として扱われる。   
+https://shiflett.org/blog/2006/addslashes-versus-mysql-real-escape-string  
+ 
 ## session
 ## login
 入力がハッシュ化されたりされなかったり。  
