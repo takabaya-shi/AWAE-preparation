@@ -44,7 +44,25 @@ php shell code:1:
 bool(true)
 php > 
 ```
+PHPのバージョンによってType Jugglingの挙動は異なる！！！！！！  
+以下で実験した  
+https://sandbox.onlinephpfunctions.com/  
+```txt
+                                    8.0.0   7.4.13~7.0.1   5.6.29~4.4.49
+var_dump('0xAAAA' == '43690');      false      false          true           
+var_dump('0xAAAA' == 43690);        false      false          true
+var_dump(0xAAAA == 43690);          true       true           true
 
+var_dump('0e1234' == 0);            true       true           true
+var_dump('0e1234' == '0');          true       true           true
+var_dump('0e1234' == '0e4321');     true       true           true
+var_dump('0e1234' == 'aaaa');       false      false          false
+
+var_dump('AAAA' == 0);              false      true           true
+var_dump('AAAA' == '0');            false      false          false
+
+var_dump(0 == "1 aa" - 1);          true       true           true
+```
 # writeup
 ##
 https://born2scan.github.io/2020/10/05/Bo1lersCTF.html#next-gen-networking  
