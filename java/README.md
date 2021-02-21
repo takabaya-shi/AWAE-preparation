@@ -181,6 +181,8 @@ https://www.fujitsu.com/jp/group/fap/services/java-education-kc/course/technolog
 JSPのわかりやすい解説。  
 https://www.javadrive.jp/servlet/  
 JSPのわかりやすい解説。  
+https://www.atmarkit.co.jp/ait/articles/1607/01/news163_3.html  
+doGetとかのわかりやすい説明。  
 ## HttpServlet /  HttpServletRequest
 以下みたいにしてHttpServletインターフェースを実装して使用する。  
 `doGet`,`doPost`を使う。  
@@ -191,6 +193,9 @@ https://qiita.com/freeworker1105/items/39eceec8d08e19f56d76
 リダイレクトは  
 `((HttpServletResponse)response).sendRedirect("/Login");`とか  
 `request.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(request, response);`  
+  
+`doGet(HttpServletRequest request,HttpServletResponse response)`とかの引数は`HttpServletRequest`インターフェースを実装したクラスのインスタンス`request`を親クラスの`HttpServletRequest`型で渡している。  
+これでリクエストの内容を引数に渡してオーバーライドした`doGet`内でいろいろ処理できる。  
 ```java
 @WebServlet(urlPatterns = "/login.do")
 public class LoginServlet extends HttpServlet {
@@ -265,6 +270,11 @@ public class FilterTest implements Filter{
 }
 ```
 https://www.javadrive.jp/servlet/filter/index3.html  
+
+## JMX
+`.jar`ファイルをJD-GUIでデコンパイルした結果に`META-INF`内に`com`,`jsp`,`jmx.class`の3つのデコンパイル結果がそれぞれ出てるけど多分`com`がサーブレット関連の主なやつで`jsp`がJSPで`jmx`がJavaプロセスにアクセスしてJavaVM内のMBeanサーバへ接続して情報を取得したりするやつ？？  
+なんもわからん  
+https://gihyo.jp/dev/serial/01/java-system-operation/0004  
 
 # JavaWebApplicationStepByStep
 ガチ基本で良さげなシンプルなサーブレット。  
