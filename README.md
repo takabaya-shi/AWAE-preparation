@@ -49,6 +49,16 @@
 エラー文が出て入れば、その該当箇所のソースコードをgithubで探して、wikiとかTutorialとかissueを見る。   
 Injection系はevalを探す。   
 見つかれば、ユーザーの入力をエスケープするような部分を`html`,`escape`とかのキーワードで検索して見つける。   
+
+## 正規表現
+入力検証を正規表現に依存している場合は、不正なパラメータが来ることを想定されていない正規表現の可能性がある。  
+よくわからん正規表現は以下で実際に何が来るかを予想して動かしてみる。  
+https://regex101.com/  
+  
+参考文献  
+https://qiita.com/ikmiyabi/items/12d1127056cdf4f0eea5  
+https://murashun.jp/article/programming/regular-expression.html  
+
 ## キーワード
 ### MySQL
 - `SELECT 'Ä'='a'`はTrueとなる。  
