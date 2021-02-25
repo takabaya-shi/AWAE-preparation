@@ -42,6 +42,21 @@ obj = {
    "key2":"val2"
 }
 ```
+以下みたいな感じで使う。  
+```js
+var array = [];
+obj = {type: 'text', name: 'obj1' , value: 'ohayo'};
+array.push(obj);
+
+console.log(obj);
+console.log(obj.type);
+console.log(array);
+
+// output
+{ type: 'text', name: 'obj1', value: 'ohayo' }
+text
+[ { type: 'text', name: 'obj1', value: 'ohayo' } ]
+```
 # 関数
 ## コンストラクタ
 ```js
@@ -129,6 +144,7 @@ function func() {
 }
 func(); // 1
 ```
+https://qiita.com/takeharu/items/4975031faf6f7baf077a  
 ## アロー関数
 以下はすべて同じこと。関数の作りかた。   
 ```js
@@ -172,6 +188,31 @@ call(printHitsuji);
 // コールバック関数を呼びだします。
 // ひつじ仙人
 ```
+```js
+var batch = function(callback){
+    console.log("batch function");
+    callback();
+}
+var test = function(){
+    console.log("test function");
+}
+var callBatch = function (arg1, arg2) {
+    console.log("callBatch function");
+    return function (callback) {  // 関数リテラルを返す
+        console.log("calling the batch function!");
+        batch(callback);
+    };
+};
+
+var a = callBatch(1,1);  // returnされた関数リテラルを変数aに格納。returnされた関数リテラルは実行されない
+// callBatch function
+
+a(test);
+// calling the batch function!
+// batch function
+// test function
+```
+https://qiita.com/nekoneko-wanwan/items/f6979f687246ba089a35  
 # クラス
 ## class
 ```js
