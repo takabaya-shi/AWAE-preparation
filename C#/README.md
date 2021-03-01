@@ -2,6 +2,10 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**
 
+- [文法](#%E6%96%87%E6%B3%95)
+  - [generics(ジェネリクス)](#generics%E3%82%B8%E3%82%A7%E3%83%8D%E3%83%AA%E3%82%AF%E3%82%B9)
+  - [コレクション](#%E3%82%B3%E3%83%AC%E3%82%AF%E3%82%B7%E3%83%A7%E3%83%B3)
+  - [プロパティ、フィールド、getter、setterとか](#%E3%83%97%E3%83%AD%E3%83%91%E3%83%86%E3%82%A3%E3%83%95%E3%82%A3%E3%83%BC%E3%83%AB%E3%83%89gettersetter%E3%81%A8%E3%81%8B)
 - [Deserialization](#deserialization)
   - [XmlSerialize](#xmlserialize)
   - [ObjectDataProvider ExpandedWrapper](#objectdataprovider-expandedwrapper)
