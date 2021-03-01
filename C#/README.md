@@ -16,6 +16,15 @@
 - [memo](#memo)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
+# 文法
+## generics(ジェネリクス)
+https://ufcpp.net/study/csharp/sp2_generics.html  
+## コレクション
+`HashTable`、`Dictionary`(連想配列)とか。  
+## プロパティ、フィールド、getter、setterとか
+フィールドにはプロパティからアクセスする。  
+自動実装プロパティで書かれてないこともある。  
+https://qiita.com/toshi0607/items/801a0d37fb48313cbdbd  
 # Deserialization
 ## XmlSerialize
 https://ivan1ee.gitbook.io/-netdeserialize/fan-xu-lie-hua-lou-dong-xi-lie/1xmlserializer-fan-xu-lie-hua-lou-dong  
