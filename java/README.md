@@ -143,6 +143,8 @@ class Person extends Animal{
 }
 ```
 ## interface 実装(implements)
+interfaceを実装したクラスの型(DogとかPerson)でinferfaceを実装したクラスのインスタンス(dog1とかperson1)を受け取ることもできるし、  
+interfaceを定義したクラス(Animal)の型でinferfaceを実装したクラスのインスタンス(dog1とかperson1)を受け取ることもできる！！！！！！！！  
 ```java
 class Main {
   public static void main(String[] args) {
@@ -152,6 +154,9 @@ class Main {
     
     person1.hello("John"); // こんにちは！John
     dog1.hello("犬");      // わんわん！犬
+
+    Animal animal1 = new Dog();
+    animal1.hello(""); // わんわん！
   }
 }
 
