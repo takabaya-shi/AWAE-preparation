@@ -576,3 +576,10 @@ http://okumocchi.jp/php/re.php
 PHPの`preg_match`、JavaScriptの`match`関数で正規表現をチェックできる。  
 https://www.debuggex.com/  
 正規表現がどんな感じで動くかわかりやすい。  
+  
+以下Whiteboxのチートシート  
+https://pentesterlab.com/exercises/codereview/course  
+https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html  
+https://github.com/softwaresecured/secure-code-review-checklist  
+https://littlemaninmyhead.wordpress.com/2019/08/04/dont-underestimate-grep-based-code-scanning/  
+https://github.com/dustyfresh/PHP-vulnerability-audit-cheatsheet  
