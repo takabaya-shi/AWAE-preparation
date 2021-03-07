@@ -27,6 +27,25 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
+# プリミティブ型  
+以下の8つがプリミティブ型。  
+|型名|分類|サイズ(bit)|
+|-----|----|-----------|
+|long|整数|64|
+|int |整数|32|
+|short|整数|16|
+|byte|整数|8|
+|double|小数|64|
+|float|小数|32|
+|boolean|真偽|?|
+|char|文字|16|
+
+これらはオブジェクトを生成しない。それゆえメソッドも持たない。  
+`String`は参照型でプリミティブ型ではない。  
+`Integer`や`Double`は参照型でこういうプリミティブ型の`int`,`double`を拡張したものをラッパークラスという。  
+https://qiita.com/hiroki-harada/items/cb6fa4affffab2019cde  
+https://qiita.com/hysdsk/items/2e94c8722dc8f950e77c  
+
 # 配列
 # class
 ```java
@@ -195,7 +214,22 @@ https://www.javadrive.jp/servlet/
 JSPのわかりやすい解説。  
 https://www.atmarkit.co.jp/ait/articles/1607/01/news163_3.html  
 doGetとかのわかりやすい説明。  
-
+  
+  
+classpathとはJava実行環境がクラスおよび他のソースファイルを検索するパス  
+コアクラス以外のクラスファイルは、Java実行環境が読み込むためにその位置を指定する必要がある  
+`System.getProperty("java.class.path")`で確認。  
+`System.getProperty`は指定されたキーを持つシステムプロパティーを、プロパティーリストから探すメソッドで他にも`System.getProperty("java.version")`,`System.getProperty("user.dir")`とかを確認できる。  
+https://itsakura.com/java-system-getproperties  
+  
+  
+`/usr/sbin/update-java-alternatives -l`でJavaのインストールディレクトリを確認できる。  
+JDK 9より前なら`jre/lib/rt.jar`に`Java.lang.String`とか`Java.io.File`の基本的なクラスが存在するらしい。  
+```txt
+$ /usr/sbin/update-java-alternatives -l                                                                                                                      
+java-1.11.0-openjdk-amd64      1111       /usr/lib/jvm/java-1.11.0-openjdk-amd64
+```
+https://docs.oracle.com/javase/jp/10/migrate/toc.htm  
 ## フォルダ構成
 `jar`ファイルは複数の`.java`がコンパイルされた`.class`実行可能ファイルをまとめたもの。  
 `war`ファイルはwebアプリケーション本体でサーバーサイドのクラスや静的コンテンツなどが含まれる。  
@@ -237,6 +271,7 @@ https://docs.oracle.com/cd/F25597_01/document/products/wls61/programming/app_xml
 ### APP-INF
 使用するライブラリが`/lib`とかに複数存在するっぽい。  
 外部ライブラリとは限らないっぽい？使うやつはとりあえず突っ込む？  
+たぶんearファイルには含まれていないモジュールとかを使用するために使う？？  
 
 ### $CATALINA_HOME
 `/webapps`に１まとまりのアプリケーションの動作に必要なJSP、サーブレット、HTML、画像、jar、web.xmlなどが含まれる。  
