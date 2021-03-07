@@ -189,6 +189,53 @@ https://www.javadrive.jp/servlet/
 JSPのわかりやすい解説。  
 https://www.atmarkit.co.jp/ait/articles/1607/01/news163_3.html  
 doGetとかのわかりやすい説明。  
+
+## フォルダ構成
+`jar`ファイルは複数の`.java`がコンパイルされた`.class`実行可能ファイルをまとめたもの。  
+`war`ファイルはwebアプリケーション本体でサーバーサイドのクラスや静的コンテンツなどが含まれる。  
+`ear`ファイルは`war`ファイルをまとめたもの。`application.xml`を含める。  
+### WEB-INF
+`WEB-INF`に`web.xml`がある。  
+`war`ファイルの中でURLマッピングとか使用するクラス名とかが定義されてる？  
+
+```xml
+<web-app>
+
+  <servlet>
+    <servlet-name>サーブレットの命名</servlet-name>
+    <servlet-class>パッケージ名.サーブレット名</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>サーブレットの命名</servlet-name>
+    <url-pattern>/URLのパターン名</url-pattern>
+  </servlet-mapping>
+
+</web-app>
+```
+https://qiita.com/takahirocook/items/d41a92bd36807d456f82  
+### META-INF
+実行可能jarファイルを作るには、jarファイル内のマニフェストファイル`MANIFEST.MF`に実行するクラス（メインクラス ：Main-Class）を指定する  
+`ear`ファイルの`META-INF`に`application.xml`がある。  
+```txt
+<web-uri>使用するモジュール(warファイルの名前).war</web-uri>
+
+<role-name>User</role-name>
+<role-name>Administrator</role-name>
+
+<library-directory>APP-INF/lib</library-directory>
+```
+https://docs.oracle.com/cd/F25597_01/document/products/wls61/programming/app_xml.html  
+
+`war`ファイルの`META-INF`には`context.xml`がある。  
+### APP-INF
+使用するライブラリが`/lib`とかに複数存在するっぽい。  
+外部ライブラリとは限らないっぽい？使うやつはとりあえず突っ込む？  
+
+### $CATALINA_HOME
+`/webapps`に１まとまりのアプリケーションの動作に必要なJSP、サーブレット、HTML、画像、jar、web.xmlなどが含まれる。  
+https://www.bigbang.mydns.jp/tomcat-context.xml-x.htm  
+
 ## HttpServlet /  HttpServletRequest
 以下みたいにしてHttpServletインターフェースを実装して使用する。  
 `doGet`,`doPost`を使う。  
