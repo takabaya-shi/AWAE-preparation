@@ -104,6 +104,11 @@ https://piyolog.hatenadiary.jp/entry/20151110/1447175137
 https://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/  
   
 `Runtime.exec()`は`ls -al`とかなら普通に実行できるけどRever shell Paylaodみたいな複雑なものは、パイプ、リダイレクト、クオーテーションがあると失敗するっぽい。なので配列として渡したり、工夫したりする。  
+### Java weak random
+`java.util.Random`クラスのRandom関数によって作成される`Random r1 = new Random(42)`とかはシード(42)が同じならどの環境でも`r1.nextInt()`の値は全く同じ値を出力する  
+https://www.jpcert.or.jp/java-rules/msc02-j.html  
+tokenとかのセキュリティ関係のやつはこのクラスじゃなくて`java.security.SecureRandom`を使わないとだめ  
+`Random r1 = new Random(current_time)`みたいに現在の時刻をシードにしていると予測可能で脆弱  
 ### ASP.NET 
 `XmlSerializer`,`Deserialize`,`Type.GetType`  
 `Type.GetType(typeName)`のように外部からここに入力を制御できる場合、DotNetNukeみたいに脆弱かも？  
@@ -187,6 +192,10 @@ https://github.com/w181496/Web-CTF-Cheatsheet#mysql
 https://www.cnblogs.com/leixiao-/p/9818602.html  
 ``$MY = create_function("","die(`cat flag.php`);");``みたいにラムダ関数が定義されているとき、`\x00lambda_49()`みたいにすると同じラムダ関数を実行できるらしい？？  
 数字は頑張って探す必要がありそう。  
+- `mt_rand()`,`mt_srand()`,`rand()`,`srand()`  
+tokenやfinenameにrandとかを使うのはシードが少なすぎるから弱いっぽい  
+また、`srand(1234)`とかでシードを与えて生成した後に`rand()`で生成される値はどの環境でも同一  
+https://blog.ohgaki.net/php-mt_rand-and-rand-issues   
 ### Command Injection
 `system`,`exec`,`create_function`  
 
