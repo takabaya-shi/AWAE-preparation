@@ -239,6 +239,14 @@ https://docs.oracle.com/cd/F25597_01/document/products/wls61/programming/app_xml
 
 ### $CATALINA_HOME
 `/webapps`に１まとまりのアプリケーションの動作に必要なJSP、サーブレット、HTML、画像、jar、web.xmlなどが含まれる。  
+CATALINAとはサーブレットコンテナ、JASPERとはJSPを処理するサーブレットで、`$CATALINA_HOME`は`/webapps`があるディレクトリ？TOMCATのインストールディレクトリでもある    
+デフォルトのディレクトリ構成は以下で、`ROOT`がwebroot。  
+つまり`/manager`とかにアクセスしてログインすればwarファイルをアップロードできる  
+ログインできるユーザーは`conf/tomcat-users.xml`に書かれている。  
+```txt
+$ ls webapps/
+docs  host-manager  manager  ROOT
+```
 https://www.bigbang.mydns.jp/tomcat-context.xml-x.htm  
 
 ## HttpServlet /  HttpServletRequest
@@ -333,6 +341,10 @@ https://www.javadrive.jp/servlet/filter/index3.html
 `.jar`ファイルをJD-GUIでデコンパイルした結果に`META-INF`内に`com`,`jsp`,`jmx.class`の3つのデコンパイル結果がそれぞれ出てるけど多分`com`がサーブレット関連の主なやつで`jsp`がJSPで`jmx`がJavaプロセスにアクセスしてJavaVM内のMBeanサーバへ接続して情報を取得したりするやつ？？  
 なんもわからん  
 https://gihyo.jp/dev/serial/01/java-system-operation/0004  
+
+# jd-gui
+jarとかwar,earファイルのデコンパイルして出力するツール。  
+jd-guiでメソッドをクリックしたときにリンクが出ないとそのWARファイル内では定義されてないことになるらしい  
 
 # JavaWebApplicationStepByStep
 ガチ基本で良さげなシンプルなサーブレット。  
