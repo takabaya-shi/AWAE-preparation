@@ -172,6 +172,27 @@ let getCircle = radius =>radius * radius * Math.PI;
 // 引数を持たない場合
 let show =()=> console.log('Hello, world!'); 
 ```
+
+## 即時関数
+関数の後に`()`を付けると参照時に即時実行できる。  
+ちなみに`(function() {})`でも`function() {}`でもどっちでもよさそう  
+```js
+immediate = (function() {
+    return "immediate function"
+}());
+
+not_immediate = (function() {
+    return "not_immediate function"
+});
+
+console.log("[+] "+immediate);
+// [+] immediate function
+
+console.log("[+] "+not_immediate);
+// [+] function() {
+//     return "not_immediate2 function"
+// }
+```
 ## コールバック関数
 ```js
 const printHitsuji = () => {
