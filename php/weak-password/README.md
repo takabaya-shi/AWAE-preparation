@@ -1,3 +1,12 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [概要](#%E6%A6%82%E8%A6%81)
+- [参考](#%E5%8F%82%E8%80%83)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # 概要
 以下のように`mt_srand`,`mt_rand`,`rand`,`srand`を使って作成したランダムな値は弱いのでtokenとかには入れない方がいい。  
 値は同じPHPのバージョンなら同一になる。バージョンによって値は変わることがある。  
