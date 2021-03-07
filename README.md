@@ -10,6 +10,7 @@
     - [PostgreSQL](#postgresql)
     - [Node.js](#nodejs)
     - [Java Deserialization](#java-deserialization)
+    - [Java weak random](#java-weak-random)
     - [ASP.NET](#aspnet)
     - [PHP](#php)
       - [webshell](#webshell)
