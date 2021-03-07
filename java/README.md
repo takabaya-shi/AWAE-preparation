@@ -2,6 +2,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**
 
+- [プリミティブ型](#%E3%83%97%E3%83%AA%E3%83%9F%E3%83%86%E3%82%A3%E3%83%96%E5%9E%8B)
 - [配列](#%E9%85%8D%E5%88%97)
 - [class](#class)
   - [abstract 継承(extends)](#abstract-%E7%B6%99%E6%89%BFextends)
