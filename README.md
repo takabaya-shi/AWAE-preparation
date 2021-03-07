@@ -182,7 +182,42 @@ https://www.cnblogs.com/leixiao-/p/9818602.html
 ``$MY = create_function("","die(`cat flag.php`);");``みたいにラムダ関数が定義されているとき、`\x00lambda_49()`みたいにすると同じラムダ関数を実行できるらしい？？  
 数字は頑張って探す必要がありそう。  
 ### Command Injection
-`system`,`exec`,`create_function`
+`system`,`exec`,`create_function`  
+
+## 知っておきたいキーワード
+### フレームワーク、ライブラリ
+- cakephp  
+MVCベースのPHPのフレームワーク  
+- augular  
+JavaScriptのフレームワーク。  
+`/vendor/angular/angular.min.js`とかを読み込むことでangularの構文で書かれたJSを実行できるようになる？  
+http://www.tohoho-web.com/ex/angular.html  
+- bootstrap  
+Webページのデザイン関係のHTML/CSS/JavaScriptのフレームワーク  
+- jquery  
+JavaScriptでできることを、より簡単な記法で実現できように設計されたJavaScriptライブラリ  
+いろんなPluginがある  
+
+### いろんなツール
+#### 監視系
+- Nagios  
+ネットワークとかのいろんな機能のサーバー監視ツール  
+- naemon  
+nagionの拡張版の監視ツール  
+- Prometheus  
+サーバーやインフラなどの監視ツール  
+- zabbix  
+オープンソースのサーバー監視システム  
+- Cacti  
+SNMP経由でのリソース情報収集に利用できるツール  
+- Hinemos
+複数台のマシンをより効率良く管理することを目的とした「運用管理ツール  
+
+#### データベース系
+- Elasticsearch  
+オープンソースで開発されている分散型データベースシステムでJavaで実装されている。  
+https://knowledge.sakura.ad.jp/2736/  
+
 # Vuln
 ## sample
 - 概要   
