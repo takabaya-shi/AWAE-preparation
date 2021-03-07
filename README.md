@@ -196,12 +196,18 @@ MVCベースのPHPのフレームワーク
 - augular  
 JavaScriptのフレームワーク。  
 `/vendor/angular/angular.min.js`とかを読み込むことでangularの構文で書かれたJSを実行できるようになる？  
+`ng`みたいな接頭語が付く？  
 http://www.tohoho-web.com/ex/angular.html  
 - bootstrap  
 Webページのデザイン関係のHTML/CSS/JavaScriptのフレームワーク  
 - jquery  
 JavaScriptでできることを、より簡単な記法で実現できように設計されたJavaScriptライブラリ  
 いろんなPluginがある  
+- lodash  
+値の操作関連の便利関数があるJavaScriptライブラリ。  
+- gridstack  
+Dashboard関連のJavaScriptライブラリ？  
+
 
 ### いろんなツール
 #### 監視系
@@ -215,7 +221,7 @@ nagionの拡張版の監視ツール
 オープンソースのサーバー監視システム  
 - Cacti  
 SNMP経由でのリソース情報収集に利用できるツール  
-- Hinemos
+- Hinemos  
 複数台のマシンをより効率良く管理することを目的とした「運用管理ツール  
 
 #### データベース系
@@ -223,6 +229,12 @@ SNMP経由でのリソース情報収集に利用できるツール
 オープンソースで開発されている分散型データベースシステムでJavaで実装されている。  
 https://knowledge.sakura.ad.jp/2736/  
 
+#### その他
+- containerd  
+Dockerの内部にあるコンテナランタイム  
+- webpack  
+JavaScriptとかCSSとかのモジュールバンドラ(複数のファイルを１つにまとめて出力してくれるツール)  
+- 
 # Vuln
 ## sample
 - 概要   
@@ -512,6 +524,8 @@ Composerが使用するPHPパッケージのライブラリと依存関係が含
 ドキュメント   
 - man   
 マニュアル（Unix/Linux）   
+  
+https://qiita.com/y_hokkey/items/871c23c24d31021d7c40  
 ## dockerでの環境構築
 ### コマンドとかのメモ
 以下、Windows10のDockerToolBoxを使用して、Dockerサーバー自体はVirtualBox上のVMで動かすことを想定。   
