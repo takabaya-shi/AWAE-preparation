@@ -231,6 +231,25 @@ $ /usr/sbin/update-java-alternatives -l
 java-1.11.0-openjdk-amd64      1111       /usr/lib/jvm/java-1.11.0-openjdk-amd64
 ```
 https://docs.oracle.com/javase/jp/10/migrate/toc.htm  
+## session
+`HttpServletRequest#getSession()`でセッションが作成されてるか確認  
+
+https://www.javadrive.jp/servlet/auth/index8.html  
+http://struts.wasureppoi.com/servlet/12_getSession.html  
+https://www.javadrive.jp/servlet/session/index1.html  
+## web.xml
+https://www.javadrive.jp/servlet/auth/index3.html  
+https://www.javadrive.jp/servlet/filter/index2.html  
+https://www.techscore.com/tech/Java/JavaEE/Servlet/10-3/  
+https://www.atmarkit.co.jp/ait/articles/0310/28/news002.html  
+## .do
+https://teratail.com/questions/45683  
+https://www.ne.jp/asahi/hishidama/home/tech/struts/action.html  
+## JSP
+https://www.javadrive.jp/servlet/jsp/index3.html  
+http://itdoc.hitachi.co.jp/manuals/link/cosmi_v0870/APKW/EU050041.HTM  
+## フィルタ
+https://www.javadrive.jp/servlet/filter/index1.html  
 ## フォルダ構成
 `jar`ファイルは複数の`.java`がコンパイルされた`.class`実行可能ファイルをまとめたもの。  
 `war`ファイルはwebアプリケーション本体でサーバーサイドのクラスや静的コンテンツなどが含まれる。  
