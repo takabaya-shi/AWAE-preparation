@@ -85,6 +85,11 @@ https://murashun.jp/article/programming/regular-expression.html
 - `select pg_read_file('/etc/passwd');`  
 絶対パスを含むこれは`ERROR:  absolute path not allowed`というエラーになるが最新版では成功することもあるとか？このやり方では絶対パスのファイルは読めないが、largeobjectを使って`lo_import`なら絶対パスでも読み込める！  
 
+### JavaScript XSS
+`dangerouslySetInnerHTML`はReactのHTMLをフィルタせずに出力する危険な関数  
+https://teppeis.hatenablog.com/entry/2013/12/angularjs-security  
+`trustAsHtml`はAngularのHTMLをフィルタせずに出力する危険な関数  
+https://qiita.com/togana/items/781ab0b75e26581fecf2  
 ### Node.js
 `eval`,`eval(`,`html`,`escape`,`new Buffer(`,`unserialize`,`node-serialize`,`deserialize`,`new Function`   
   
