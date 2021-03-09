@@ -10,7 +10,7 @@
 - [サーブレット](#%E3%82%B5%E3%83%BC%E3%83%96%E3%83%AC%E3%83%83%E3%83%88)
   - [session](#session)
   - [web.xml](#webxml)
-  - [.do](#do)
+  - [Apache Struts (Action / .do)](#apache-struts-action--do)
   - [JSP](#jsp)
   - [フィルタ](#%E3%83%95%E3%82%A3%E3%83%AB%E3%82%BF)
   - [フォルダ構成](#%E3%83%95%E3%82%A9%E3%83%AB%E3%83%80%E6%A7%8B%E6%88%90)
