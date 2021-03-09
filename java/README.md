@@ -244,12 +244,31 @@ http://struts.wasureppoi.com/servlet/12_getSession.html
 https://www.javadrive.jp/servlet/session/index1.html  
 ## web.xml
 https://www.javadrive.jp/servlet/auth/index3.html  
+roleについて  
 https://www.javadrive.jp/servlet/filter/index2.html  
+`<filter>`,`<filter-mapping>`について  
 https://www.techscore.com/tech/Java/JavaEE/Servlet/10-3/  
+`<security-constraint>`について  
 https://www.atmarkit.co.jp/ait/articles/0310/28/news002.html  
-## .do
+web.xmlでのアクセス制限  
+http://struts.wasureppoi.com/env/01_action.html  
+`<action>`の中のいろんなキーの定義  
+## Apache Struts (Action / .do)
+フォームに入力して`/test.do`とかをリクエストすると`web.xml`で「`*.do`はActionServletで処理する」と書かれているのでActionServletに渡される。  
+次に、`struts-config.xml`の`<action path="/test"`とかで使用するActionが判明して、そのActionの`<action name=TestForm`で定義されてるActionFormクラス(TestForm)の`set**`メソッドを実行してJava Beansにフォームの値を保存する。  
+この際、ActionFormクラス(TestForm)の`validate`メソッドをオーバーライドしていれば、先にそこでValidationが行われる。`struts-config.xml`の`valid=false`とすればこれはスキップできる。  
+また、`struts-config.xml`の`<action path="/test"`のActionクラスの`<action type="com.myapp.struts.TestAction"`で定義されてるActionクラスの`execute`メソッドを実行する。  
+そして実行し終わったら`struts-config.xml`の判明したAction(TestAction)の`<forward path=`で定義されてるJSPとかにフォワードする。  
+![image](https://user-images.githubusercontent.com/56021519/110468233-5aa82080-811b-11eb-8018-655f4fc03d5f.png)  
+https://netbeans.apache.org/kb/docs/web/quickstart-webapps-struts_ja.html  
+![image](https://user-images.githubusercontent.com/56021519/110468283-6c89c380-811b-11eb-8f4a-14e1365e95d1.png)  
+https://www.atmarkit.co.jp/ait/articles/0809/01/news162_3.html  
+  
+http://www.javaroad.jp/opensource/js_struts9.htm  
+https://www.infoq.com/jp/articles/migrating-struts-2-part2/  
 https://teratail.com/questions/45683  
 https://www.ne.jp/asahi/hishidama/home/tech/struts/action.html  
+Struts Actionの使い方  
 ## JSP
 https://www.javadrive.jp/servlet/jsp/index3.html  
 http://itdoc.hitachi.co.jp/manuals/link/cosmi_v0870/APKW/EU050041.HTM  
