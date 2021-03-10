@@ -337,3 +337,9 @@ https://soroush.secproject.com/blog/2019/04/exploiting-deserialisation-in-asp-ne
 - **payload**  
 
 # memo
+https://soroush.secproject.com/blog/2019/04/exploiting-deserialisation-in-asp-net-via-viewstate/  
+VIEWSTATEのデシリアライズの攻撃について  
+https://cheatsheetseries.owasp.org/cheatsheets/DotNet_Security_Cheat_Sheet.html  
+OWASPの資料  
+https://github.com/wireghoul/graudit  
+grepするキーワード  
