@@ -486,3 +486,5 @@ https://www.javadrive.jp/servlet/
 JSPのわかりやすい解説。  
 http://www.tohoho-web.com/java/index.htm  
 とほほのわかりやすいやつ。  
+https://find-sec-bugs.github.io/bugs_ja.htm  
+Javaの脆弱性について。まとまっててよい  
