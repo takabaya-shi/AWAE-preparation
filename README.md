@@ -666,3 +666,5 @@ https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html
 https://github.com/softwaresecured/secure-code-review-checklist  
 https://littlemaninmyhead.wordpress.com/2019/08/04/dont-underestimate-grep-based-code-scanning/  
 https://github.com/dustyfresh/PHP-vulnerability-audit-cheatsheet  
+https://github.com/wireghoul/graudit  
+これ特にすごい  
