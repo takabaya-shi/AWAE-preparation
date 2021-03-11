@@ -234,8 +234,13 @@ PHPのテンプレートエンジン
 RESTful APIを構築するためのオープンソースのフレームワーク  
 swagger editorではあらかじめ用意されたJSON形式のドキュメントを読み込んでブラウザからAPIを叩ける  
 モデルとかも確認できるので便利だけどAPI叩くにはリファレンス確認した方がよさそう  
-
-- 
+- apache struts  
+JavaServletのフレームワーク。Actionに関するリクエストはActionServletで実行する。  
+このActionのURLマッピングは`struts-config.xml`で定義する。  
+- zend  
+レガシーなPHPのフレームワーク  
+MVCっぽい。ルーティング、フロントコントローラ、アクションコントローラ、VIEW、ディスパッチとかは最低限わかったほうがよさそう。  
+http://doremi.s206.xrea.com/zend/mvc.html  
 
 
 ### いろんなツール
