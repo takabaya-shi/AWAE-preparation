@@ -62,6 +62,7 @@ var_dump('AAAA' == 0);              false      true           true
 var_dump('AAAA' == '0');            false      false          false
 
 var_dump(0 == "1 aa" - 1);          true       true           true
+var_dump("1" == "1" + "AA" );       error      true           true
 ```
 # writeup
 ##
