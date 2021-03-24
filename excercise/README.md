@@ -5,6 +5,7 @@
 - [trouble1](#trouble1)
   - [file upload](#file-upload)
   - [SSTI](#ssti)
+  - [SQL Injection](#sql-injection)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
