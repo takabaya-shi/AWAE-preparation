@@ -176,4 +176,7 @@ insertとselectでは違う構文でInjectionする必要があるが、その�
           $passtoken = $_SESSION['token'];
           $sql = "SELECT id FROM users WHERE username = '$myusername' and SHA1(CONCAT(password, '$passtoken'))='$mypassword'";
 ```
+ブラウザ上では以下のようにPHPから指定されたtokenを使ってPassword欄に入力された値をSHA1ハッシュとかに変換してからサーバーに送信している。  
+![image](https://user-images.githubusercontent.com/56021519/112282224-4000aa80-8cca-11eb-9836-9d99a56ee5bb.png)  
+
 
