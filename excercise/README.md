@@ -1,3 +1,13 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [trouble1](#trouble1)
+  - [file upload](#file-upload)
+  - [SSTI](#ssti)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # trouble1
 https://github.com/TROUBLE-1/White-box-pentesting  
 
