@@ -59,4 +59,31 @@ https://github.com/TROUBLE-1/White-box-pentesting
 
 
 ## SSTI
+`render`で検索すると以下のようにtwigが使用されているのでSSTIの可能性  
+![image](https://user-images.githubusercontent.com/56021519/112273153-5e61a880-8cc0-11eb-8b91-ae44710b4a4c.png)  
+なんかコードがミスっててerrorになるので以下のように編集した。  
+```php
+<?php
+   if (isset($_REQUEST['submit'])) {
+       $name=$_REQUEST['name'];
+       // include and register Twig auto-loader
+       include 'twig/twig/lib/Twig/Autoloader.php';
+       Twig_Autoloader::register();
+       try {
+             // specify where to look for templates
+                 $loader = new Twig_Loader_String();  
+             // initialize Twig environment
+                 $twig = new Twig_Environment($loader);
+            // set template variables
+            // render template
+               $result= $twig->render($name);
+               echo "<h2 style='color:white;'>You searched for ". @$result ."</h2>";
+       } catch (Exception $e) {
+             die ('<h2 style="color:white;">Bad Username</h2>' );
+           }
+   }
+   ?>
+```
+![image](https://user-images.githubusercontent.com/56021519/112273054-425e0700-8cc0-11eb-9d65-b70dc6478770.png)  
+
 
