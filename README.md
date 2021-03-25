@@ -259,7 +259,9 @@ JavaServletのフレームワーク。Actionに関するリクエストはAction
 レガシーなPHPのフレームワーク  
 MVCっぽい。ルーティング、フロントコントローラ、アクションコントローラ、VIEW、ディスパッチとかは最低限わかったほうがよさそう。  
 http://doremi.s206.xrea.com/zend/mvc.html  
-
+- Django  
+https://qiita.com/maisuto/items/d01e2cca63c8e5b2c18c  
+https://qiita.com/maisuto/items/eece9d880d94fd241a0d  
 
 ### いろんなツール
 #### 監視系
@@ -667,7 +669,19 @@ https://snyk.io/advisor/npm-package/ghost#versions
 # ToDO
 https://github.com/wectf/2020   
 https://github.com/TeamHarekaze/HarekazeCTF2019-challenges   
-
+# OSWE review
+https://www.vesiluoma.com/offensive-security-web-expert-oswe-advanced-web-attacks-and-exploitation/  
+https://cyberiko.com/awae-oswe/  
+https://arvandy.com/oswe-journey/  
+https://wa1m3im.hatenablog.com/entry/2020/12/24/111520  
+https://klezvirus.github.io/Misc/HTB-VH-OSWE/  
+https://www.pentest.com.tr/blog/OSWE-Advanced-Web-Attacks-and-Exploitation-EN.html  
+https://infosecwriteups.com/awae-oswe-review-from-a-non-developer-perspective-2c2842cfbd4d  
+https://alex-labs.com/my-awae-review-becoming-an-oswe/  
+https://donavan.sg/blog/index.php/2020/03/14/the-awae-oswe-journey-a-review/  
+https://qiita.com/Howtoplay/items/3bed35e2051ceb2ccc4a  
+https://medium.com/greenwolf-security/an-awae-oswe-review-2020-update-6d6ec7a80c1f  
+https://tento.hatenablog.com/entry/2021/03/11/061921  
 # 参考資料
 https://alex-labs.com/my-awae-review-becoming-an-oswe/   
 ホワイトボックスの方法論的なことが書いてある。超参考になりそう。   
@@ -682,6 +696,16 @@ http://okumocchi.jp/php/re.php
 PHPの`preg_match`、JavaScriptの`match`関数で正規表現をチェックできる。  
 https://www.debuggex.com/  
 正規表現がどんな感じで動くかわかりやすい。  
+https://qiita.com/ikmiyabi/items/12d1127056cdf4f0eea5  
+正規表現の基本  
+https://www.epochconverter.com/  
+Epochの計算サイト  
+https://bi.biopapyrus.jp/os/linux/grep.html  
+grepコマンドの正規表現の使い方  
+https://sandbox.onlinephpfunctions.com/  
+PHPのいろんなバージョンで実行できる便利サイト  
+https://sqliteonline.com/  
+いろんなDBでSQL文を実行できる  
   
 以下Whiteboxのチートシート  
 https://pentesterlab.com/exercises/codereview/course  
@@ -691,3 +715,14 @@ https://littlemaninmyhead.wordpress.com/2019/08/04/dont-underestimate-grep-based
 https://github.com/dustyfresh/PHP-vulnerability-audit-cheatsheet  
 https://github.com/wireghoul/graudit  
 これ特にすごい  
+https://pentesterlab.com/exercises/from_sqli_to_shell_pg_edition/course  
+From SQL Injection to Shell: PostgreSQL edition  
+https://www.exploit-db.com/docs/english/45074-file-upload-restrictions-bypass.pdf  
+File Uploadについて  
+http://www.securityidiots.com/Web-Pentest/hacking-website-by-shell-uploading.html  
+File Uploadについて  
+https://bowneconsultingcontent.com/pub/EH/proj/ED105.htm  
+SSTIについて  
+
+
+
