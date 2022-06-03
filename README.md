@@ -54,6 +54,9 @@
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # AWAE-preparation
+このリポジトリはAWAEコースを受験するために自分が作成したメモ書き用リポジトリです。
+他の方が公開しているWriteupのコピペも多くありますのでご容赦下さい（引用元リンクは明記しています）. 
+（追記）ちなみにこの後、試験は合格しました！
 
 # 脆弱性発見方法
 エラー文が出て入れば、その該当箇所のソースコードをgithubで探して、wikiとかTutorialとかissueを見る。   
