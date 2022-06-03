@@ -661,12 +661,7 @@ API
 ```
 報告する場合はgithubがちゃんと動いてて他の脆弱性にも対応してるのか確認したほうがよさそう。  
 そもそも動いてないのに報告しても空気読めてなくて悲報になりそう。  
-ただその分超複雑なソースにはなってないから普通に勉強になっていい。まあスター数少なくてかつ動いてるプロジェクトがあれば報告してもよさそう。  
 あとNode.jsベースのCMSはそもそも依存関係に脆弱性あってそれを放置してるプロジェクトとかはCMSにXSSとかを報告しても意味なさそう。  
-https://snyk.io/advisor/npm-package/cody#versions  
-とかは動いてなさそうだから報告しても意味なさげ？？  
-https://snyk.io/advisor/npm-package/ghost#versions  
-これはめっちゃ動いてる。ただスター数えぐくて見つけるのもしんどそう。  
 # ToDO
 https://github.com/wectf/2020   
 https://github.com/TeamHarekaze/HarekazeCTF2019-challenges   
